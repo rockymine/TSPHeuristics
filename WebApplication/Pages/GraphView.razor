@@ -94,8 +94,10 @@
         <h4>Graph Display</h4>
         <div class="row">
             <Canvas @ref="canvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
-        </div>        
-        <TableGenerator @ref="tableGenerator"/>
+        </div>
+        @if (algorithmEnum == AlgorithmEnum.NN) {
+            <TableGenerator @ref="tableGenerator"/>
+        }        
     </div>
 </div>
 
@@ -207,7 +209,9 @@ n,12,11,11";
             graph = GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
         }
         await UpdateGraph();
-        tableGenerator.UpdateFromGraphState(enumerator.Current);
+
+        if (algorithmEnum == AlgorithmEnum.NN)
+            tableGenerator.UpdateFromGraphState(enumerator.Current);
     }    
 
     private async Task UpdateGraph() {
@@ -230,7 +234,9 @@ n,12,11,11";
             await DrawPath(context, reset);
         }
 
-        tableGenerator.UpdateFromGraphState(enumerator.Current);
+        if (algorithmEnum == AlgorithmEnum.NN)
+            tableGenerator.UpdateFromGraphState(enumerator.Current);
+
         StateHasChanged();
     }
 
