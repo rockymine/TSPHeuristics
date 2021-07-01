@@ -1,0 +1,72 @@
+﻿@using TravellingSalesmanProblem.Graph
+@using WebApplication.Utils
+@if (tableInfo.HasData) {
+	<table class="table table-responsive" style="text-align: center">
+		<thead>
+			<tr>
+				@foreach (var head in tableInfo.Header) {
+					<th>@head</th>
+				}
+			</tr>	  
+		</thead>
+		<tbody>
+			@for (int i = 0; i < tableInfo.Cells.GetLength(0); i++) {
+				<tr>
+					@for (int j = 0; j < tableInfo.Cells.GetLength(1); j++) {
+						<td class="@tableInfo.Cells[i,j].Class">@tableInfo.Cells[i,j].Value</td>
+					}
+				</tr>
+			}
+		</tbody>
+	</table>
+}
+
+@code {
+	private TableInfo tableInfo = new();
+
+	public void UpdateFromGraphState(GraphState graph) {
+		tableInfo.Header.Clear();
+		tableInfo.Header.Add("");
+
+		var size = graph.Nodes.Count + 1;
+		tableInfo.Cells = new TableCellInfo[size - 1, size];
+
+		for (int i = 0; i < size - 1; i++) {
+			for (int j = 0; j < size; j++) {
+				var node1 = graph.Nodes[i];
+
+				if (j == 0) {
+					tableInfo.Cells[i, j] = new TableCellInfo(node1.Index.ToString(), "font-weight-bold");
+					continue;
+				}
+				
+				var node2 = graph.Nodes[j - 1];
+
+				if (i == 0)
+					tableInfo.Header.Add(node2.Index.ToString());
+				if (j - i - 1 < 0) {
+					tableInfo.Cells[i, j] = new TableCellInfo("-", null);
+					continue;
+				}
+				
+				var distance = Math.Round(Edge.GetDistance(node1, node2), 1);
+
+				tableInfo.Cells[i, j] = new TableCellInfo(distance.ToString(),
+					InPath(graph.Path, node1, node2) ? "table-danger" : null);
+			}
+		}		
+		StateHasChanged();
+	}
+
+	private bool InPath(List<Node> path, Node node1, Node node2) {
+		var i1 = path.IndexOf(node1);
+		if (i1 < 0)
+			return false;
+
+		var i2 = path.IndexOf(node2);
+		if (i2 < 0)
+			return false;
+
+		return Math.Abs(i1 - i2) == 1;
+	}
+}

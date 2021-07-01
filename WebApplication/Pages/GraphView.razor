@@ -1,0 +1,259 @@
+﻿@page "/graph"
+@using Excubo.Blazor.Canvas
+@using Excubo.Blazor.Canvas.Contexts
+@using TravellingSalesmanProblem.Algorithms
+@using TravellingSalesmanProblem.Graph
+@using WebApplication.Utils
+<h3>GraphView</h3>
+<div class="row align-items-lg-start">
+    <div class="col-4">
+        <h4>Settings</h4>
+        <div class="row">
+            <!-- Input -->
+            <h6>Graph Input</h6>
+            <div class="input-group">
+                <textarea class="form-control" @bind="graphDefinition" style="height: 200px;"></textarea>
+                <div class="input-group-append">
+                    <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(true)">Draw Graph</button>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <!-- Buttons -->
+            <div class="form-group">
+                @if (algorithmEnum == AlgorithmEnum.NN) {
+                <label for="formControlRange">Select Start Node</label>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode--">-</button>
+                    </div>
+                    <div class="input-group-prepend">
+                        <div class="input-group-text">@StartNode</div>
+                    </div>
+                    <div class="input-group-append">
+                        <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode++">+</button>
+                    </div>
+                </div>
+                }
+            </div>
+            <div class="input-group">
+                <div class="col">
+                    <!-- Advance through iterations -->
+                    <div class="row">
+                        <button class="btn btn-primary btn-sm" type="button" @onclick="e => NextState(false)">Advance</button>
+                        <button class="btn btn-danger btn-sm" type="button" @onclick="e => NextState(true)">Reset</button>
+                    </div>
+                    <div class="row">
+                        <div class="custom-control custom-switch">
+                            <input class="custom-control-input" type="checkbox" id="switch" @bind="autoAdvance">
+                            <label class="custom-control-label" for="switch">Enable auto advance</label>
+                        </div>
+                    </div>
+                    <!-- Generate Random Graph -->
+                    <div class="row">                        
+                        <div class="input-group">                            
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">Width</span>
+                                <input type="number" aria-label="Max. Width" class="form-control" @bind="MaxX">
+                            </div>
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">Height</span>
+                                <input type="number" aria-label="Max. Height" class="form-control" @bind="MaxY">
+                            </div>
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">Nodes</span>
+                                <input type="number" aria-label="Node Count" class="form-control" @bind="NodeCount">
+                            </div>
+                            <button class="btn btn-primary btn-sm" type="button" @onclick="e => InitiateGraph(false)">RandomGraph</button>
+                        </div> 
+                    </div>
+                    <!-- Select Heuristics -->
+                    <div class="row">
+                        <label for="selectHeuristics">Select Heuristics</label>
+                        <select name="heuristics" id="selectHeuristics" @bind="algorithmEnum">
+                            <option value="NN" @onselect="e => algorithmEnum = AlgorithmEnum.NN">Nearest Neighbor</option>
+                            <option value="SA" @onselect="e => algorithmEnum = AlgorithmEnum.SA">Simulated Annealing</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Show Messages -->
+        <div>
+            @if (enumerator != null && enumerator.Current != null) {
+                <span>Success: @enumerator.Current.Success</span><br/>
+                <span>Finished: @enumerator.Current.Finished</span><br/>
+
+                foreach (var kvp in enumerator.Current.Messages) {
+                    <span>@kvp.Key: @kvp.Value</span><br/>
+                }
+            }
+        </div>
+    </div>    
+    <div class="col-8">
+        <h4>Graph Display</h4>
+        <div class="row">
+            <Canvas @ref="canvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+        </div>        
+        <TableGenerator @ref="tableGenerator"/>
+    </div>
+</div>
+
+@code {
+    //components
+	private Canvas canvas;
+	private TableGenerator tableGenerator;
+
+	//graph
+	private GraphProblem graph;
+    private NearestNeighbour nearestNeighbour = new();
+    private SimulatedAnnealing simulatedAnnealing = new();
+	private IEnumerator<GraphState> enumerator;
+	private AlgorithmEnum algorithmEnum;
+	private string graphDefinition = @"n,1,11,5
+n,2,6,4
+n,3,4,10
+n,4,4,2
+n,5,2,4
+n,6,7,7
+n,7,8,8
+n,8,9,2
+n,9,5,7
+n,10,7,1
+n,11,1,6
+n,12,11,11";
+
+    private const float Scale = 20;
+    private const int Delay = 50;
+
+    private int CanvasWidth;
+    private int CanvasHeight;
+    private int NodeMax;
+    private bool autoAdvance;
+
+    private int _nodeValue;
+    private int _horizontal = 30;
+    private int _vertical = 30;
+    private int _count = 30;
+
+    private int StartNode {
+        get => _nodeValue;
+        set {
+            if (value == _nodeValue)
+                return;
+            if (value < 0 || value > NodeMax)
+                return;
+
+            _nodeValue = value;
+            UpdateGraph();
+        }
+    }
+
+    private int MaxX {
+        get => _horizontal;
+        set {
+            if (value == _horizontal)
+                return;
+            if (value < 10 || value > 90)
+                return;
+
+            _horizontal = value;
+        }
+    }
+    
+    private int MaxY {
+        get => _vertical;
+        set {
+            if (value == _vertical)
+                return;
+            if (value < 10 || value > 90)
+                return;
+
+            _vertical = value;
+        }
+    }
+    
+    private int NodeCount {
+        get => _count;
+        set {
+            if (value == _count)
+                return;
+            if (value < 5 || value > 90)
+                return;
+
+            _count = value;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            await InitiateGraph(true);
+
+            Task.Run(async () => {
+                while (true) {
+                    await Task.Delay(Delay);
+
+                    if (autoAdvance)
+                        await NextState(false);
+                }
+            });
+        }
+    }
+
+    private async Task InitiateGraph(bool textbased) {
+        if (textbased) {
+            graph = GraphProblem.FromText(graphDefinition);
+        } else {
+            graph = GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
+        }
+        await UpdateGraph();
+        tableGenerator.UpdateFromGraphState(enumerator.Current);
+    }    
+
+    private async Task UpdateGraph() {
+        //TODO: check what is actually necessary.
+        if (algorithmEnum == AlgorithmEnum.NN) {
+            NodeMax = graph.Nodes.Count - 1;
+        }
+
+        var max = graph.FindMax();             
+        CanvasWidth = (int)(max.X * Scale) + 50;
+        CanvasHeight = (int)(max.Y * Scale) + 50;
+
+        await NextState(true);
+    }    
+
+    private async Task NextState(bool reset) {
+        await using (var context = await canvas.GetContext2DAsync()) {
+            await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
+            await CanvasRenderer.DrawGrid(context, MaxX, MaxY, CanvasHeight);
+            await DrawPath(context, reset);
+        }
+
+        tableGenerator.UpdateFromGraphState(enumerator.Current);
+        StateHasChanged();
+    }
+
+    private async Task DrawPath(Context2D context, bool reset) {
+        if (reset)
+            SwitchAlgorithm();
+        
+        enumerator.MoveNext();
+
+        await CanvasRenderer.DrawEdges(context, enumerator, CanvasHeight);
+        await CanvasRenderer.DrawNodes(context, enumerator, CanvasHeight);
+    }
+
+    private void SwitchAlgorithm() {
+        switch (algorithmEnum) {
+            case AlgorithmEnum.NN:
+                nearestNeighbour.Node = graph.Nodes[StartNode];
+                enumerator = nearestNeighbour.FindPath(graph).GetEnumerator();
+                break;
+            case AlgorithmEnum.SA:
+                enumerator = simulatedAnnealing.FindPath(graph).GetEnumerator();
+                break;
+            default: break;
+        }
+    }
+}
