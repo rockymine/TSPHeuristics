@@ -4,12 +4,15 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using static TravellingSalesmanProblem.Algorithms.AntAlgorithm;
 
 namespace TravellingSalesmanProblem.Graph {
     public class Edge {
         public Node Node1 { get; set; }
         public Node Node2 { get; set; }
         public double Value { get; set; }
+        public double Pheromone { get; set; }
+        public double Visibility => 1 / Distance;
         public double Distance => Vector2.Distance(Node1.Position, Node2.Position);
 
         internal int Node1Id;
@@ -47,6 +50,24 @@ namespace TravellingSalesmanProblem.Graph {
 
         public static double GetDistance(Node n1, Node n2) {
             return Math.Round(Vector2.Distance(n1.Position, n2.Position), 1);
+        }
+
+        public static Edge FindShortest(Node node) {
+            Edge closest = null;
+            var closestDistance = double.MaxValue;
+
+            foreach (var edge in node.Edges) {
+                //ignore already visited nodes
+                if (edge.Opposite(node).Visited)
+                    continue;
+
+                if (edge.Distance < closestDistance) {
+                    closestDistance = edge.Distance;
+                    closest = edge;
+                }
+            }
+
+            return closest;
         }
 
         public Vector2 FindCenter() => Vector2.Add(Node1.Position, Node2.Position) / 2;

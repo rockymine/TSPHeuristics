@@ -11,6 +11,7 @@ namespace TravellingSalesmanProblem.Graph {
     public class GraphProblem {
         public List<Node> Nodes { get; set; }
         public List<Edge> Edges { get; set; }
+
         private static readonly Random Random = new();
         public GraphProblem() {
             Nodes = new List<Node>();
@@ -68,7 +69,6 @@ namespace TravellingSalesmanProblem.Graph {
         }
 
         public void ConnectPathNodes() {
-            Console.WriteLine("Node count: " + Nodes.Count);
             for (int i = 0; i < Nodes.Count - 1; i++) {
                 var edge = Edge.Between(Nodes[i], Nodes[i + 1]);
                 Edges.Add(edge);
@@ -152,6 +152,6 @@ namespace TravellingSalesmanProblem.Graph {
 
         public bool EqualPosition(Node node) => Nodes.Find(n => n.Position == node.Position) != null;
 
-        public double CalcCosts() => Edges.Sum(e => e.Distance);
+        public double CalcCosts() => Edges.Sum(e => e.Distance);        
     }
 }

@@ -7,7 +7,7 @@ using TravellingSalesmanProblem.Graph;
 
 namespace TravellingSalesmanProblem.Algorithms {
     public class NearestNeighbour : Algorithm {
-        public Node Node { get; set; }
+        public Node Start { get; set; }
         public bool Closed { get; set; } = true;
         public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
             var state = new GraphState {
@@ -15,26 +15,27 @@ namespace TravellingSalesmanProblem.Algorithms {
             };
             graph.Reset();
 
-            var current = Node;
-            Node.Visited = true;
+            var current = Start;
+            Start.Visited = true;
             state.Path.Add(current);
 
             UpdateStateMessages(state);
             yield return state;
 
             while (true) {
-                var edge = FindShortest(current);
+                var edge = Edge.FindShortest(current);
 
                 if (edge == null) {
                     var isClosed = true;
 
                     if (Closed) {
-                        edge = current.Edges.Find(e => e.IsBetween(current, Node));
+                        edge = current.Edges.Find(e => e.IsBetween(current, Start));
                         isClosed = edge != null;
 
                         if (edge != null) {
                             state.Path.Add(edge.Opposite(current));
                             state.PathEdges.Add(edge);
+                            state.Distance += edge.Distance;
                         }
                     }
 
@@ -59,24 +60,6 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Messages["Route"] = string.Join('-', state.Path.Select(n => n.Index));
             state.Messages["Path Edges"] = string.Join(',', state.PathEdges.Select(n => n.Node1.Index + " <-> " + n.Node2.Index));
             state.Messages["Distance"] = Math.Round(state.Distance, 1).ToString();
-        }
-
-        private static Edge FindShortest(Node node) {
-            Edge closest = null;
-            var closestDistance = double.MaxValue;
-
-            foreach (var edge in node.Edges) {
-                //ignore already visited nodes
-                if (edge.Opposite(node).Visited)
-                    continue;
-
-                if (edge.Distance < closestDistance) {
-                    closestDistance = edge.Distance;
-                    closest = edge;
-                }
-            }
-
-            return closest;
         }
     }
 }

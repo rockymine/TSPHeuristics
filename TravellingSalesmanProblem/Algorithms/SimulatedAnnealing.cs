@@ -31,15 +31,18 @@ namespace TravellingSalesmanProblem.Algorithms {
             graph = initial;
             GraphProblem mintour = graph;
 
-            while (state.Iteration < MaxIter) {
-                if (state.Temperature < MinTemp) {
-                    state.Finished = true;
-                    UpdateStateMessages(state);
-                    yield return state;
-                    yield break;
-                }
+            int iteration = 0;
+            for (; iteration < MaxIter; iteration++) {
+                state.Iteration++;
+
+                //if (state.Temperature < MinTemp) {
+                //    state.Finished = true;
+                //    UpdateStateMessages(state);
+                //    yield return state;
+                //    yield break;
+                //}
                 //randomly select a neighbour
-                var neighbour = NeighbourState.TwoOptSwap(graph);
+                var neighbour = NeighbourState.DoubleBridgeFourOpt(graph);
                 var neighbourCosts = neighbour.CalcCosts();
 
                 //if neighbour is better, jump to it
@@ -63,7 +66,6 @@ namespace TravellingSalesmanProblem.Algorithms {
                 }
                 //update temperature and iteration
                 state.Temperature *= Alpha;
-                state.Iteration++;
             }
 
             state.Distance = mintour.CalcCosts();

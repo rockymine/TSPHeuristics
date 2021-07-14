@@ -1,0 +1,25 @@
+﻿@using TravellingSalesmanProblem.Graph
+@using WebApplication.Utils
+<h3>ChartGenerator</h3>
+@if (chartInfo.XValues.Count > 0 && chartInfo.YValues.Count > 0) {
+	@for (int i = 0; i < chartInfo.XValues.Count; i++) {
+	<p>@chartInfo.XValues[i]</p>
+	<p>@chartInfo.YValues[i]</p>
+	}
+}
+
+@code {
+	private ChartInfo chartInfo = new();
+
+	public void UpdateFromGraphState(GraphState graph) {
+		var iteration = graph.Iteration;
+		var distance = graph.Distance;
+		
+		if (!chartInfo.XValues.Contains(iteration))
+			chartInfo.XValues.Add(iteration);
+		if (!chartInfo.YValues.Contains(distance))
+			chartInfo.YValues.Add(distance);
+
+		StateHasChanged();
+	}
+}

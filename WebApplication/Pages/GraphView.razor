@@ -97,7 +97,10 @@
         </div>
         @if (algorithmEnum == AlgorithmEnum.NN) {
             <TableGenerator @ref="tableGenerator"/>
-        }        
+        }
+        @if (algorithmEnum == AlgorithmEnum.SA) {
+            <ChartGenerator @ref="chartGenerator"/>
+        }
     </div>
 </div>
 
@@ -105,6 +108,7 @@
     //components
 	private Canvas canvas;
 	private TableGenerator tableGenerator;
+    private ChartGenerator chartGenerator;
 
 	//graph
 	private GraphProblem graph;
@@ -190,6 +194,7 @@ n,12,11,11";
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
             await InitiateGraph(true);
+            //await NextState(true);
 
             Task.Run(async () => {
                 while (true) {
@@ -212,6 +217,8 @@ n,12,11,11";
 
         if (algorithmEnum == AlgorithmEnum.NN)
             tableGenerator.UpdateFromGraphState(enumerator.Current);
+        if (algorithmEnum == AlgorithmEnum.SA)
+            chartGenerator.UpdateFromGraphState(enumerator.Current);
     }    
 
     private async Task UpdateGraph() {
@@ -236,6 +243,8 @@ n,12,11,11";
 
         if (algorithmEnum == AlgorithmEnum.NN)
             tableGenerator.UpdateFromGraphState(enumerator.Current);
+        if (algorithmEnum == AlgorithmEnum.SA)
+            chartGenerator.UpdateFromGraphState(enumerator.Current);
 
         StateHasChanged();
     }
@@ -253,7 +262,7 @@ n,12,11,11";
     private void SwitchAlgorithm() {
         switch (algorithmEnum) {
             case AlgorithmEnum.NN:
-                nearestNeighbour.Node = graph.Nodes[StartNode];
+                nearestNeighbour.Start = graph.Nodes[StartNode];
                 enumerator = nearestNeighbour.FindPath(graph).GetEnumerator();
                 break;
             case AlgorithmEnum.SA:

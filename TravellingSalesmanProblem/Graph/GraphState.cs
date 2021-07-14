@@ -15,5 +15,12 @@ namespace TravellingSalesmanProblem.Graph {
         public double Temperature { get; set; }
         public int Iteration { get; set; }
         public Dictionary<string, string> Messages { get; set; } = new();
+
+        public GraphProblem ToGraphProblem() {
+            return new GraphProblem {
+                Nodes = Nodes,
+                Edges = PathEdges
+            };
+        }
     }
 }
