@@ -152,6 +152,6 @@ namespace TravellingSalesmanProblem.Graph {
 
         public bool EqualPosition(Node node) => Nodes.Find(n => n.Position == node.Position) != null;
 
-        public double CalcCosts() => Edges.Sum(e => e.Distance);        
+        public double CalcCosts() => Edges.Sum(e => e.Distance);
     }
 }

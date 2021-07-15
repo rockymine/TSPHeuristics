@@ -22,5 +22,7 @@ namespace TravellingSalesmanProblem.Graph {
                 Edges = PathEdges
             };
         }
+
+        public double CalcCosts() => PathEdges.Sum(e => e.Distance);
     }
 }

@@ -12,6 +12,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         public double Alpha { get; set; } = 0.1;
         public double Rho { get; set; } = 0.1; //Alpha
         public double Beta { get; set; } = 2;
+        public double ExploitVsExplore { get; set; } = 0.9; //Relative importance of exploitation versus exploration
         public double InitialPheromone { get; set; }
         private static readonly Random Random = new();
         private GraphProblem GlobalBest = new();
@@ -20,7 +21,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             Colony = new List<Ant>(new Ant[AntCount]);
 
             NearestNeighbour nn = new();
-            nn.Start = graph.Nodes[Random.Next(0, graph.Nodes.Count - 1)];
+            nn.Start = graph.Nodes[Random.Next(0, graph.Nodes.Count)];
             GlobalBest = nn.FindPath(graph).First().ToGraphProblem();
 
             InitialPheromone = Math.Pow(GlobalBest.Nodes.Count - 1 * GlobalBest.CalcCosts(), -1);
@@ -28,11 +29,38 @@ namespace TravellingSalesmanProblem.Algorithms {
             //1) Initialization phase
             ScatterAnts();
             //2) Construction phase
-            for (int i = 0; i < graph.Nodes.Count; i++) {
-                
+            for (int i = 0; i < graph.Nodes.Count - 1; i++) {
+                if (true) {
+
+                } else {
+
+                }
+
+                //ants move to next node
+                foreach (var ant in Colony) {
+                    var next = new Node();
+                    if (!ant.Unvisited.Any()) {
+                        next = StateTransitionRule(graph, ant, ant.Current);
+                    } else { //close tour
+                        next = ant.AntSolution.Nodes[0];
+                    }                        
+                    
+                    ant.UpdateAntSolution(ant.Current, next);
+                }
+
+                //local updating
+                foreach (var ant in Colony) {
+                    LocalUpdatingRule(ant);
+                }
+
+                GlobalUpdatingRule(graph);
             }
 
             return null;
+        }
+
+        public override IEnumerable<GraphState> MultiStart(GraphProblem graph) {
+            throw new NotImplementedException();
         }
 
         public override void UpdateStateMessages(GraphState state) {
@@ -67,20 +95,22 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         //ants visit edges and change their pheromone level
+        //local updating will help to avoid ants converging to a common path
         private void LocalUpdatingRule(Ant k) {
+            //TODO: Q-Learning, Disable Local Updating.
             foreach (var edge in k.AntSolution.Edges) {
                 edge.Pheromone = (1 - Rho) * edge.Pheromone + Rho * InitialPheromone;
             }
         }
 
+        //TODO: make sure uses the pheromone values of the shared graph
         private Node StateTransitionRule(GraphProblem graph, Ant k, Node r) {
-            /*TODO: every time an ant in node r has to choose a city s to move to,
+            /*every time an ant in node r has to choose a city s to move to,
              it samples a random number 1 <= q <= 1*/
-            var q = k.Random.NextDouble(); 
-            var q0 = 0d; //TODO: Parameter
+            var q = k.Random.NextDouble();
 
             //if q <= q0 then the best edge, according to STATETRANSITIONRULE is chosen (exploitation)
-            if (q <= q0) {
+            if (q <= ExploitVsExplore) {
                 return Exploitation(k, r);
             //otherwise an edge is chosen according to RANDOMPROPORTIONALRULE (biased exploration)
             } else {
@@ -126,7 +156,6 @@ namespace TravellingSalesmanProblem.Algorithms {
 
             for (int i = 0; i < AntCount; i++) {
                 var node = range[i];
-                Colony[i].Start = node;
                 Colony[i].AntSolution.Nodes.Add(node);
                 Colony[i].Unvisited = unvisited.GetRange(1, unvisited.Count - 1);
             }
@@ -144,12 +173,20 @@ namespace TravellingSalesmanProblem.Algorithms {
 
     //ant
     public class Ant {
-        public Node Start { get; set; }
         public GraphProblem AntSolution { get; set; }
         public List<Node> Unvisited { get; set; }
         public Dictionary<Tuple<Node, Node>, double> MoveProbability = new();
 
         private static readonly Random random = new();
         public Random Random = random;
+
+        public Node Current => AntSolution.Nodes.Last();
+        public double Length => AntSolution.CalcCosts();
+
+        public void UpdateAntSolution(Node from, Node to) {
+            AntSolution.Nodes.Add(to);
+            AntSolution.Edges.Add(Edge.Between(from, to));
+            Unvisited.Remove(to);
+        }
     }
 }

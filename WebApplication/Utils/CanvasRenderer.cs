@@ -41,8 +41,8 @@ namespace WebApplication.Utils {
             }
         }
 
-        public static async Task DrawNodes(Context2D context, IEnumerator<GraphState> enumerator, int cHeight) {
-            foreach (var node in enumerator.Current.Nodes) {
+        public static async Task DrawNodes(Context2D context, GraphState state, int cHeight) {
+            foreach (var node in state.Nodes) {
                 var position = node.Position;
 
                 await context.DrawCircle(NodeBrush, NodeSize,
@@ -52,8 +52,8 @@ namespace WebApplication.Utils {
             }
         }
 
-        public static async Task DrawEdges(Context2D context, IEnumerator<GraphState> enumerator, int cHeight) {
-            foreach (var edge in enumerator.Current.PathEdges) {
+        public static async Task DrawEdges(Context2D context, GraphState state, int cHeight) {
+            foreach (var edge in state.PathEdges) {
                 var center = edge.FindCenter();
                 var pos1 = edge.Node1.Position;
                 var pos2 = edge.Node2.Position;

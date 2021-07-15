@@ -15,20 +15,20 @@ namespace TravellingSalesmanProblem.Algorithms {
         private static readonly Random Random = new();
 
         public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
-            var initial = GraphProblem.OrderedGraphProblem(graph);
+            var problem = GraphProblem.OrderedGraphProblem(graph);
 
             var state = new GraphState() {
                 Nodes = graph.Nodes,
-                Path = initial.Nodes,
-                PathEdges = initial.Edges,
-                Distance = initial.CalcCosts(),
+                Path = problem.Nodes,
+                PathEdges = problem.Edges,
+                Distance = problem.CalcCosts(),
                 Temperature = StartTemp
             };
             yield return state;
 
             //record initial tour as best so far
             double min = state.Distance;
-            graph = initial;
+            graph = problem;
             GraphProblem mintour = graph;
 
             int iteration = 0;
@@ -83,6 +83,10 @@ namespace TravellingSalesmanProblem.Algorithms {
                 return true;
 
             return false;
+        }
+
+        public override IEnumerable<GraphState> MultiStart(GraphProblem graph) {
+            throw new NotImplementedException();
         }
 
         public override void UpdateStateMessages(GraphState state) {

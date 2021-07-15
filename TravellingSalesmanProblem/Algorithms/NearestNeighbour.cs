@@ -56,6 +56,16 @@ namespace TravellingSalesmanProblem.Algorithms {
             }
         }
 
+        public override IEnumerable<GraphState> MultiStart(GraphProblem graph) {
+            //x* unspezifiziert
+            //f(x*) := unendlich
+            //while Stoppkriterium nicht erfüllt do
+            //  Konstruiere eine Lösung x;
+            //  if f(x) < f(x*) then
+            //      Setze x* := x und f(x*) := f(x);
+            throw new NotImplementedException();
+        }
+
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Route"] = string.Join('-', state.Path.Select(n => n.Index));
             state.Messages["Path Edges"] = string.Join(',', state.PathEdges.Select(n => n.Node1.Index + " <-> " + n.Node2.Index));

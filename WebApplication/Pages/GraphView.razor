@@ -93,7 +93,14 @@
     <div class="col-8">
         <h4>Graph Display</h4>
         <div class="row">
-            <Canvas @ref="canvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+            <div>
+                <h6 class="font-weight-bold">Previous</h6>
+                <Canvas @ref="previousCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+            </div>
+            <div>
+                <h6 class="font-weight-bold">Current</h6>
+                <Canvas @ref="currentCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+            </div>
         </div>
         @if (algorithmEnum == AlgorithmEnum.NN) {
             <TableGenerator @ref="tableGenerator"/>
@@ -106,12 +113,14 @@
 
 @code {
     //components
-	private Canvas canvas;
+	private Canvas currentCanvas;
+    private Canvas previousCanvas;
 	private TableGenerator tableGenerator;
     private ChartGenerator chartGenerator;
 
 	//graph
 	private GraphProblem graph;
+    private GraphState previous;
     private NearestNeighbour nearestNeighbour = new();
     private SimulatedAnnealing simulatedAnnealing = new();
 	private IEnumerator<GraphState> enumerator;
@@ -194,7 +203,7 @@ n,12,11,11";
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
             await InitiateGraph(true);
-            //await NextState(true);
+            await NextState(true);
 
             Task.Run(async () => {
                 while (true) {
@@ -214,12 +223,8 @@ n,12,11,11";
             graph = GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
         }
         await UpdateGraph();
-
-        if (algorithmEnum == AlgorithmEnum.NN)
-            tableGenerator.UpdateFromGraphState(enumerator.Current);
-        if (algorithmEnum == AlgorithmEnum.SA)
-            chartGenerator.UpdateFromGraphState(enumerator.Current);
-    }    
+        UpdateVisualsFromGraphState();
+    }
 
     private async Task UpdateGraph() {
         //TODO: check what is actually necessary.
@@ -235,28 +240,46 @@ n,12,11,11";
     }    
 
     private async Task NextState(bool reset) {
-        await using (var context = await canvas.GetContext2DAsync()) {
-            await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
-            await CanvasRenderer.DrawGrid(context, MaxX, MaxY, CanvasHeight);
-            await DrawPath(context, reset);
-        }
-
-        if (algorithmEnum == AlgorithmEnum.NN)
-            tableGenerator.UpdateFromGraphState(enumerator.Current);
-        if (algorithmEnum == AlgorithmEnum.SA)
-            chartGenerator.UpdateFromGraphState(enumerator.Current);
-
-        StateHasChanged();
-    }
-
-    private async Task DrawPath(Context2D context, bool reset) {
+        //copied from drawpath (creates error when simulated annealing ends)
         if (reset)
             SwitchAlgorithm();
         
+        previous = enumerator.Current;
+        await using (var context = await previousCanvas.GetContext2DAsync()) {
+            await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
+            await CanvasRenderer.DrawGrid(context, MaxX, MaxY, CanvasHeight);
+            await DrawPath(context, reset, true);
+        }
         enumerator.MoveNext();
+        //copied from drawpath
 
-        await CanvasRenderer.DrawEdges(context, enumerator, CanvasHeight);
-        await CanvasRenderer.DrawNodes(context, enumerator, CanvasHeight);
+        await using (var context = await currentCanvas.GetContext2DAsync()) {
+            await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
+            await CanvasRenderer.DrawGrid(context, MaxX, MaxY, CanvasHeight);
+            await DrawPath(context, reset, false);
+        }
+
+        
+
+        UpdateVisualsFromGraphState();
+        StateHasChanged();
+    }
+
+    private async Task DrawPath(Context2D context, bool reset, bool prev) {
+        if (prev) {
+            if (previous != null) {
+                Console.WriteLine("previous is not null.");
+                await CanvasRenderer.DrawEdges(context, previous, CanvasHeight);
+                await CanvasRenderer.DrawNodes(context, previous, CanvasHeight);
+            } else if (previous == enumerator.Current) {
+                Console.WriteLine("equal");
+                //TODO: DON'T DRAW?
+            }
+        } else {
+            await CanvasRenderer.DrawEdges(context, enumerator.Current, CanvasHeight);
+            await CanvasRenderer.DrawNodes(context, enumerator.Current, CanvasHeight);           
+        }
+        //TODO: Fallunterscheidung zwischen Current und Previous.
     }
 
     private void SwitchAlgorithm() {
@@ -270,5 +293,12 @@ n,12,11,11";
                 break;
             default: break;
         }
+    }
+
+    private void UpdateVisualsFromGraphState() {
+        if (algorithmEnum == AlgorithmEnum.NN)
+            tableGenerator.UpdateFromGraphState(enumerator.Current);
+        if (algorithmEnum == AlgorithmEnum.SA)
+            chartGenerator.UpdateFromGraphState(enumerator.Current);
     }
 }

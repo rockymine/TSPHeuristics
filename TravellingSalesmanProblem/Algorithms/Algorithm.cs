@@ -8,6 +8,7 @@ using TravellingSalesmanProblem.Graph;
 namespace TravellingSalesmanProblem.Algorithms {
     public abstract class Algorithm {
         public abstract IEnumerable<GraphState> FindPath(GraphProblem graph);
+        public abstract IEnumerable<GraphState> MultiStart(GraphProblem graph);
         public abstract void UpdateStateMessages(GraphState state);
     }
 
