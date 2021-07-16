@@ -9,7 +9,7 @@ namespace TravellingSalesmanProblem.Graph {
         public List<Node> Nodes { get; set; }
         public List<Node> Path { get; set; } = new();
         public List<Edge> PathEdges { get; set; } = new();
-        public bool Finished { get; set; }
+        public bool Finished { get; set; } = false;
         public bool Success { get; set; }
         public double Distance { get; set; }
         public double Temperature { get; set; }

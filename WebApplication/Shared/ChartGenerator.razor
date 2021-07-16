@@ -2,7 +2,7 @@
 @using WebApplication.Utils
 <h3>ChartGenerator</h3>
 @if (chartInfo.XValues.Count > 0 && chartInfo.YValues.Count > 0) {
-	@for (int i = 0; i < chartInfo.XValues.Count; i++) {
+	@for (int i = 0; i < chartInfo.XValues.Count - 1; i++) {
 	<p>@chartInfo.XValues[i]</p>
 	<p>@chartInfo.YValues[i]</p>
 	}

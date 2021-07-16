@@ -16,45 +16,54 @@ namespace TravellingSalesmanProblem.Algorithms {
         public double InitialPheromone { get; set; }
         private static readonly Random Random = new();
         private GraphProblem GlobalBest = new();
+        private GraphProblem DistributedMemory = new();
         public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
+            /* Set up ant colony. */
             AntCount = graph.Nodes.Count;
             Colony = new List<Ant>(new Ant[AntCount]);
+            DistributedMemory.Nodes = graph.Nodes;
+            DistributedMemory.ConnectAllNodes();
 
+            /* Create tour using tour constructive heuristic.
+             This tour will be improved by the ACS heuristic. */
             NearestNeighbour nn = new();
             nn.Start = graph.Nodes[Random.Next(0, graph.Nodes.Count)];
-            GlobalBest = nn.FindPath(graph).First().ToGraphProblem();
+            GlobalBest = nn.FindPath(graph).First().ToGraphProblem();            
 
+            /* 1) Initialization phase */
+            ScatterAnts();
             InitialPheromone = Math.Pow(GlobalBest.Nodes.Count - 1 * GlobalBest.CalcCosts(), -1);
 
-            //1) Initialization phase
-            ScatterAnts();
-            //2) Construction phase
-            for (int i = 0; i < graph.Nodes.Count - 1; i++) {
-                if (true) {
+            //TODO: actually put initial pheromone on all edges?
 
-                } else {
+            /* 2) This is the phase in which ants build their tours.
+             The tour of an ant k is stored in k.Path.Nodes */
 
-                }
+            //TODO: add loop.
+            //TODO: reset ants.
+            //TODO: add graphstate logic.
 
-                //ants move to next node
+            for (int i = 0; i < GlobalBest.Nodes.Count - 1; i++) {
                 foreach (var ant in Colony) {
                     var next = new Node();
                     if (!ant.Unvisited.Any()) {
-                        next = StateTransitionRule(graph, ant, ant.Current);
-                    } else { //close tour
-                        next = ant.AntSolution.Nodes[0];
-                    }                        
-                    
-                    ant.UpdateAntSolution(ant.Current, next);
+                        next = StateTransitionRule(ant);
+                    } else {
+                        next = ant.Path.Nodes[0];
+                    }                    
+                    ant.UpdatePath(ant.Current, next);
                 }
 
-                //local updating
+                /* In this phase local updating occurs and pheromone is updated. */
                 foreach (var ant in Colony) {
                     LocalUpdatingRule(ant);
-                }
-
-                GlobalUpdatingRule(graph);
+                }                
             }
+
+            /* 3) In this phase global updating occurs and pheromone is updated. */
+            GlobalUpdatingRule();
+
+            //TODO: print best solution
 
             return null;
         }
@@ -67,29 +76,26 @@ namespace TravellingSalesmanProblem.Algorithms {
             throw new NotImplementedException();
         }
 
-        //random-proportional rule
         private double RandomProportionalRule(Ant k, Node r, Node s) {
-            var edge = Edge.Between(r, s);
             var sum = k.Unvisited.Sum(n => PheromoneClosenessProduct(r, n));
             return PheromoneClosenessProduct(r, s) / sum;
         }
 
         private double PheromoneClosenessProduct(Node from, Node to) {
-            var edge = Edge.Between(from, to);
+            var edge = DistributedMemory.Edges.Find(e => e == Edge.Between(from, to));
             return edge.Pheromone * Math.Pow(edge.Visibility, Beta);
         }
 
-        private void GlobalUpdatingRule(GraphProblem graph, bool acs = true) {
-            foreach (var edge in graph.Edges) {
+        private void GlobalUpdatingRule(bool acs = true) {
+            foreach (var edge in DistributedMemory.Edges) {
                 edge.Pheromone = (1 - Alpha) * edge.Pheromone;
 
                 if (acs) {
                     //only those edges belonging to the globally best tour are reinforced.
-                    var Lgb = Math.Pow(GlobalBest.CalcCosts(), -1);
-                    if (IsEdgeInGlobalBestTour(edge, GlobalBest))
-                        edge.Pheromone += Alpha * Lgb;
+                    if (IsEdgeInTour(edge, GlobalBest))
+                        edge.Pheromone += Alpha * Math.Pow(GlobalBest.CalcCosts(), -1);
                 } else {
-                    edge.Pheromone += Colony.Where(k => IsEdgeUsedByAntK(edge, k)).Sum(k => 1 / k.AntSolution.Nodes.Count);
+                    edge.Pheromone += Colony.Where(k => IsEdgeUsedByAntK(edge, k)).Sum(k => 1 / k.Path.Nodes.Count);
                 }                
             }
         }
@@ -97,24 +103,29 @@ namespace TravellingSalesmanProblem.Algorithms {
         //ants visit edges and change their pheromone level
         //local updating will help to avoid ants converging to a common path
         private void LocalUpdatingRule(Ant k) {
-            //TODO: Q-Learning, Disable Local Updating.
-            foreach (var edge in k.AntSolution.Edges) {
-                edge.Pheromone = (1 - Rho) * edge.Pheromone + Rho * InitialPheromone;
+            //TODO: Q-Learning, Disable Local Updating.            
+            foreach (var edge in DistributedMemory.Edges) {
+                if (IsEdgeUsedByAntK(edge, k))
+                    edge.Pheromone = (1 - Rho) * edge.Pheromone + Rho * InitialPheromone;
             }
+
+            //foreach (var edge in k.AntSolution.Edges) {
+            //    edge.Pheromone = (1 - Rho) * edge.Pheromone + Rho * InitialPheromone;
+            //}
         }
 
         //TODO: make sure uses the pheromone values of the shared graph
-        private Node StateTransitionRule(GraphProblem graph, Ant k, Node r) {
+        private Node StateTransitionRule(Ant k) {
             /*every time an ant in node r has to choose a city s to move to,
              it samples a random number 1 <= q <= 1*/
             var q = k.Random.NextDouble();
 
             //if q <= q0 then the best edge, according to STATETRANSITIONRULE is chosen (exploitation)
             if (q <= ExploitVsExplore) {
-                return Exploitation(k, r);
+                return Exploitation(k, k.Current);
             //otherwise an edge is chosen according to RANDOMPROPORTIONALRULE (biased exploration)
             } else {
-                return BiasedExploration(k, r);
+                return BiasedExploration(k, k.Current);
             }
         }
 
@@ -156,37 +167,43 @@ namespace TravellingSalesmanProblem.Algorithms {
 
             for (int i = 0; i < AntCount; i++) {
                 var node = range[i];
-                Colony[i].AntSolution.Nodes.Add(node);
+                Colony[i].Path.Nodes.Add(node);
                 Colony[i].Unvisited = unvisited.GetRange(1, unvisited.Count - 1);
             }
         }
 
         private static bool IsEdgeUsedByAntK(Edge e, Ant k) {
-            //TODO: check if the ants tour contains the given edge.
-            return k.AntSolution.Nodes.Any(node => node.Edges.Any(edge => edge == e));
+            return k.Path.Nodes.Any(node => node.Edges.Any(edge => edge == e));
         }
 
-        private static bool IsEdgeInGlobalBestTour(Edge e, GraphProblem best) {
+        private static bool IsEdgeInTour(Edge e, GraphProblem best) {
             return best.Nodes.Any(node => node.Edges.Any(edge => edge == e));
         }
     }
 
-    //ant
     public class Ant {
-        public GraphProblem AntSolution { get; set; }
+        public GraphProblem Path { get; set; }
         public List<Node> Unvisited { get; set; }
         public Dictionary<Tuple<Node, Node>, double> MoveProbability = new();
 
         private static readonly Random random = new();
         public Random Random = random;
 
-        public Node Current => AntSolution.Nodes.Last();
-        public double Length => AntSolution.CalcCosts();
+        public Node Current => Path.Nodes.Last();
+        public double Length => Path.CalcCosts();
 
-        public void UpdateAntSolution(Node from, Node to) {
-            AntSolution.Nodes.Add(to);
-            AntSolution.Edges.Add(Edge.Between(from, to));
+        public void UpdatePath(Node from, Node to) {
+            Path.Nodes.Add(to);
+            Path.Edges.Add(Edge.Between(from, to));
             Unvisited.Remove(to);
+        }
+
+        public void Reset() {
+            Path.Reset();
+            Path.Nodes.Clear();
+            Path.Edges.Clear();
+            Unvisited.Clear();
+            MoveProbability.Clear();
         }
     }
 }

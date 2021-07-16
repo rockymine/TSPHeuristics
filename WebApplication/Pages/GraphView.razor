@@ -94,13 +94,13 @@
         <h4>Graph Display</h4>
         <div class="row">
             <div>
-                <h6 class="font-weight-bold">Previous</h6>
-                <Canvas @ref="previousCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
-            </div>
-            <div>
                 <h6 class="font-weight-bold">Current</h6>
                 <Canvas @ref="currentCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
             </div>
+            <div>
+                <h6 class="font-weight-bold">Previous</h6>
+                <Canvas @ref="previousCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+            </div>            
         </div>
         @if (algorithmEnum == AlgorithmEnum.NN) {
             <TableGenerator @ref="tableGenerator"/>
@@ -145,6 +145,7 @@ n,12,11,11";
     private int CanvasHeight;
     private int NodeMax;
     private bool autoAdvance;
+    private bool drawComplete;
 
     private int _nodeValue;
     private int _horizontal = 30;
@@ -240,49 +241,54 @@ n,12,11,11";
     }    
 
     private async Task NextState(bool reset) {
-        //copied from drawpath (creates error when simulated annealing ends)
         if (reset)
-            SwitchAlgorithm();
-        
-        previous = enumerator.Current;
-        await using (var context = await previousCanvas.GetContext2DAsync()) {
+            UpdateEnumerator();
+
+        if (!drawComplete) {
+            previous = enumerator.Current;
+            if (enumerator.Current != null)
+                await FillCanvas(previousCanvas, reset);
+
+            enumerator.MoveNext();
+            if (enumerator.Current.Finished)
+                drawComplete = true;
+            
+            await FillCanvas(currentCanvas, reset);
+            UpdateVisualsFromGraphState();
+            StateHasChanged();
+        }
+    }
+
+    private async Task FillCanvas(Canvas canvas, bool reset) {
+        await using (var context = await canvas.GetContext2DAsync()) {
             await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
             await CanvasRenderer.DrawGrid(context, MaxX, MaxY, CanvasHeight);
-            await DrawPath(context, reset, true);
+
+            if (canvas == previousCanvas) {
+                await DrawPath(context, reset, true);
+            } else {
+                await DrawPath(context, reset, false);
+            }            
         }
-        enumerator.MoveNext();
-        //copied from drawpath
-
-        await using (var context = await currentCanvas.GetContext2DAsync()) {
-            await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
-            await CanvasRenderer.DrawGrid(context, MaxX, MaxY, CanvasHeight);
-            await DrawPath(context, reset, false);
-        }
-
-        
-
-        UpdateVisualsFromGraphState();
-        StateHasChanged();
     }
 
     private async Task DrawPath(Context2D context, bool reset, bool prev) {
         if (prev) {
             if (previous != null) {
-                Console.WriteLine("previous is not null.");
                 await CanvasRenderer.DrawEdges(context, previous, CanvasHeight);
                 await CanvasRenderer.DrawNodes(context, previous, CanvasHeight);
-            } else if (previous == enumerator.Current) {
-                Console.WriteLine("equal");
-                //TODO: DON'T DRAW?
+                Console.WriteLine("prev count: " + previous.PathEdges.Count);
             }
         } else {
             await CanvasRenderer.DrawEdges(context, enumerator.Current, CanvasHeight);
-            await CanvasRenderer.DrawNodes(context, enumerator.Current, CanvasHeight);           
+            await CanvasRenderer.DrawNodes(context, enumerator.Current, CanvasHeight);
+            Console.WriteLine("curr count: " + enumerator.Current.PathEdges.Count);
         }
-        //TODO: Fallunterscheidung zwischen Current und Previous.
     }
 
-    private void SwitchAlgorithm() {
+    private void UpdateEnumerator() {
+        drawComplete = false;
+
         switch (algorithmEnum) {
             case AlgorithmEnum.NN:
                 nearestNeighbour.Start = graph.Nodes[StartNode];

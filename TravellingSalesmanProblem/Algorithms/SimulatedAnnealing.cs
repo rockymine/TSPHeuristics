@@ -35,12 +35,12 @@ namespace TravellingSalesmanProblem.Algorithms {
             for (; iteration < MaxIter; iteration++) {
                 state.Iteration++;
 
-                //if (state.Temperature < MinTemp) {
-                //    state.Finished = true;
-                //    UpdateStateMessages(state);
-                //    yield return state;
-                //    yield break;
-                //}
+                if (state.Temperature < MinTemp) {
+                    state.Finished = true;
+                    UpdateStateMessages(state);
+                    yield return state;
+                    yield break;
+                }
                 //randomly select a neighbour
                 var neighbour = NeighbourState.DoubleBridgeFourOpt(graph);
                 var neighbourCosts = neighbour.CalcCosts();
