@@ -10,10 +10,20 @@ namespace WebApplication.Utils {
         public string TextFont { get; set; }
         public string TextStyle { get; set; }
         public FillStyle Style { get; set; }
+
+        public Brush Copy() {
+            return new Brush {
+                Color = new string(Color),
+                Width = Width,
+                TextFont = new string(TextFont),
+                TextStyle = new string(TextStyle),
+                Style = Style
+            };
+        }
     }
 
     public enum FillStyle {
         Stroke,
         Fill
-    }
+    }    
 }

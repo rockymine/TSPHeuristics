@@ -58,10 +58,15 @@ namespace WebApplication.Utils {
                 var pos1 = edge.Node1.Position;
                 var pos2 = edge.Node2.Position;
 
-                await context.DrawLine(EdgeBrush,
+                var brush = EdgeBrush.Copy();
+                if (edge.Color != null) {
+                    brush.Color = edge.Color;
+                }
+
+                await context.DrawLine(brush,
                     Manipulate(pos1, cHeight),
                     Manipulate(pos2, cHeight));
-                await context.WriteText(EdgeBrush.TextFont, EdgeBrush.TextStyle, Math.Round(edge.Distance, 1).ToString(),
+                await context.WriteText(brush.TextFont, brush.TextStyle, Math.Round(edge.Distance, 1).ToString(),
                     Manipulate(center, cHeight));
             }
         }

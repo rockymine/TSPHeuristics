@@ -38,7 +38,7 @@ namespace TravellingSalesmanProblem.Algorithms {
                 if (state.Temperature < MinTemp) {
                     state.Finished = true;
                     UpdateStateMessages(state);
-                    yield return state;
+                    //yield return state;
                     yield break;
                 }
                 //randomly select a neighbour

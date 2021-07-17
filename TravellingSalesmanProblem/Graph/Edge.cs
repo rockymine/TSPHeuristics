@@ -11,6 +11,7 @@ namespace TravellingSalesmanProblem.Graph {
         public Node Node1 { get; set; }
         public Node Node2 { get; set; }
         public double Value { get; set; }
+        public string Color { get; set; }
         public double Pheromone { get; set; }
         public double Visibility => 1 / Distance;
         public double Distance => Vector2.Distance(Node1.Position, Node2.Position);

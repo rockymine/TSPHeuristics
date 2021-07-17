@@ -28,6 +28,7 @@ namespace TravellingSalesmanProblem.Algorithms {
 
     public enum AlgorithmEnum {
         NN = 0,
-        SA = 1
+        SA = 1,
+        MSNN = 2
     }
 }

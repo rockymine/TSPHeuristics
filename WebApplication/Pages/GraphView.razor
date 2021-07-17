@@ -73,6 +73,7 @@
                         <select name="heuristics" id="selectHeuristics" @bind="algorithmEnum">
                             <option value="NN" @onselect="e => algorithmEnum = AlgorithmEnum.NN">Nearest Neighbor</option>
                             <option value="SA" @onselect="e => algorithmEnum = AlgorithmEnum.SA">Simulated Annealing</option>
+                            <option value="MSNN" @onselect="e => algorithmEnum = AlgorithmEnum.MSNN">Multi Start (NN)</option>
                         </select>
                     </div>
                 </div>
@@ -203,8 +204,8 @@ n,12,11,11";
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
-            await InitiateGraph(true);
-            await NextState(true);
+            //await InitiateGraph(true);
+            //await NextState(true);
 
             Task.Run(async () => {
                 while (true) {
@@ -220,6 +221,7 @@ n,12,11,11";
     private async Task InitiateGraph(bool textbased) {
         if (textbased) {
             graph = GraphProblem.FromText(graphDefinition);
+            //enumerator = nearestNeighbour.FindPath(graph).GetEnumerator();
         } else {
             graph = GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
         }
@@ -242,12 +244,21 @@ n,12,11,11";
 
     private async Task NextState(bool reset) {
         if (reset)
-            UpdateEnumerator();
+            await UpdateEnumerator();
+
+        if (enumerator == null)
+            await InitiateGraph(true);
 
         if (!drawComplete) {
-            previous = enumerator.Current;
             if (enumerator.Current != null)
+                previous = enumerator.Current.DeepCopy();
+
+            if (!drawComplete && previous != null) {
+                //color update stuff
+                previous.ComparePathEdges(enumerator.Current);
+
                 await FillCanvas(previousCanvas, reset);
+            }
 
             enumerator.MoveNext();
             if (enumerator.Current.Finished)
@@ -265,37 +276,51 @@ n,12,11,11";
             await CanvasRenderer.DrawGrid(context, MaxX, MaxY, CanvasHeight);
 
             if (canvas == previousCanvas) {
-                await DrawPath(context, reset, true);
+                await DrawPath(context, reset, previous);
             } else {
-                await DrawPath(context, reset, false);
+                await DrawPath(context, reset, enumerator.Current);
             }            
         }
     }
 
-    private async Task DrawPath(Context2D context, bool reset, bool prev) {
-        if (prev) {
-            if (previous != null) {
-                await CanvasRenderer.DrawEdges(context, previous, CanvasHeight);
-                await CanvasRenderer.DrawNodes(context, previous, CanvasHeight);
-                Console.WriteLine("prev count: " + previous.PathEdges.Count);
-            }
-        } else {
-            await CanvasRenderer.DrawEdges(context, enumerator.Current, CanvasHeight);
-            await CanvasRenderer.DrawNodes(context, enumerator.Current, CanvasHeight);
-            Console.WriteLine("curr count: " + enumerator.Current.PathEdges.Count);
+    private async Task DrawPath(Context2D context, bool reset, GraphState state) {
+        if (state != null) {
+            await CanvasRenderer.DrawEdges(context, state, CanvasHeight);
+            await CanvasRenderer.DrawNodes(context, state, CanvasHeight);
         }
     }
 
-    private void UpdateEnumerator() {
+    private async Task ClearAll() {
+        if (previousCanvas != null) {
+            previous = null;
+            await using (var context = await previousCanvas.GetContext2DAsync()) {
+                await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
+                await CanvasRenderer.DrawGrid(context, MaxX, MaxY, CanvasHeight);
+            }
+        }
+
+        if (currentCanvas != null) {
+            await using (var context = await currentCanvas.GetContext2DAsync()) {
+                await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
+                await CanvasRenderer.DrawGrid(context, MaxX, MaxY, CanvasHeight);
+            }
+        }
+    }
+
+    private async Task UpdateEnumerator() {
         drawComplete = false;
+        await ClearAll();
 
         switch (algorithmEnum) {
             case AlgorithmEnum.NN:
-                nearestNeighbour.Start = graph.Nodes[StartNode];
+                nearestNeighbour.Start = graph.Nodes[StartNode];                
                 enumerator = nearestNeighbour.FindPath(graph).GetEnumerator();
                 break;
             case AlgorithmEnum.SA:
                 enumerator = simulatedAnnealing.FindPath(graph).GetEnumerator();
+                break;
+            case AlgorithmEnum.MSNN:
+                enumerator = nearestNeighbour.MultiStart(graph).GetEnumerator();
                 break;
             default: break;
         }

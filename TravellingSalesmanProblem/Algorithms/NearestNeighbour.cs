@@ -57,13 +57,27 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public override IEnumerable<GraphState> MultiStart(GraphProblem graph) {
-            //x* unspezifiziert
-            //f(x*) := unendlich
-            //while Stoppkriterium nicht erfüllt do
-            //  Konstruiere eine Lösung x;
-            //  if f(x) < f(x*) then
-            //      Setze x* := x und f(x*) := f(x);
-            throw new NotImplementedException();
+            var best = new GraphState {
+                Nodes = graph.Nodes
+            };
+            graph.Reset();
+
+            var costs = double.MaxValue;
+
+            foreach (var node in graph.Nodes) {
+                //graph.Start = node;
+                Start = node;
+                var current = FindPath(graph).Last();
+
+                if (current.CalcCosts() < costs) {
+                    costs = current.CalcCosts();
+                    best.Path = current.Path;
+                    best.PathEdges = current.PathEdges;
+                    best.Distance = current.Distance;
+                    UpdateStateMessages(best);
+                    yield return best;
+                }                    
+            }
         }
 
         public override void UpdateStateMessages(GraphState state) {
