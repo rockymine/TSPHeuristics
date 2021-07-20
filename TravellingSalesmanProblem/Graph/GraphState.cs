@@ -40,18 +40,21 @@ namespace TravellingSalesmanProblem.Graph {
         }
 
         public void ComparePathEdges(GraphState state) {
-            //if "state" does not have edge of THIS color edge of "THIS" red
+            //an edge was removed
             SetEdgeColors(state.PathEdges, PathEdges, "red");
 
-            //if "state" has edge that is not in THIS color edge of "state" green
+            //an edge was added
             SetEdgeColors(PathEdges, state.PathEdges, "green");
         }
 
         private static void SetEdgeColors(List<Edge> current, List<Edge> compareAgainst, string color) {
             foreach (var edge in compareAgainst) {
-                var other = current.Find(e => e == edge);
+                if (edge.Color == "green" | edge.Color == "red")
+                    edge.Color = "black";
+
+                var other = current.Find(e => e == edge || e.Node2 == edge.Node1 && e.Node1 == edge.Node2);
                 if (other == null)
-                    other.Color = color;
+                    edge.Color = color;
             }
         }
     }

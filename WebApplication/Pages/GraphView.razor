@@ -253,14 +253,13 @@ n,12,11,11";
             if (enumerator.Current != null)
                 previous = enumerator.Current.DeepCopy();
 
-            if (!drawComplete && previous != null) {
-                //color update stuff
-                previous.ComparePathEdges(enumerator.Current);
+            enumerator.MoveNext();
 
+            if (previous != null) {
+                previous.ComparePathEdges(enumerator.Current);
                 await FillCanvas(previousCanvas, reset);
             }
 
-            enumerator.MoveNext();
             if (enumerator.Current.Finished)
                 drawComplete = true;
             
@@ -313,7 +312,7 @@ n,12,11,11";
 
         switch (algorithmEnum) {
             case AlgorithmEnum.NN:
-                nearestNeighbour.Start = graph.Nodes[StartNode];                
+                nearestNeighbour.Start = graph.Nodes[StartNode];
                 enumerator = nearestNeighbour.FindPath(graph).GetEnumerator();
                 break;
             case AlgorithmEnum.SA:
