@@ -6,12 +6,14 @@ using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using WebApplication.Utils;
+using System.Drawing;
 
 namespace WebApplication.Extensions {
     public static class Context2DExtensions {
         public static async Task DrawLine(this Context2D context, Brush brush, Vector2 pos1, Vector2 pos2) {
             await context.StrokeStyleAsync(brush.Color);
             await context.LineWidthAsync(brush.Width);
+            //await context.SetLineDashAsync(new double[] { 1, 2, 3 });
             await context.BeginPathAsync();
             await context.MoveToAsync(pos1.X, pos1.Y);
             await context.LineToAsync(pos2.X, pos2.Y);
@@ -30,17 +32,21 @@ namespace WebApplication.Extensions {
                 await context.StrokeAsync();
         }
 
-        public static async Task DrawTextBox(this Context2D context, Brush brush, Vector2 pos) {
-            await context.FillStyleAsync(brush.Color);
-            await context.LineWidthAsync(brush.Width);
-            await context.MoveToAsync(pos.X - 0.2, pos.X - 0.2);
-            await context.RectAsync(pos.X - 0.2, pos.Y - 0.2, 1, 1);
-            //await context.FillRectAsync(min1, min2, 0.4, 0.4);
-
-            if (brush.Style == FillStyle.Fill)
-                await context.FillAsync(FillRule.EvenOdd);
-            else if (brush.Style == FillStyle.Stroke)
-                await context.StrokeAsync();
+        public static async Task DrawTextBox(this Context2D context, Brush brush, Vector2 pos, string text) {
+            var metrics = await context.MeasureTextAsync(text);
+            var width = metrics.Width;
+            var height = metrics.FontBoundingBoxAscent + metrics.FontBoundingBoxDescent;
+            var x = pos.X;
+            var y = pos.Y;
+            var startX = x - (width / 2);
+            var startY = y - (height / 2);
+            
+            await context.FillStyleAsync("#3f74a8");
+            await context.LineWidthAsync(2);
+            await context.BeginPathAsync();
+            await context.MoveToAsync(x, y);
+            await context.FillRectAsync(startX, startY, width, height);
+            await WriteText(context, brush.TextFont, "white", text, pos);
         }
 
         public static async Task FillTextAsyncVector(this Context2D context, string text, Vector2 pos) {
@@ -51,7 +57,7 @@ namespace WebApplication.Extensions {
             await context.FontAsync(font);
             await context.FillStyleAsync(style);
             await context.TextBaseLineAsync(TextBaseLine.Middle);
-            await context.TextAlignAsync(TextAlign.Left);
+            await context.TextAlignAsync(TextAlign.Center);
             await context.FillTextAsyncVector(text, v2);
         }
     }
