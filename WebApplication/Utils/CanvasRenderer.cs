@@ -66,19 +66,19 @@ namespace WebApplication.Utils {
                 //await context.WriteText(brush.TextFont, brush.TextStyle, Math.Round(edge.Distance, 1).ToString(),
                 //    Manipulate(edge.FindCenter(), height));
             }
+            await DrawEdgeTextBox(context, state, brush, height);
+        }
+
+        public static async Task DrawEdgeTextBox(Context2D context, GraphState state, Brush brush, int height) {
             var positions = new List<Vector2>();
             foreach (var edge in state.PathEdges) {
                 var center = edge.FindCenter();
                 //TODO: include small offsets
-                if (!positions.Contains(center)) {
-                    await context.DrawTextBox(brush, Manipulate(center, height), Math.Round(edge.Distance, 1).ToString());
-                    positions.Add(center);
-                } else {
-                    var node1 = edge.Node1.Position;
-                    var position = (node1 + edge.FindCenter()) / 2;
-                    await context.DrawTextBox(brush, Manipulate(position, height), Math.Round(edge.Distance, 1).ToString());
-                    positions.Add(position);
-                }
+                if (positions.Contains(center))
+                    center = (edge.Node1.Position + edge.FindCenter()) / 2;
+
+                await context.DrawTextBox(brush, Manipulate(center, height), Math.Round(edge.Distance, 1).ToString());
+                positions.Add(center);
             }
         }
 
