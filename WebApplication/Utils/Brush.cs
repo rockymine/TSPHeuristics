@@ -21,7 +21,6 @@ namespace WebApplication.Utils {
             };
         }
     }
-
     public enum FillStyle {
         Stroke,
         Fill

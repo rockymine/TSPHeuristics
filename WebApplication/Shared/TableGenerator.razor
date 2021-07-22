@@ -49,7 +49,7 @@
 					continue;
 				}
 				
-				var distance = Math.Round(Edge.GetDistance(node1, node2), 1);
+				var distance = Math.Round(Edge.GetDistanceRounded(node1, node2), 1);
 
 				tableInfo.Cells[i, j] = new TableCellInfo(distance.ToString(),
 					InPath(graph.Path, node1, node2) ? "table-danger" : null);

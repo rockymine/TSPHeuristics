@@ -225,17 +225,15 @@ n,12,11,11";
         } else {
             graph = GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
         }
+
         await UpdateGraph();
-        UpdateVisualsFromGraphState();
     }
 
     private async Task UpdateGraph() {
-        //TODO: check what is actually necessary.
-        if (algorithmEnum == AlgorithmEnum.NN) {
+        if (algorithmEnum == AlgorithmEnum.NN)
             NodeMax = graph.Nodes.Count - 1;
-        }
 
-        var max = graph.FindMax();             
+        var max = graph.FindMax();
         CanvasWidth = (int)(max.X * Scale) + 50;
         CanvasHeight = (int)(max.Y * Scale) + 50;
 
@@ -245,7 +243,6 @@ n,12,11,11";
     private async Task NextState(bool reset) {
         if (reset)
             await UpdateEnumerator();
-
         if (enumerator == null)
             await InitiateGraph(true);
 
@@ -257,35 +254,35 @@ n,12,11,11";
 
             if (previous != null) {
                 previous.ComparePathEdges(enumerator.Current);
-                await FillCanvas(previousCanvas, reset);
+                await FillCanvas(previousCanvas);
             }
 
             if (enumerator.Current.Finished)
                 drawComplete = true;
             
-            await FillCanvas(currentCanvas, reset);
+            await FillCanvas(currentCanvas);
             UpdateVisualsFromGraphState();
             StateHasChanged();
         }
     }
 
-    private async Task FillCanvas(Canvas canvas, bool reset) {
+    private async Task FillCanvas(Canvas canvas) {
         await using (var context = await canvas.GetContext2DAsync()) {
             await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
             await CanvasRenderer.DrawGrid(context, MaxX, MaxY, CanvasHeight);
 
             if (canvas == previousCanvas) {
-                await DrawPath(context, reset, previous);
+                await DrawPath(context, previous);
             } else {
-                await DrawPath(context, reset, enumerator.Current);
+                await DrawPath(context, enumerator.Current);
             }            
         }
     }
 
-    private async Task DrawPath(Context2D context, bool reset, GraphState state) {
-        if (state != null) {
-            await CanvasRenderer.DrawEdges(context, state, CanvasHeight);
-            await CanvasRenderer.DrawNodes(context, state, CanvasHeight);
+    private async Task DrawPath(Context2D context, GraphState graph) {
+        if (graph != null) {
+            await CanvasRenderer.DrawEdges(context, graph, CanvasHeight);
+            await CanvasRenderer.DrawNodes(context, graph, CanvasHeight);
         }
     }
 

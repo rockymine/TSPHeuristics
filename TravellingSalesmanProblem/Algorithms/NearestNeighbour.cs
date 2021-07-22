@@ -65,7 +65,6 @@ namespace TravellingSalesmanProblem.Algorithms {
             var costs = double.MaxValue;
 
             foreach (var node in graph.Nodes) {
-                //graph.Start = node;
                 Start = node;
                 var current = FindPath(graph).Last();
 

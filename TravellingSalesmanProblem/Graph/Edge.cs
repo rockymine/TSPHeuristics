@@ -38,10 +38,7 @@ namespace TravellingSalesmanProblem.Graph {
         }
 
         public static Edge Between(Node node1, Node node2) {
-            var edge = new Edge {
-                Node1 = node1,
-                Node2 = node2
-            };
+            var edge = new Edge { Node1 = node1, Node2 = node2 };
 
             node1.Edges.Add(edge);
             node2.Edges.Add(edge);
@@ -49,7 +46,7 @@ namespace TravellingSalesmanProblem.Graph {
             return edge;
         }
 
-        public static double GetDistance(Node n1, Node n2) {
+        public static double GetDistanceRounded(Node n1, Node n2) {
             return Math.Round(Vector2.Distance(n1.Position, n2.Position), 1);
         }
 

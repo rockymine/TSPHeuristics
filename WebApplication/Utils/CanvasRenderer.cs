@@ -43,31 +43,24 @@ namespace WebApplication.Utils {
 
         public static async Task DrawNodes(Context2D context, GraphState state, int cHeight) {
             foreach (var node in state.Nodes) {
-                var position = node.Position;
-
                 await context.DrawCircle(NodeBrush, NodeSize,
-                    Manipulate(position, cHeight));
+                    Manipulate(node.Position, cHeight));
                 await context.WriteText(NodeBrush.TextFont, NodeBrush.TextStyle, node.Index.ToString(),
-                    Manipulate(position, cHeight));
+                    Manipulate(node.Position, cHeight));
             }
         }
 
-        public static async Task DrawEdges(Context2D context, GraphState state, int cHeight) {
-            foreach (var edge in state.PathEdges) {
-                var center = edge.FindCenter();
-                var pos1 = edge.Node1.Position;
-                var pos2 = edge.Node2.Position;
-
-                var brush = EdgeBrush.Copy();
-                if (edge.Color != null) {
+        public static async Task DrawEdges(Context2D context, GraphState state, int height) {
+            var brush = EdgeBrush.Copy();
+            foreach (var edge in state.PathEdges) {                
+                if (edge.Color != null)
                     brush.Color = edge.Color;
-                }
 
                 await context.DrawLine(brush,
-                    Manipulate(pos1, cHeight),
-                    Manipulate(pos2, cHeight));
+                    Manipulate(edge.Node1.Position, height),
+                    Manipulate(edge.Node2.Position, height));
                 await context.WriteText(brush.TextFont, brush.TextStyle, Math.Round(edge.Distance, 1).ToString(),
-                    Manipulate(center, cHeight));
+                    Manipulate(edge.FindCenter(), height));
             }
         }
 

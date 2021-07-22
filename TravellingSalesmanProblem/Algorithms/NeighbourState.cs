@@ -55,18 +55,18 @@ namespace TravellingSalesmanProblem.Algorithms {
             var F = tour[k + 1];
 
             //edge distances
-            var dAB = Edge.GetDistance(A, B);
-            var dAC = Edge.GetDistance(A, C);
-            var dAD = Edge.GetDistance(A, D);
-            var dCD = Edge.GetDistance(C, D);
-            var dEF = Edge.GetDistance(E, F);           
-            var dBD = Edge.GetDistance(B, D);
-            var dCE = Edge.GetDistance(C, E);
-            var dDF = Edge.GetDistance(D, F);            
-            var dEB = Edge.GetDistance(E, B);
-            var dCF = Edge.GetDistance(C, F);
-            var dFB = Edge.GetDistance(F, B);
-            var dAE = Edge.GetDistance(A, E);
+            var dAB = Edge.GetDistanceRounded(A, B);
+            var dAC = Edge.GetDistanceRounded(A, C);
+            var dAD = Edge.GetDistanceRounded(A, D);
+            var dCD = Edge.GetDistanceRounded(C, D);
+            var dEF = Edge.GetDistanceRounded(E, F);           
+            var dBD = Edge.GetDistanceRounded(B, D);
+            var dCE = Edge.GetDistanceRounded(C, E);
+            var dDF = Edge.GetDistanceRounded(D, F);            
+            var dEB = Edge.GetDistanceRounded(E, B);
+            var dCF = Edge.GetDistanceRounded(C, F);
+            var dFB = Edge.GetDistanceRounded(F, B);
+            var dAE = Edge.GetDistanceRounded(A, E);
             
             IEnumerable<Node> final = null;
             var distances = new List<double>();
@@ -168,5 +168,13 @@ namespace TravellingSalesmanProblem.Algorithms {
             final.ConnectPathNodes();
             return final;
         }
+    }
+
+    public enum NeighbourType {
+        Interchange = 0,
+        Swap = 1,
+        TwoOpt = 2,
+        ThreeOpt = 3,
+        FourOpt = 4
     }
 }
