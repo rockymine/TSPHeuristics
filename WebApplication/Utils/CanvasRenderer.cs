@@ -74,8 +74,12 @@ namespace WebApplication.Utils {
             foreach (var edge in state.PathEdges) {
                 var center = edge.FindCenter();
                 //TODO: include small offsets
-                if (positions.Contains(center))
+                if (positions.Contains(center)) {
                     center = (edge.Node1.Position + edge.FindCenter()) / 2;
+                    if (positions.Contains(center)) {
+                        center = (edge.Node2.Position + edge.FindCenter()) / 2;
+                    }
+                }
 
                 await context.DrawTextBox(brush, Manipulate(center, height), Math.Round(edge.Distance, 1).ToString());
                 positions.Add(center);

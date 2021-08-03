@@ -74,6 +74,7 @@
                             <option value="NN" @onselect="e => algorithmEnum = AlgorithmEnum.NN">Nearest Neighbor</option>
                             <option value="SA" @onselect="e => algorithmEnum = AlgorithmEnum.SA">Simulated Annealing</option>
                             <option value="MSNN" @onselect="e => algorithmEnum = AlgorithmEnum.MSNN">Multi Start (NN)</option>
+                            <option value="ACS" @onselect="e => algorithmEnum = AlgorithmEnum.ACS">Ant Colony System</option>
                         </select>
                     </div>
                 </div>
@@ -124,6 +125,7 @@
     private GraphState previous;
     private NearestNeighbour nearestNeighbour = new();
     private SimulatedAnnealing simulatedAnnealing = new();
+    private AntAlgorithm antColonySystem = new();
 	private IEnumerator<GraphState> enumerator;
 	private AlgorithmEnum algorithmEnum;
 	private string graphDefinition = @"n,1,11,5
@@ -317,6 +319,9 @@ n,12,11,11";
                 break;
             case AlgorithmEnum.MSNN:
                 enumerator = nearestNeighbour.MultiStart(graph).GetEnumerator();
+                break;
+            case AlgorithmEnum.ACS:
+                enumerator = antColonySystem.FindPath(graph).GetEnumerator();
                 break;
             default: break;
         }

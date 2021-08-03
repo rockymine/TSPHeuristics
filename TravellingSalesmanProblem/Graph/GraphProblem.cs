@@ -11,8 +11,8 @@ namespace TravellingSalesmanProblem.Graph {
     public class GraphProblem {
         //optional (for multistart in NN)
         public Node Start { get; set; }
-        public List<Node> Nodes { get; set; }
-        public List<Edge> Edges { get; set; }
+        public List<Node> Nodes { get; set; } = new();
+        public List<Edge> Edges { get; set; } = new();
 
         private static readonly Random Random = new();
         public GraphProblem() {
@@ -32,6 +32,11 @@ namespace TravellingSalesmanProblem.Graph {
                 graph.Nodes.Add(node);
             }
 
+            graph.ConnectAllNodes();
+            return graph;
+        }
+
+        public static GraphProblem ConnectedGraphProblem(GraphProblem graph) {
             graph.ConnectAllNodes();
             return graph;
         }
