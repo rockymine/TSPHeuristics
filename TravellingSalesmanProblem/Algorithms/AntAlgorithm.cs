@@ -26,9 +26,6 @@ namespace TravellingSalesmanProblem.Algorithms {
             }
 
             DistributedMemory = GraphProblem.ConnectedGraphProblem(graph);
-            //yield return new GraphState { 
-            //    Nodes = DistributedMemory.Nodes, 
-            //    PathEdges = DistributedMemory.Edges };
 
             /* Create tour using tour constructive heuristic.
              This tour will be improved by the ACS heuristic. */
@@ -50,53 +47,52 @@ namespace TravellingSalesmanProblem.Algorithms {
                 Nodes = graph.Nodes
             };
 
-            state.Path = GlobalBest.Nodes;
-            state.PathEdges = GlobalBest.Edges;
-            state.Distance = GlobalBest.CalcCosts();
-            UpdateStateMessages(state);
-            yield return state;
+            yield return UpdateState(state);
 
             int i = 0;
             /* Main ACS loop */
             for (; i < 100; i++) {
-                if (i > 0) {
-                    foreach (var ant in Colony)
-                        ant.Reset();
-                }
+                if (i > 0)
+                    Colony.ForEach(a => a.Reset());
 
                 /* 1) Initialization phase */
                 ScatterAnts(graph);
 
                 /* 2) This is the phase in which ants build their tours.
                 The tour of an ant k is stored in k.Path.Nodes */
-                
-                for (int j = 0; j < graph.Nodes.Count; j++) {
-                    foreach (var ant in Colony) {
-                        var next = new Node();
-                        if (ant.Unvisited.Any()) {
-                            next = StateTransitionRule(ant);
-                        } else {
-                            next = ant.Path.Nodes[0];
-                        }
-                        ant.UpdatePath(ant.Current, next);
-                    }
-                    /* In this phase local updating occurs and pheromone is updated. */
-                    foreach (var ant in Colony) {
-                        LocalUpdatingRule(ant);
-                    }
-                }
+                AntPathBuilding(graph);
 
                 /* 3) In this phase global updating occurs and pheromone is updated. */
                 GlobalBest = Colony.OrderBy(x => x.Length).FirstOrDefault().Path;
-                Console.WriteLine("Graph: " + string.Join('-', GlobalBest.Nodes.Select(n => n.Index)));
                 GlobalUpdatingRule();
-                Console.WriteLine("Pheromones: " + DistributedMemory.Edges.Sum(e => e.Pheromone));
+                
+                yield return UpdateState(state);
+            }
+        }
 
-                state.Path = GlobalBest.Nodes;
-                state.PathEdges = GlobalBest.Edges;
-                state.Distance = GlobalBest.CalcCosts();
-                UpdateStateMessages(state);
-                yield return state;
+        private GraphState UpdateState(GraphState state) {
+            state.Path = GlobalBest.Nodes;
+            state.PathEdges = GlobalBest.Edges;
+            state.Distance = GlobalBest.CalcCosts();
+            UpdateStateMessages(state);
+            return state;
+        }
+
+        private void AntPathBuilding(GraphProblem graph) {
+            for (int j = 0; j < graph.Nodes.Count; j++) {
+                foreach (var ant in Colony) {
+                    var next = new Node();
+                    if (ant.Unvisited.Any()) {
+                        next = StateTransitionRule(ant);
+                    } else {
+                        next = ant.Path.Nodes[0];
+                    }
+                    ant.UpdatePath(ant.Current, next);
+                }
+                /* In this phase local updating occurs and pheromone is updated. */
+                foreach (var ant in Colony) {
+                    LocalUpdatingRule(ant);
+                }
             }
         }
 
@@ -107,7 +103,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
             state.Messages["Distance"] = Math.Round(state.Distance, 2).ToString();
-            state.Messages["Pheromones"] = state.PathEdges.Sum(e => e.Pheromone).ToString();
+            state.Messages["Pheromones"] = DistributedMemory.Edges.Sum(e => e.Pheromone).ToString();
         }
 
         private double RandomProportionalRule(Ant k, Node r, Node s) {
@@ -138,15 +134,13 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         //ants visit edges and change their pheromone level
         //local updating will help to avoid ants converging to a common path
-        private void LocalUpdatingRule(Ant k) {
-            //TODO: Q-Learning, Disable Local Updating.            
+        private void LocalUpdatingRule(Ant k) {       
             foreach (var edge in DistributedMemory.Edges) {
                 if (IsEdgeInTour(edge, k.Path.Edges))
                     edge.Pheromone = ((1 - Rho) * edge.Pheromone) + (Rho * InitialPheromone);
             }
         }
 
-        //TODO: make sure uses the pheromone values of the shared graph
         private Node StateTransitionRule(Ant k) {
             /*every time an ant in node r has to choose a city s to move to,
              it samples a random number 1 <= q <= 1*/
