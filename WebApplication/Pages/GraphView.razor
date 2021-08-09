@@ -41,7 +41,10 @@
                     <!-- Advance through iterations -->
                     <div class="row">
                         <button class="btn btn-primary btn-sm" type="button" @onclick="e => NextState(false)">Advance</button>
-                        <button class="btn btn-danger btn-sm" type="button" @onclick="e => NextState(true)">Reset</button>
+                        <!-- Only allow reset when enumerator not empty -->
+                        @if (enumerator != null && previous != null) {
+                            <button class="btn btn-danger btn-sm" type="button" @onclick="e => NextState(true)">Reset</button>
+                        }
                     </div>
                     <div class="row">
                         <div class="custom-control custom-switch">
@@ -270,8 +273,7 @@ n,12,11,11";
 
     private async Task FillCanvas(Canvas canvas) {
         await using (var context = await canvas.GetContext2DAsync()) {
-            await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
-            await CanvasRenderer.DrawGrid(context, MaxX, MaxY, CanvasHeight);
+            await ClearAndDrawGrid(context);
 
             if (canvas == previousCanvas) {
                 await DrawPath(context, previous);
@@ -292,17 +294,20 @@ n,12,11,11";
         if (previousCanvas != null) {
             previous = null;
             await using (var context = await previousCanvas.GetContext2DAsync()) {
-                await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
-                await CanvasRenderer.DrawGrid(context, MaxX, MaxY, CanvasHeight);
+                await ClearAndDrawGrid(context);
             }
         }
 
         if (currentCanvas != null) {
             await using (var context = await currentCanvas.GetContext2DAsync()) {
-                await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
-                await CanvasRenderer.DrawGrid(context, MaxX, MaxY, CanvasHeight);
+                await ClearAndDrawGrid(context);
             }
         }
+    }
+
+    private async Task ClearAndDrawGrid(Context2D context) {
+        await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
+        await CanvasRenderer.DrawGrid(context, MaxX, MaxY, CanvasHeight);
     }
 
     private async Task UpdateEnumerator() {
@@ -330,7 +335,7 @@ n,12,11,11";
     private void UpdateVisualsFromGraphState() {
         if (algorithmEnum == AlgorithmEnum.NN)
             tableGenerator.UpdateFromGraphState(enumerator.Current);
-        if (algorithmEnum == AlgorithmEnum.SA)
-            chartGenerator.UpdateFromGraphState(enumerator.Current);
+        @*if (algorithmEnum == AlgorithmEnum.SA)
+            chartGenerator.UpdateFromGraphState(enumerator.Current);*@
     }
 }

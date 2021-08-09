@@ -25,7 +25,7 @@ namespace WebApplication.Utils {
             TextFont = "15px serif bold",
             TextStyle = "white"
         };
-        private static readonly Brush GridBrush = new() { Color = "#999999", Width = 1 };
+        private static readonly Brush GridBrush = new() { Color = "#999999", Width = 0.75 };
         private static readonly Vector2 Offset = new(NodeSize + 5, NodeSize + 5);
 
         public static async Task DrawGrid(Context2D context, int maxX, int maxY, int cHeight) {
