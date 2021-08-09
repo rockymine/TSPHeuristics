@@ -63,7 +63,12 @@ namespace TravellingSalesmanProblem.Algorithms {
                 AntPathBuilding(graph);
 
                 /* 3) In this phase global updating occurs and pheromone is updated. */
-                GlobalBest = Colony.OrderBy(x => x.Length).FirstOrDefault().Path;
+                var best = Colony.OrderBy(x => x.Length).FirstOrDefault().Path;
+
+                if (best.Costs == state.Distance)
+                    state.Finished = true;
+
+                GlobalBest = best;
                 GlobalUpdatingRule();
                 
                 yield return UpdateState(state);

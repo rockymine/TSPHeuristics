@@ -12,10 +12,15 @@
             <!-- Input -->
             <h6>Graph Input</h6>
             <div class="input-group">
-                <textarea class="form-control" @bind="graphDefinition" style="height: 200px;"></textarea>
-                <div class="input-group-append">
+                <div class="input-group-prepend">
                     <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(true)">Draw Graph</button>
                 </div>
+                <textarea class="form-control" @bind="graphDefinition" style="height: 200px;"></textarea>
+                @if (previous != null) {
+                    <div class="input-group-append">
+                        <button class="btn btn-danger btn-sm" type="button" @onclick="e => NextState(true)">Reset</button>
+                    </div>
+                }
             </div>
         </div>
         <div class="row">
@@ -40,17 +45,15 @@
                 <div class="col">
                     <!-- Advance through iterations -->
                     <div class="row">
-                        <button class="btn btn-primary btn-sm" type="button" @onclick="e => NextState(false)">Advance</button>
-                        <!-- Only allow reset when enumerator not empty -->
-                        @if (enumerator != null && previous != null) {
-                            <button class="btn btn-danger btn-sm" type="button" @onclick="e => NextState(true)">Reset</button>
+                        @if (enumerator != null && !enumerator.Current.Finished) {
+                            <button class="btn btn-primary btn-sm" type="button" @onclick="e => NextState(false)">Advance</button>
+                            <div class="row">
+                                <div class="custom-control custom-switch">
+                                    <input class="custom-control-input" type="checkbox" id="switch" @bind="autoAdvance">
+                                    <label class="custom-control-label" for="switch">Enable auto advance</label>
+                                </div>
+                            </div>
                         }
-                    </div>
-                    <div class="row">
-                        <div class="custom-control custom-switch">
-                            <input class="custom-control-input" type="checkbox" id="switch" @bind="autoAdvance">
-                            <label class="custom-control-label" for="switch">Enable auto advance</label>
-                        </div>
                     </div>
                     <!-- Generate Random Graph -->
                     <div class="row">                        

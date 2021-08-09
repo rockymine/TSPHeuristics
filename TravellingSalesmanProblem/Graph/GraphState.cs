@@ -52,9 +52,12 @@ namespace TravellingSalesmanProblem.Graph {
                 if (edge.Color == "green" | edge.Color == "red")
                     edge.Color = "black";
 
-                var other = current.Find(e => e == edge || e.Node2 == edge.Node1 && e.Node1 == edge.Node2);
-                if (other == null)
+                var other = current.Find(e => (e.Node1 == edge.Node1 && e.Node2 == edge.Node2) || (e.Node2 == edge.Node1 && e.Node1 == edge.Node2));
+                if (other == null) {
                     edge.Color = color;
+                } else {
+                    edge.Color = "black";
+                }
             }
         }
     }
