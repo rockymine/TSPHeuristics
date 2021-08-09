@@ -8,77 +8,62 @@ using TravellingSalesmanProblem.Graph;
 namespace TravellingSalesmanProblem.Algorithms {
     public class SimulatedAnnealing : Algorithm {
         public int MaxIter { get; set; } = 100_000;
-        public double StartTemp { get; set; } = 10_000;
+        public int MaxIter1 { get; set; } = 10;
+        public int MaxIter2 { get; set; } = 150;
+        public double StartTemp { get; set; } = 100;
         public double MinTemp { get; set; } = 0.00001;
-        public double Alpha { get; set; } = 0.999;
+        public double Alpha { get; set; } = 0.95;
+        private GraphProblem CurrentBest = new();
 
         private static readonly Random Random = new();
 
         public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
-            var problem = GraphProblem.OrderedGraphProblem(graph);
+            /* TODO: Create tour using tour constructive heuristic.
+             This tour will be improved by the Simulated Annealing heuristic. */
+            var x = GraphProblem.OrderedGraphProblem(graph);
+            CurrentBest = x;
 
-            var state = new GraphState() {
+            var state = new GraphState {
                 Nodes = graph.Nodes,
-                Path = problem.Nodes,
-                PathEdges = problem.Edges,
-                Distance = problem.CalcCosts(),
+                Path = x.Nodes,
+                PathEdges = x.Edges,
+                Distance = x.Costs,
                 Temperature = StartTemp
             };
             yield return state;
 
-            //record initial tour as best so far
-            double min = state.Distance;
-            graph = problem;
-            GraphProblem mintour = graph;
-
-            int iteration = 0;
-            for (; iteration < MaxIter; iteration++) {
+            int i = 0;
+            for (; i < 400; i++) {
                 state.Iteration++;
+                /* TODO: If necessary, break when a certain temperature is reached */
 
-                if (state.Temperature < MinTemp) {
-                    state.Finished = true;
-                    UpdateStateMessages(state);
-                    //yield return state;
-                    yield break;
-                }
-                //randomly select a neighbour
-                var neighbour = NeighbourState.DoubleBridgeFourOpt(graph);
-                var neighbourCosts = neighbour.CalcCosts();
+                /* MaxIter1 stands for the maximum amount of iterations without temperature change */
+                for (int j = 0; j < 10; j++) {
+                    /* Create a neighbor y from N(x) and check if it is better than x */
+                    GraphProblem y = NeighbourState.TwoOpt(x);
+                    if (y.Costs <= x.Costs) {
+                        x = y;
 
-                //if neighbour is better, jump to it
-                if (neighbourCosts < graph.CalcCosts()) {
-                    graph = neighbour;
+                        /* update current best tour */
+                        if (x.Costs < CurrentBest.Costs) {
+                            CurrentBest = x;
+                            yield return UpdateState(state);
+                        }
 
-                    //check if tour is best so far
-                    if (neighbourCosts < min) {
-                        min = neighbourCosts;
-                        mintour = neighbour;
-
-                        state.Distance = graph.CalcCosts();
-                        state.Path = graph.Nodes;
-                        state.PathEdges = graph.Edges;
-                        UpdateStateMessages(state);
-                        yield return state;
+                    } else if (ExpCoinFlip(graph, state.ToGraphProblem(), state.Temperature)) {
+                        x = y;
                     }
-                } else if (ExpCoinFlip(graph, mintour, state.Temperature)) {
-                    //jump to neighbour even if it is worse
-                    graph = neighbour;
                 }
-                //update temperature and iteration
                 state.Temperature *= Alpha;
             }
 
-            state.Distance = mintour.CalcCosts();
-            state.Path = mintour.Nodes;
-            state.PathEdges = mintour.Edges;
-            state.Finished = true;
-            UpdateStateMessages(state);
-            yield return state;
+            yield return UpdateState(state, true);
         }
 
         private static bool ExpCoinFlip(GraphProblem x, GraphProblem y, double t) {
             var p = Math.Exp(-(x.CalcCosts() - y.CalcCosts()) / t);
             var r = Random.NextDouble();
+
             if (p > r)
                 return true;
 
@@ -89,8 +74,21 @@ namespace TravellingSalesmanProblem.Algorithms {
             throw new NotImplementedException();
         }
 
+        private GraphState UpdateState(GraphState state, bool finished = false) {
+            state.Distance = CurrentBest.CalcCosts();
+            state.Path = CurrentBest.Nodes;
+            state.PathEdges = CurrentBest.Edges;
+
+            if (finished)
+                state.Finished = true;
+
+            UpdateStateMessages(state);
+            return state;
+        }
+
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Iteration"] = state.Iteration.ToString();
+            state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
             state.Messages["Distance"] = state.Distance.ToString();
             state.Messages["Temperature"] = state.Temperature.ToString();
         }

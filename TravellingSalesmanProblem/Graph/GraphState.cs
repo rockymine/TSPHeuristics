@@ -18,7 +18,7 @@ namespace TravellingSalesmanProblem.Graph {
 
         public GraphProblem ToGraphProblem() {
             return new GraphProblem {
-                Nodes = Nodes,
+                Nodes = Path,
                 Edges = PathEdges
             };
         }
