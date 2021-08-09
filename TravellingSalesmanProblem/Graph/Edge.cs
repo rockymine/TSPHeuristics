@@ -28,6 +28,15 @@ namespace TravellingSalesmanProblem.Graph {
             return false;
         }
 
+        public bool IsEqual(Edge edge) {
+            if (Node1 == edge.Node1 && Node2 == edge.Node2)
+                return true;
+            if (Node1 == edge.Node2 && Node2 == edge.Node1)
+                return true;
+
+            return false;
+        }
+
         public Node Opposite(Node node) {
             if (node == Node1)
                 return Node2;

@@ -227,12 +227,8 @@ n,12,11,11";
     }
 
     private async Task InitiateGraph(bool textbased) {
-        if (textbased) {
-            graph = GraphProblem.FromText(graphDefinition);
-            //enumerator = nearestNeighbour.FindPath(graph).GetEnumerator();
-        } else {
-            graph = GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
-        }
+        graph = textbased ? GraphProblem.FromText(graphDefinition) :
+        GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
 
         await UpdateGraph();
     }

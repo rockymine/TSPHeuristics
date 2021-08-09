@@ -86,12 +86,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         private void AntPathBuilding(GraphProblem graph) {
             for (int j = 0; j < graph.Nodes.Count; j++) {
                 foreach (var ant in Colony) {
-                    var next = new Node();
-                    if (ant.Unvisited.Any()) {
-                        next = StateTransitionRule(ant);
-                    } else {
-                        next = ant.Path.Nodes[0];
-                    }
+                    var next = ant.Unvisited.Any() ? StateTransitionRule(ant) : ant.Path.Nodes[0];
                     ant.UpdatePath(ant.Current, next);
                 }
                 /* In this phase local updating occurs and pheromone is updated. */
@@ -208,8 +203,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         private static bool IsEdgeInTour(Edge e, List<Edge> edges) {
-            return edges.Any(edge => (edge.Node1 == e.Node1 && edge.Node2 == e.Node2) ||
-            (edge.Node1 == e.Node2 && edge.Node2 == e.Node1));
+            return edges.Any(edge => e.IsEqual(edge));
         }
     }
 

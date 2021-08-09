@@ -49,15 +49,8 @@ namespace TravellingSalesmanProblem.Graph {
 
         private static void SetEdgeColors(List<Edge> current, List<Edge> compareAgainst, string color) {
             foreach (var edge in compareAgainst) {
-                if (edge.Color == "green" | edge.Color == "red")
-                    edge.Color = "black";
-
-                var other = current.Find(e => (e.Node1 == edge.Node1 && e.Node2 == edge.Node2) || (e.Node2 == edge.Node1 && e.Node1 == edge.Node2));
-                if (other == null) {
-                    edge.Color = color;
-                } else {
-                    edge.Color = "black";
-                }
+                var condition = current.Find(e => e.IsEqual(edge)) == null;
+                edge.Color = condition ? color : "black";
             }
         }
     }
