@@ -81,7 +81,7 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Route"] = string.Join('-', state.Path.Select(n => n.Index));
-            state.Messages["Path Edges"] = string.Join(',', state.PathEdges.Select(n => n.Node1.Index + " <-> " + n.Node2.Index));
+            //state.Messages["Path Edges"] = string.Join(',', state.PathEdges.Select(n => n.Node1.Index + " <-> " + n.Node2.Index));
             state.Messages["Distance"] = Math.Round(state.Distance, 1).ToString();
         }
     }

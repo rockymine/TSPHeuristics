@@ -11,16 +11,17 @@
         <h4 class="font-weight-light">Master thesis project of Michael Ganske at the University of Hildesheim</h4>
         <div class="row">
             <!-- Settings -->
-            <div class="col-4">
+            <div class="col-md-4 col-sm-6">
+                <h3 class="font-weight-bold">Settings</h3>
+                <!-- Heuristics Selection and Algorithm Specific-->
                 <div class="row">
-                    <div class="col">
-                        <h3 class="font-weight-bold">Settings</h3>
-                        <!-- heuristics -->
+                    <!-- Selection -->
+                    <div class="col-md-6 col-sm-6">
                         <div class="row">
                             <div class="container-fluid">
                                 <div class="col">
                                     <div class="row">
-                                        <h5>Select Heuristics</h5>
+                                        <h5 class="font-font-weight-light">Select Heuristics</h5>
                                     </div>
                                 </div>
                                 <div class="col">
@@ -33,85 +34,95 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col">
-                                    <div class="row">
-                                        <div class="form-group">
-                                            @if (enumerator != null && algorithmEnum == AlgorithmEnum.NN) {
-                                                <h5 class="font-weight-light">Algorithm specific toggles</h5>
-                                                <label for="formControlRange">Select Start Node</label>
-                                                <div class="input-group">
-                                                    <div class="input-group-prepend">
-                                                        <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode--">-</button>
-                                                    </div>
-                                                    <div class="input-group-prepend">
-                                                        <div class="input-group-text">@StartNode</div>
-                                                    </div>
-                                                    <div class="input-group-append">
-                                                        <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode++">+</button>
-                                                    </div>
-                                                </div>
-                                            }
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Nodes -->
+                    <div class="col-md-6 col-sm-6">
+                        <div class="row">
+                            <div class="container-fluid">
+                                <!-- Algorithm specific toggles -->
+                                @if (enumerator != null && algorithmEnum == AlgorithmEnum.NN) {
+                                    <div class="col">
+                                        <div class="row">
+                                            <h5 class="font-weight-light">Algorithm specific toggles</h5>
                                         </div>
                                     </div>
-                                </div>
+                                    <div class="col">
+                                        <div class="row">
+                                            <label for="startnodeselect">Select Start Node</label>
+                                            <div id="startnodeselect" class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode--">-</button>
+                                                </div>
+                                                <div class="input-group-prepend">
+                                                    <div class="input-group-text">@StartNode</div>
+                                                </div>
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode++">+</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
                             </div>
                         </div>
-                        <hr/>
-                        <!-- text-based graph -->
-                        <div class="row">
-                            <div class="container-fluid">
-                                <div class="col">
-                                    <div class="row">
-                                        <h5>Parameters for text-based Graph</h5>
-                                    </div>
-                                </div>
-                                <div class="col">
-                                    <div class="row">
-                                        <textarea class="form-control" @bind="graphDefinition" style="height: 200px;"></textarea>
-                                    </div>
-                                </div>
-                                <div class="col">
-                                    <div class="row">
-                                        <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(true)">Draw From Text</button>
-                                    </div>
-                                </div>
+                    </div>
+                </div>
+                <hr/>
+                <!-- text-based graph -->
+                <div class="row">
+                    <div class="container-fluid">
+                        <div class="col">
+                            <div class="row">
+                                <h5 class="font-font-weight-light">Parameters for text-based graph</h5>
                             </div>
                         </div>
-                        <hr/>
-                        <!-- random graph -->
+                        <div class="col">
+                            <div class="row">
+                                <textarea class="form-control" @bind="graphDefinition" style="height: 200px;"></textarea>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="row">
+                                <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(true)">Draw From Text</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr/>
+                <!-- random graph -->
+                <div class="row">
+                    <div class="container-fluid">
                         <div class="row">
-                            <div class="container-fluid">
-                                <div class="row">
-                                    <div class="col">
-                                        <h5 class="font-font-weight-light">Parameters for Random Graph</h5>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col">
-                                        <label for="maxWidth">Width</label>
-                                        <input type="number" id="maxWidth" class="form-control" @bind="MaxX">
-                                    </div>
-                                    <div class="col">
-                                        <label for="maxHeight">Height</label>
-                                        <input type="number" id="maxHeight" class="form-control" @bind="MaxY">
-                                    </div>
-                                    <div class="col">
-                                        <label for="maxNodes">Nodes</label>
-                                        <input type="number" id="maxNodes" class="form-control" @bind="NodeCount">
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col">
-                                        <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(false)">Draw Random Graph</button>
-                                    </div>
-                                </div>
+                            <div class="col">
+                                <h5 class="font-font-weight-light">Parameters for random graph</h5>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <label for="maxWidth">Max. Width</label>
+                                <input type="number" id="maxWidth" class="form-control" @bind="MaxX">
+                            </div>
+                            <div class="col">
+                                <label for="maxHeight">Max. Height</label>
+                                <input type="number" id="maxHeight" class="form-control" @bind="MaxY">
+                            </div>
+                            <div class="col">
+                                <label for="maxNodes">Nodes</label>
+                                <input type="number" id="maxNodes" class="form-control" @bind="NodeCount">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(false)">Draw Random Graph</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             <!-- Graphs -->
-            <div class="col-8">
+            <div class="col-md-8 col-sm-6">
                 <h3 class="font-weight-bold">Graphs</h3>
                 <div class="row">
                     <!-- Current -->
@@ -123,27 +134,24 @@
                         <div class="row">
                             <div class="col">
                                 @if (enumerator != null && !enumerator.Current.Finished) {
-                                    <h5 class="font-weight-light">Advance through iterations</h5>
-                                    @if (!autoAdvance) {
-                                        <div class="col">
+                                    <div class="col">
+                                        @if (!autoAdvance) {
                                             <div class="row">
                                                 <button class="btn btn-primary btn-sm" type="button" @onclick="e => NextState(false)">Advance to next Graph State</button>
                                             </div>
-                                        </div>
-                                    }
-                                    @if (previous != null ) {
-                                        <div class="col">
-                                            <div class="row">
-                                                <button class="btn btn-danger btn-sm" type="button" @onclick="e => NextState(true)">Reset</button>
-                                            </div>
-                                        </div>
-                                    }
-                                    <div class="col">
+                                        }
                                         <div class="row">
                                             <div class="custom-control custom-switch">
                                                 <input class="custom-control-input" type="checkbox" id="switch" @bind="autoAdvance">
                                                 <label class="custom-control-label" for="switch">Toggle auto-advance</label>
                                             </div>
+                                        </div>
+                                    </div>
+                                }
+                                @if (previous != null ) {
+                                    <div class="col">
+                                        <div class="row">
+                                            <button class="btn btn-danger btn-sm" type="button" @onclick="e => NextState(true)">Reset</button>
                                         </div>
                                     </div>
                                 }
@@ -175,131 +183,13 @@
         </div>
     </div>
 </div>
-@*<h3>GraphView</h3>
-<div class="row align-items-lg-start">
-    <div class="col-4">
-        <h4>Settings</h4>
-        <div class="row">
-            <div class="col">
-                <!-- Input -->
-                <div class="input-group">
-                    <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(true)">Draw From Text</button>
-                    <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(false)">Draw Random Graph</button>
-                    @if (previous != null) {
-                        <button class="btn btn-danger btn-sm" type="button" @onclick="e => NextState(true)">Reset</button>
-                    }
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col">
-                <textarea class="form-control" @bind="graphDefinition" style="height: 200px;"></textarea>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col">
-                <!-- Buttons -->
-                <div class="form-group">
-                    @if (enumerator != null && algorithmEnum == AlgorithmEnum.NN) {
-                    <label for="formControlRange">Select Start Node</label>
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode--">-</button>
-                        </div>
-                        <div class="input-group-prepend">
-                            <div class="input-group-text">@StartNode</div>
-                        </div>
-                        <div class="input-group-append">
-                            <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode++">+</button>
-                        </div>
-                    </div>
-                    }
-                </div>
-                <div class="input-group">
-                    <div class="col">
-                        <!-- Advance through iterations -->
-                        <div class="row">
-                            @if (enumerator != null && !enumerator.Current.Finished) {
-                                <button class="btn btn-primary btn-sm" type="button" @onclick="e => NextState(false)">Advance</button>
-                                <div class="row">
-                                    <div class="custom-control custom-switch">
-                                        <input class="custom-control-input" type="checkbox" id="switch" @bind="autoAdvance">
-                                        <label class="custom-control-label" for="switch">Enable auto advance</label>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                        <!-- Generate Random Graph -->
-                        <div class="row">
-                            <div class="col-4">
-                                <div class="input-group">
-                                    <span class="input-group-text">Width</span>
-                                    <input type="number" aria-label="Max. Width" class="form-control" @bind="MaxX">
-                                </div>
-                            </div>
-                            <div class="col-4">
-                                <div class="input-group">
-                                    <span class="input-group-text">Height</span>
-                                    <input type="number" aria-label="Max. Height" class="form-control" @bind="MaxY">
-                                </div>
-                            </div>
-                            <div class="col-4">
-                                <div class="input-group">
-                                    <span class="input-group-text">Nodes</span>
-                                    <input type="number" aria-label="Node Count" class="form-control" @bind="NodeCount">
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Select Heuristics -->
-                        <div class="row">
-                            <label for="selectHeuristics">Select Heuristics</label>
-                            <select name="heuristics" id="selectHeuristics" @bind="algorithmEnum">
-                                <option value="NN" @onselect="e => algorithmEnum = AlgorithmEnum.NN">Nearest Neighbor</option>
-                                <option value="SA" @onselect="e => algorithmEnum = AlgorithmEnum.SA">Simulated Annealing</option>
-                                <option value="MSNN" @onselect="e => algorithmEnum = AlgorithmEnum.MSNN">Multi Start (NN)</option>
-                                <option value="ACS" @onselect="e => algorithmEnum = AlgorithmEnum.ACS">Ant Colony System</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>    
-    <div class="col-8">
-        <h4>Graph Display</h4>
-        <div class="row">
-            <div class="col">
-                <div>
-                    <h6 class="font-weight-bold">Current</h6>
-                    <Canvas @ref="currentCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
-                </div>
-                <div>
-                    <h6 class="font-weight-bold">Previous</h6>
-                    <Canvas @ref="previousCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <!-- Show Messages -->
-            <div class="col">
-                @if (enumerator != null && enumerator.Current != null) {
-                    <span>Success: @enumerator.Current.Success</span><br/>
-                    <span>Finished: @enumerator.Current.Finished</span><br/>
 
-                    foreach (var kvp in enumerator.Current.Messages) {
-                        <span>@kvp.Key: @kvp.Value</span><br/>
-                    }
-                }
-            </div>
-        </div>
-        @if (algorithmEnum == AlgorithmEnum.NN) {
-            <TableGenerator @ref="tableGenerator"/>
-        }
-        @if (algorithmEnum == AlgorithmEnum.SA) {
-            <ChartGenerator @ref="chartGenerator"/>
-        }
-    </div>
-</div>*@
+@*@if (algorithmEnum == AlgorithmEnum.NN) {
+    <TableGenerator @ref="tableGenerator"/>
+}
+@if (algorithmEnum == AlgorithmEnum.SA) {
+    <ChartGenerator @ref="chartGenerator"/>
+}*@
 
 @code {
     //components
