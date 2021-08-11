@@ -24,20 +24,71 @@
                         </div>
                     </div>
                     <div class="col-md-6 col-sm-6">
-                        @if (enumerator != null && algorithmEnum == AlgorithmEnum.NN) {
-                            <h5 class="font-weight-light">Algorithm specific settings</h5>
-                            <div class="form-group">
-                                <label for="startnodeselect">Select Start Node</label>
-                                <div id="startnodeselect" class="input-group">
-                                    <div class="input-group-prepend">
-                                        <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode--">-</button>
-                                    </div>
-                                    <div class="input-group-text">@StartNode</div>
-                                    <div class="input-group-append">
-                                        <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode++">+</button>
+                        @if (enumerator != null) {
+                            <h5 class="font-weight-light">Heuristic Parameters</h5>
+                            @if (algorithmEnum == AlgorithmEnum.NN) {
+                                <div class="form-group">
+                                    <label for="startnodeselect">Select Start Node</label>
+                                    <div id="startnodeselect" class="input-group">
+                                        <div class="input-group-prepend">
+                                            <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode--">-</button>
+                                        </div>
+                                        <div class="input-group-text">@StartNode</div>
+                                        <div class="input-group-append">
+                                            <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode++">+</button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            }
+                            @if (algorithmEnum == AlgorithmEnum.SA) {
+                                <div class="form-group">
+                                    <label for="iter1">MaxIter1</label>
+                                    <input type="number" id="iter1" class="form-control" @bind="MaxIter1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="iter2">MaxIter2</label>
+                                    <input type="number" id="iter2" class="form-control" @bind="MaxIter2">
+                                </div>
+                                <div class="form-group">
+                                    <label for="temp1">StartTemp</label>
+                                    <input type="number" id="temp1" class="form-control" @bind="StartTemp">
+                                </div>
+                                <div class="form-group">
+                                    <label for="temp2">StartTemp</label>
+                                    <input type="number" step="0.005" id="temp2" class="form-control" @bind="MinTemp">
+                                </div>
+                                <div class="form-group">
+                                    <label for="alphaSA">Alpha</label>
+                                    <input type="number" step="0.05" id="alphaSA" class="form-control" @bind="AlphaSA">
+                                </div>
+                            }
+                            @if (algorithmEnum == AlgorithmEnum.ACS) {
+                                <div class="form-group">
+                                    <label for="ants">Ant Count</label>
+                                    <input type="number" id="ants" class="form-control" @bind="AntCount">
+                                </div>
+                                <div class="form-group">
+                                    <label for="alphaACS">Alpha</label>
+                                    <input type="number" step="0.05" id="alphaACS" class="form-control" @bind="AlphaACS">
+                                </div>
+                                <div class="form-group">
+                                    <label for="rho">Rho</label>
+                                    <input type="number" step="0.05" id="rho" class="form-control" @bind="Rho">
+                                </div>
+                                <div class="form-group">
+                                    <label for="beta">Beta</label>
+                                    <input type="number" step="0.5" id="beta" class="form-control" @bind="Beta">
+                                </div>
+                                <div class="form-group">
+                                    <label for="ratio">Exploit vs. Explore</label>
+                                    <input type="number" step="0.05" id="ratio" class="form-control" @bind="ExploitVsExplore">
+                                </div>
+                            }
+                            @if (algorithmEnum == AlgorithmEnum.SA || algorithmEnum == AlgorithmEnum.ACS) {
+                                <div class="form-group">
+                                    <button class="btn btn-warning" type="button" @onclick="e => UpdateGraph()">Update</button>
+                                </div>
+                            }
                         }
                     </div>
                 </div>
@@ -157,30 +208,15 @@ n,12,11,11";
 
     private const float Scale = 20;
     private const int Delay = 50;
-
-    private int CanvasWidth;
-    private int CanvasHeight;
-    private int NodeMax;
     private bool autoAdvance;
     private bool drawComplete;
-
-    private int _nodeValue;
+    
+    /* GraphView Parameters */
+    private int CanvasWidth;
+    private int CanvasHeight;
     private int _horizontal = 30;
     private int _vertical = 30;
     private int _count = 30;
-
-    private int StartNode {
-        get => _nodeValue;
-        set {
-            if (value == _nodeValue)
-                return;
-            if (value < 0 || value > NodeMax)
-                return;
-
-            _nodeValue = value;
-            UpdateGraph();
-        }
-    }
 
     private int MaxX {
         get => _horizontal;
@@ -217,6 +253,159 @@ n,12,11,11";
             _count = value;
         }
     }
+
+    /* Nearest Neighbor Parameters */
+    private int _nodeValue;
+    private int NodeMax;
+
+    private int StartNode {
+        get => _nodeValue;
+        set {
+            if (value == _nodeValue)
+                return;
+            if (value < 0 || value > NodeMax)
+                return;
+
+            _nodeValue = value;
+            UpdateGraph();
+        }
+    }
+
+    /* Simulated Annealing Parameters */
+    private int _maxIter1 = 20; //iterations without temperature change
+    private int _maxIter2 = 400; //temperature changes
+    private double _startTemp = 100;
+    private double _minTemp = 0.0001;
+    private double _alphaSA = 0.95;
+
+    private int MaxIter1 {
+        get => _maxIter1;
+        set {
+            if (value == _maxIter1)
+                return;
+            if (value < 5 || value > 20)
+                return;
+
+            _maxIter1 = value;
+        }
+    }
+
+    private int MaxIter2 {
+        get => _maxIter2;
+        set {
+            if (value == _maxIter2)
+                return;
+            if (value < 100 || value > 1000)
+                return;
+
+            _maxIter2 = value;
+        }
+    }
+
+    private double StartTemp {
+        get => _startTemp;
+        set {
+            if (value == _startTemp)
+                return;
+            if (value < 50 || value > 100_000) {
+                return;
+            }
+
+            _startTemp = value;
+        }
+    }
+
+    private double MinTemp {
+        get => _minTemp;
+        set {
+            if (value == _minTemp)
+                return;
+            if (value < 0.0000001 || value >= _startTemp)
+                return;
+
+            _minTemp = value;
+        }
+    }
+
+    private double AlphaSA {
+        get => _alphaSA;
+        set {
+            if (value == _alphaSA)
+                return;
+            if (value < 0.5 || value >= 1)
+                return;
+
+            _alphaSA = value;
+        }
+    }
+
+    /* Ant Colony Search Parameters */
+    private double _alphaACS = 0.1;
+    private double _beta = 2;
+    private double _rho = 0.1;
+    private double _exploitVsExplore = 0.9;
+    private int _antCount = 10;
+
+    private double AlphaACS {
+        get => _alphaACS;
+        set {
+            if (value == _alphaACS)
+                return;
+            if (value <= 0 || value >= 1)
+                return;
+
+            _alphaACS = value;
+        }
+    }
+
+    private double Beta {
+        get => _beta;
+        set {
+            if (value == _beta)
+                return;
+            if (value <= 0 || value >= 10)
+                return;
+
+            _beta = value;
+        }
+    }
+
+    private double Rho {
+        get => _rho;
+        set {
+            if (value == _rho)
+                return;
+            if (value <= 0 || value >= 1)
+                return;
+
+            _rho = value;
+        }
+    }
+
+    private double ExploitVsExplore {
+        get => _exploitVsExplore;
+        set {
+            if (value == _exploitVsExplore)
+                return;
+            if (value < 0.5 || value >= 1)
+                return;
+
+            _exploitVsExplore = value;
+        }
+    }
+
+    private int AntCount {
+        get => _antCount;
+        set {
+            if (value == _antCount)
+                return;
+            if (value < 1 || value > enumerator.Current.Nodes.Count)
+                return;
+
+            _antCount = value;
+        }
+    }
+    
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
@@ -274,7 +463,7 @@ n,12,11,11";
             
             await FillCanvas(currentCanvas);
             @*UpdateVisualsFromGraphState();*@
-            StateHasChanged();
+    StateHasChanged();
         }
     }
 
@@ -327,12 +516,22 @@ n,12,11,11";
                 enumerator = nearestNeighbour.FindPath(graph).GetEnumerator();
                 break;
             case AlgorithmEnum.SA:
+                @*simulatedAnnealing.Alpha = AlphaSA;
+                simulatedAnnealing.MaxIter1 = MaxIter1;
+                simulatedAnnealing.MaxIter2 = MaxIter2;
+                simulatedAnnealing.StartTemp = StartTemp;
+                simulatedAnnealing.MinTemp = MinTemp;*@
                 enumerator = simulatedAnnealing.FindPath(graph).GetEnumerator();
                 break;
             case AlgorithmEnum.MSNN:
                 enumerator = nearestNeighbour.MultiStart(graph).GetEnumerator();
                 break;
             case AlgorithmEnum.ACS:
+                @*antColonySystem.AntCount = AntCount;
+                antColonySystem.Alpha = AlphaACS;
+                antColonySystem.Rho = Rho;
+                antColonySystem.Beta = Beta;
+                antColonySystem.ExploitVsExplore = ExploitVsExplore;*@
                 enumerator = antColonySystem.FindPath(graph).GetEnumerator();
                 break;
             default: break;
