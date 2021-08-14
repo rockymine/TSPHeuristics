@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Numerics;
 using System.Globalization;
 using System.IO;
+using TravellingSalesmanProblem.Algorithms;
 
 namespace TravellingSalesmanProblem.Graph {
     public class GraphProblem {
@@ -25,16 +26,15 @@ namespace TravellingSalesmanProblem.Graph {
             var graph = new GraphProblem();
 
             for (int i = 0; i < maxNodes; i++) {
-                Node node = RandomNode(i, maxX, maxY);
+                var node = RandomNode(i, maxX, maxY);
 
                 if (graph.EqualPosition(node))
                     node = RandomNode(i, maxX, maxY);
 
                 graph.Nodes.Add(node);
             }
-
-            graph.ConnectAllNodes();
-            return graph;
+            
+            return ConnectedGraphProblem(graph);
         }
 
         public static GraphProblem ConnectedGraphProblem(GraphProblem graph) {
@@ -43,15 +43,21 @@ namespace TravellingSalesmanProblem.Graph {
         }
 
         public static GraphProblem OrderedGraphProblem(GraphProblem graph) {
-            var ordered = new GraphProblem();
+            /* TODO: Fix nodes appearing too many times in graph */
             var path = graph.Nodes;
+            if (path[0] != path.Last())
+                path.Add(graph.Nodes[0]);
 
-            //close graph
-            path.Add(graph.Nodes[0]);
-            ordered.Nodes = path;
+            var ordered = new GraphProblem {
+                Nodes = path
+            };
             ordered.ConnectPathNodes();
-
             return ordered;
+        }
+
+        /* TODO: Implement, requires fixing of upper issue */
+        public static GraphProblem ShuffledGraphProblem(GraphProblem graph) {
+            throw new NotImplementedException();
         }
 
         private static Node RandomNode(int index, int maxX, int maxY) {

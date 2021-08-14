@@ -9,17 +9,17 @@ namespace TravellingSalesmanProblem.Algorithms {
     public class AntAlgorithm : Algorithm {
         public List<Ant> Colony { get; set; }
         public int AntCount { get; set; }
-        public double Alpha { get; set; } = 0.1;
-        public double Rho { get; set; } = 0.1; //Alpha
-        public double Beta { get; set; } = 2;
-        public double ExploitVsExplore { get; set; } = 0.9;
+        public double Alpha { get; set; }
+        public double Rho { get; set; }
+        public double Beta { get; set; }
+        public double ExploitVsExplore { get; set; }
         public double InitialPheromone { get; set; }
         private static readonly Random Random = new();
         private GraphProblem GlobalBest = new();
         private GraphProblem DistributedMemory = new();
         public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
             /* Set up ant colony. */
-            AntCount = graph.Nodes.Count;
+            //AntCount = graph.Nodes.Count;
             Colony = new List<Ant>();
             for (int j = 0; j < AntCount; j++) {
                 Colony.Add(new Ant());
@@ -52,6 +52,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             int i = 0;
             /* Main ACS loop */
             for (; i < 100; i++) {
+                state.Iteration++;
+
                 if (i > 0)
                     Colony.ForEach(a => a.Reset());
 
@@ -65,19 +67,30 @@ namespace TravellingSalesmanProblem.Algorithms {
                 /* 3) In this phase global updating occurs and pheromone is updated. */
                 var best = Colony.OrderBy(x => x.Length).FirstOrDefault().Path;
 
-                if (best.Costs == state.Distance)
+                //if (best.Costs == state.Distance)
+                //    state.Finished = true;
+                if (Colony.TrueForAll(a => a.Path.Costs == best.Costs))
                     state.Finished = true;
 
                 GlobalBest = best;
                 GlobalUpdatingRule();
                 
-                yield return UpdateState(state);
+                //yield return UpdateState(state);
+                yield return UpdateGlobalState(state);
             }
         }
 
         private GraphState UpdateState(GraphState state) {
             state.Path = GlobalBest.Nodes;
             state.PathEdges = GlobalBest.Edges;
+            state.Distance = GlobalBest.CalcCosts();
+            UpdateStateMessages(state);
+            return state;
+        }
+
+        private GraphState UpdateGlobalState(GraphState state) {
+            state.Path = GlobalBest.Nodes;
+            state.PathEdges = DistributedMemory.Edges;
             state.Distance = GlobalBest.CalcCosts();
             UpdateStateMessages(state);
             return state;
@@ -101,9 +114,13 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public override void UpdateStateMessages(GraphState state) {
+            state.Messages["Iteration"] = state.Iteration.ToString();
             state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
             state.Messages["Distance"] = Math.Round(state.Distance, 2).ToString();
             state.Messages["Pheromones"] = DistributedMemory.Edges.Sum(e => e.Pheromone).ToString();
+            state.Messages["Highest Pheromone"] = DistributedMemory.Edges.Max(e => e.Pheromone).ToString();
+            state.Messages["Lowest Pheromone"] = DistributedMemory.Edges.Min(e => e.Pheromone).ToString();
+            state.Messages["Average Pheromone"] = DistributedMemory.Edges.Average(e => e.Pheromone).ToString();
         }
 
         private double RandomProportionalRule(Ant k, Node r, Node s) {

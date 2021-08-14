@@ -55,9 +55,18 @@ namespace WebApplication.Utils {
 
         public static async Task DrawEdges(Context2D context, GraphState state, int height) {
             var brush = EdgeBrush.Copy();
+            var ants = false;
+
             foreach (var edge in state.PathEdges) {                
                 if (edge.Color != null)
                     brush.Color = edge.Color;
+
+                if (edge.Pheromone != 0) {
+                    brush.Width = edge.Pheromone * 1000;
+                    if (!ants)
+                        ants = true;
+                }
+                    
 
                 await context.DrawLine(brush,
                     Manipulate(edge.Node1.Position, height),
@@ -66,7 +75,9 @@ namespace WebApplication.Utils {
                 //await context.WriteText(brush.TextFont, brush.TextStyle, Math.Round(edge.Distance, 1).ToString(),
                 //    Manipulate(edge.FindCenter(), height));
             }
-            await DrawEdgeTextBox(context, state, brush, height);
+
+            if (!ants)
+                await DrawEdgeTextBox(context, state, brush, height);
         }
 
         public static async Task DrawEdgeTextBox(Context2D context, GraphState state, Brush brush, int height) {

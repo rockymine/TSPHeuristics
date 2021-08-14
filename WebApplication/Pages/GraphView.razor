@@ -54,7 +54,7 @@
                                     <input type="number" id="temp1" class="form-control" @bind="StartTemp">
                                 </div>
                                 <div class="form-group">
-                                    <label for="temp2">StartTemp</label>
+                                    <label for="temp2">MinTemp</label>
                                     <input type="number" step="0.005" id="temp2" class="form-control" @bind="MinTemp">
                                 </div>
                                 <div class="form-group">
@@ -275,8 +275,8 @@ n,12,11,11";
     private int _maxIter1 = 20; //iterations without temperature change
     private int _maxIter2 = 400; //temperature changes
     private double _startTemp = 100;
-    private double _minTemp = 0.0001;
-    private double _alphaSA = 0.95;
+    private double _minTemp = Math.Pow(10,-8);
+    private double _alphaSA = 0.98;
 
     private int MaxIter1 {
         get => _maxIter1;
@@ -426,7 +426,6 @@ n,12,11,11";
     private async Task InitiateGraph(bool textbased) {
         graph = textbased ? GraphProblem.FromText(graphDefinition) :
         GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
-
         await UpdateGraph();
     }
 
@@ -463,7 +462,7 @@ n,12,11,11";
             
             await FillCanvas(currentCanvas);
             @*UpdateVisualsFromGraphState();*@
-    StateHasChanged();
+            StateHasChanged();
         }
     }
 
@@ -516,22 +515,22 @@ n,12,11,11";
                 enumerator = nearestNeighbour.FindPath(graph).GetEnumerator();
                 break;
             case AlgorithmEnum.SA:
-                @*simulatedAnnealing.Alpha = AlphaSA;
+                simulatedAnnealing.Alpha = AlphaSA;
                 simulatedAnnealing.MaxIter1 = MaxIter1;
                 simulatedAnnealing.MaxIter2 = MaxIter2;
                 simulatedAnnealing.StartTemp = StartTemp;
-                simulatedAnnealing.MinTemp = MinTemp;*@
+                simulatedAnnealing.MinTemp = MinTemp;
                 enumerator = simulatedAnnealing.FindPath(graph).GetEnumerator();
                 break;
             case AlgorithmEnum.MSNN:
                 enumerator = nearestNeighbour.MultiStart(graph).GetEnumerator();
                 break;
             case AlgorithmEnum.ACS:
-                @*antColonySystem.AntCount = AntCount;
+                antColonySystem.AntCount = AntCount;
                 antColonySystem.Alpha = AlphaACS;
                 antColonySystem.Rho = Rho;
                 antColonySystem.Beta = Beta;
-                antColonySystem.ExploitVsExplore = ExploitVsExplore;*@
+                antColonySystem.ExploitVsExplore = ExploitVsExplore;
                 enumerator = antColonySystem.FindPath(graph).GetEnumerator();
                 break;
             default: break;

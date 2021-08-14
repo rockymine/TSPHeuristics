@@ -151,7 +151,7 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public static GraphProblem Interchange(GraphProblem graph) {
             var i = Random.Next(1, graph.Nodes.Count - 2);
-            var j = Random.Next(1, graph.Nodes.Count - 2);
+            var j = Random.Next(1, graph.Nodes.Count - 1);
             
             if (i == j)
                 Interchange(graph);
