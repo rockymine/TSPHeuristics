@@ -154,14 +154,9 @@ namespace TravellingSalesmanProblem.Graph {
         }
 
         public Vector2 FindMax() {
-            var position = new Vector2();
-            foreach (var node in Nodes) {
-                var maxX = Math.Max(position.X, node.Position.X);
-                var maxY = Math.Max(position.Y, node.Position.Y);
-                position = new Vector2(maxX, maxY);
-            }
-
-            return position;
+            var x = Nodes.Max(n => n.Position.X);
+            var y = Nodes.Max(n => n.Position.Y);
+            return new Vector2(x, y);
         }
 
         public bool EqualPosition(Node node) => Nodes.Find(n => n.Position == node.Position) != null;

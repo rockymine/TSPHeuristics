@@ -20,7 +20,6 @@ namespace TravellingSalesmanProblem.Algorithms {
             /* TODO: Create tour using tour constructive heuristic.
              This tour will be improved by the Simulated Annealing heuristic. */
             var x = GraphProblem.OrderedGraphProblem(graph);
-            Console.WriteLine("FindPath, Node Count (Ordering): " + graph.Nodes.Count);
             CurrentBest = x;
 
             var state = new GraphState {

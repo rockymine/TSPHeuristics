@@ -26,18 +26,18 @@ namespace WebApplication.Utils {
             TextStyle = "white"
         };
         private static readonly Brush GridBrush = new() { Color = "#999999", Width = 0.75 };
-        private static readonly Vector2 Offset = new(NodeSize + 5, NodeSize + 5);
+        private static readonly Vector2 Offset = new(Scale / 2, Scale / 2);
 
-        public static async Task DrawGrid(Context2D context, int maxX, int maxY, int cHeight) {
-            for (int i = 0; i <= maxY; i++) {
+        public static async Task DrawGrid(Context2D context, Vector2 max, int cHeight) {
+            for (int i = 0; i <= max.Y; i++) {
                 await context.DrawLine(GridBrush,
                     Manipulate(new Vector2(0, i), cHeight),
-                    Manipulate(new Vector2(maxX, i), cHeight));
+                    Manipulate(new Vector2(max.X, i), cHeight));
             }
-            for (int i = 0; i <= maxX; i++) {
+            for (int i = 0; i <= max.X; i++) {
                 await context.DrawLine(GridBrush,
                     Manipulate(new Vector2(i, 0), cHeight),
-                    Manipulate(new Vector2(i, maxY), cHeight));
+                    Manipulate(new Vector2(i, max.Y), cHeight));
             }
         }
 

@@ -1,6 +1,7 @@
 ﻿@page "/graph"
 @using Excubo.Blazor.Canvas
 @using Excubo.Blazor.Canvas.Contexts
+@using System.Diagnostics
 @using TravellingSalesmanProblem.Algorithms
 @using TravellingSalesmanProblem.Graph
 @using WebApplication.Utils
@@ -33,7 +34,7 @@
                                         <div class="input-group-prepend">
                                             <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode--">-</button>
                                         </div>
-                                        <div class="input-group-text">@StartNode</div>
+                                        <div class="input-group-text">@graph.Nodes[StartNode].Index</div>
                                         <div class="input-group-append">
                                             <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode++">+</button>
                                         </div>
@@ -84,9 +85,9 @@
                                     <input type="number" step="0.05" id="ratio" class="form-control" @bind="ExploitVsExplore">
                                 </div>
                             }
-                            @if (algorithmEnum == AlgorithmEnum.SA || algorithmEnum == AlgorithmEnum.ACS) {
+                            @if (algorithmEnum != AlgorithmEnum.MSNN) {
                                 <div class="form-group">
-                                    <button class="btn btn-warning" type="button" @onclick="e => UpdateGraph()">Update</button>
+                                    <button class="btn btn-warning" type="button" @onclick="e => NextState(true)">Update</button>
                                 </div>
                             }
                         }
@@ -105,13 +106,13 @@
                 <div class="row">
                     <div class="col">
                         <div class="form-group">
-                            <label for="maxWidth">Max. Width</label>
+                            <label for="maxWidth">Max. X</label>
                             <input type="number" id="maxWidth" class="form-control" @bind="MaxX">
                         </div>
                     </div>
                     <div class="col">
                         <div class="form-group">
-                            <label for="maxHeight">Max. Height</label>
+                            <label for="maxHeight">Max. Y</label>
                             <input type="number" id="maxHeight" class="form-control" @bind="MaxY">
                         </div>
                     </div>
@@ -159,6 +160,8 @@
                             @foreach (var kvp in enumerator.Current.Messages) {
                                 <span><b>@kvp.Key</b>: @kvp.Value</span><br/>
                             }
+
+                            <span><b>Elapsed Time</b>: @TimeSpan.Minutes m @TimeSpan.Seconds s @TimeSpan.Milliseconds ms</span><br/>
                         }
                     </div>
                     <div class="col">
@@ -207,7 +210,7 @@ n,11,1,6
 n,12,11,11";
 
     private const float Scale = 20;
-    private const int Delay = 50;
+    private const int Delay = 1;
     private bool autoAdvance;
     private bool drawComplete;
     
@@ -256,18 +259,16 @@ n,12,11,11";
 
     /* Nearest Neighbor Parameters */
     private int _nodeValue;
-    private int NodeMax;
 
     private int StartNode {
         get => _nodeValue;
         set {
             if (value == _nodeValue)
                 return;
-            if (value < 0 || value > NodeMax)
+            if (value < 0 || value > graph.Nodes.Count - 1)
                 return;
 
             _nodeValue = value;
-            UpdateGraph();
         }
     }
 
@@ -405,7 +406,9 @@ n,12,11,11";
             _antCount = value;
         }
     }
-    
+
+    private Stopwatch stopwatch = new();
+    private TimeSpan TimeSpan = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
@@ -426,23 +429,17 @@ n,12,11,11";
     private async Task InitiateGraph(bool textbased) {
         graph = textbased ? GraphProblem.FromText(graphDefinition) :
         GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
-        await UpdateGraph();
-    }
-
-    private async Task UpdateGraph() {
-        if (algorithmEnum == AlgorithmEnum.NN)
-            NodeMax = graph.Nodes.Count - 1;
-
-        var max = graph.FindMax();
-        CanvasWidth = (int)(max.X * Scale) + 50;
-        CanvasHeight = (int)(max.Y * Scale) + 50;
-
+        CanvasWidth = (int)(Scale * (graph.FindMax().X + 1));
+        CanvasHeight = (int)(Scale * (graph.FindMax().Y + 1));
         await NextState(true);
-    }    
+    }   
 
     private async Task NextState(bool reset) {
-        if (reset)
+        if (reset) {
+            stopwatch.Restart();
             await UpdateEnumerator();
+        }
+            
         if (enumerator == null)
             await InitiateGraph(true);
 
@@ -451,14 +448,17 @@ n,12,11,11";
                 previous = enumerator.Current.DeepCopy();
 
             enumerator.MoveNext();
+            TimeSpan = stopwatch.Elapsed;
 
             if (previous != null) {
                 previous.ComparePathEdges(enumerator.Current);
                 await FillCanvas(previousCanvas);
             }
 
-            if (enumerator.Current.Finished)
+            if (enumerator.Current.Finished) {
                 drawComplete = true;
+                stopwatch.Stop();
+            }
             
             await FillCanvas(currentCanvas);
             @*UpdateVisualsFromGraphState();*@
@@ -468,7 +468,7 @@ n,12,11,11";
 
     private async Task FillCanvas(Canvas canvas) {
         await using (var context = await canvas.GetContext2DAsync()) {
-            await ClearAndDrawGrid(context);
+            await ResetCanvas(context);
 
             if (canvas == previousCanvas) {
                 await DrawPath(context, previous);
@@ -479,35 +479,28 @@ n,12,11,11";
     }
 
     private async Task DrawPath(Context2D context, GraphState graph) {
-        if (graph != null) {
-            await CanvasRenderer.DrawEdges(context, graph, CanvasHeight);
-            await CanvasRenderer.DrawNodes(context, graph, CanvasHeight);
-        }
+        await CanvasRenderer.DrawEdges(context, graph, CanvasHeight);
+        await CanvasRenderer.DrawNodes(context, graph, CanvasHeight);
     }
 
-    private async Task ClearAll() {
+    private async Task ResetAllCanvases() {
         if (previousCanvas != null) {
             previous = null;
-            await using (var context = await previousCanvas.GetContext2DAsync()) {
-                await ClearAndDrawGrid(context);
-            }
+            await ResetCanvas(await previousCanvas.GetContext2DAsync());
         }
 
-        if (currentCanvas != null) {
-            await using (var context = await currentCanvas.GetContext2DAsync()) {
-                await ClearAndDrawGrid(context);
-            }
-        }
+        if (currentCanvas != null)
+            await ResetCanvas(await currentCanvas.GetContext2DAsync());
     }
 
-    private async Task ClearAndDrawGrid(Context2D context) {
+    private async Task ResetCanvas(Context2D context) {
         await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
-        await CanvasRenderer.DrawGrid(context, MaxX, MaxY, CanvasHeight);
+        await CanvasRenderer.DrawGrid(context, graph.FindMax(), CanvasHeight);
     }
 
     private async Task UpdateEnumerator() {
         drawComplete = false;
-        await ClearAll();
+        await ResetAllCanvases();
 
         switch (algorithmEnum) {
             case AlgorithmEnum.NN:
