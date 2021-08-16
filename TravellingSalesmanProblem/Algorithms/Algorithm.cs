@@ -28,8 +28,8 @@ namespace TravellingSalesmanProblem.Algorithms {
 
     public enum AlgorithmEnum {
         NN = 0,
-        SA = 1, //needs improvement.
+        SA = 1,
         MSNN = 2,
-        ACS = 3 //needs intensive testing.
+        ACS = 3
     }
 }

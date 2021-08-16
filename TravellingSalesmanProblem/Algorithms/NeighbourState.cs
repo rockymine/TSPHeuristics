@@ -149,12 +149,12 @@ namespace TravellingSalesmanProblem.Algorithms {
             return swapped;
         }
 
-        public static GraphProblem Interchange(GraphProblem graph) {
+        public static GraphProblem Swap(GraphProblem graph) {
             var i = Random.Next(1, graph.Nodes.Count - 2);
             var j = Random.Next(1, graph.Nodes.Count - 1);
             
             if (i == j)
-                Interchange(graph);
+                Swap(graph);
 
             var temp = graph.Nodes;
             var node = temp[i];
@@ -171,10 +171,9 @@ namespace TravellingSalesmanProblem.Algorithms {
     }
 
     public enum NeighbourType {
-        Interchange = 0,
-        Swap = 1,
-        TwoOpt = 2,
-        ThreeOpt = 3,
-        FourOpt = 4
+        Swap = 0,
+        TwoOpt = 1,
+        ThreeOpt = 2,
+        FourOpt = 3
     }
 }

@@ -13,6 +13,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         public double MinTemp { get; set; }
         public double Alpha { get; set; }
         private GraphProblem CurrentBest = new();
+        public NeighbourType NeighbourEnum;
 
         private static readonly Random Random = new();
 
@@ -33,7 +34,22 @@ namespace TravellingSalesmanProblem.Algorithms {
             
             while (state.Temperature >= MinTemp) {
                 /* Create a neighbor y from N(x) and check if it is better than x */
-                var y = NeighbourState.TwoOpt(x);
+                var y = new GraphProblem();
+                switch (NeighbourEnum) {
+                    case NeighbourType.Swap:
+                        y = NeighbourState.Swap(x);
+                        break;
+                    case NeighbourType.TwoOpt:
+                        y = NeighbourState.TwoOpt(x);
+                        break;
+                    case NeighbourType.ThreeOpt:
+                        y = NeighbourState.ThreeOpt(x);
+                        break;
+                    case NeighbourType.FourOpt:
+                        y = NeighbourState.DoubleBridgeFourOpt(x);
+                        break;
+                }
+                
                 if (y.Costs <= x.Costs) {
                     x = y;
 
