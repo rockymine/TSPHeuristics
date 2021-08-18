@@ -49,7 +49,9 @@ namespace TravellingSalesmanProblem.Algorithms {
                         y = NeighbourState.DoubleBridgeFourOpt(x);
                         break;
                 }
-                
+
+                state.Segments = y.Segments;
+
                 if (y.Costs <= x.Costs) {
                     x = y;
 

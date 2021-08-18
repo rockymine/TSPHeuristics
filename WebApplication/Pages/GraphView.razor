@@ -177,6 +177,7 @@
 
                             <span><b>Elapsed Time</b>: @TimeSpan.Minutes m @TimeSpan.Seconds s @TimeSpan.Milliseconds ms</span><br/>
                         }
+                        <hr/>
                     </div>
                     <div class="col">
                         @if (showPrevious) {
@@ -185,6 +186,29 @@
                         }
                     </div>
                 </div>
+                @if (algorithmEnum == AlgorithmEnum.SA) {
+                    <div class="row">
+                        <div class="col">
+                            @if (enumerator != null) {
+                                <h5 class="font-weight-bold">Details</h5>
+                                <div class="row">
+                                @for (int i = 0; i < enumerator.Current.Segments.Count; i++) {
+                                    <div class="col">
+                                        <div class="card">
+                                            <Canvas @ref="additionalCanvases[i]" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+                                            <div class="card-body">
+                                                <h5>@enumerator.Current.Segments[i].Identifier</h5>
+                                                <h6 class="card-subtitle mb-2 text-muted">@enumerator.Current.Segments[i].Type</h6>
+                                                <p class="card-text">@enumerator.Current.Segments[i].Info</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
             </div>
         </div>
     </div>
@@ -201,6 +225,7 @@
     //components
 	private Canvas currentCanvas;
     private Canvas previousCanvas;
+    private Canvas[] additionalCanvases = new Canvas[5];
 	private TableGenerator tableGenerator;
     private ChartGenerator chartGenerator;
 
@@ -477,8 +502,15 @@ n,12,11,11";
                 drawComplete = true;
                 stopwatch.Stop();
             }
-            
+
             await FillCanvas(currentCanvas);
+
+            /* Simulated Annealing */
+            @*for (int i = 0; i < enumerator.Current.Segments.Count; i++) {
+                additionalCanvases[i] = new Canvas();
+                await FillCanvas(additionalCanvases[i]);
+            }*@
+
             StateHasChanged();
             @*UpdateVisualsFromGraphState();*@
     }
