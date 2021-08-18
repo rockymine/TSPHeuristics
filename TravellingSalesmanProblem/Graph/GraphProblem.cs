@@ -14,12 +14,20 @@ namespace TravellingSalesmanProblem.Graph {
         public Node Start { get; set; }
         public List<Node> Nodes { get; set; } = new();
         public List<Edge> Edges { get; set; } = new();
+        public List<GraphSegment> Segments { get; set; } = new();
         public double Costs => CalcCosts();
-
         private static readonly Random Random = new();
         public GraphProblem() {
             Nodes = new List<Node>();
             Edges = new List<Edge>();
+        }
+
+        public GraphProblem DeepCopy() {
+            var graph = new GraphProblem();
+            graph.Nodes.AddRange(Nodes);
+            graph.Edges.AddRange(Edges);
+            graph.Segments.AddRange(Segments);
+            return graph;
         }
 
         public static GraphProblem RandomGraphProblem(int maxX, int maxY, int maxNodes) {

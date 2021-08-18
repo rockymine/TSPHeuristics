@@ -11,21 +11,52 @@ namespace TravellingSalesmanProblem.Algorithms {
         public static GraphProblem TwoOpt(GraphProblem graph) {
             var tour = graph.Nodes.ToArray();
             var n = tour.Length;
-
             var i = Random.Next(1, n - 2);
             var j = Random.Next(i, n - 1);
+            j++;
 
             var a = tour[0..i];
-            var b = tour[i..j];//i = i+1
-            var c = tour[j..n];//j = j+1
-
+            var b = tour[i..j];//i = i + 1
+            var c = tour[j..n];//j = j + 1
             var bDash = b.Reverse();
-            var final = a.Concat(bDash).Concat(c);
 
+            var final = a.Concat(bDash).Concat(c).ToList();
             var swapped = new GraphProblem {
-                Nodes = final.ToList()
+                Nodes = final
             };
+
             swapped.ConnectPathNodes();
+            var edges = swapped.Edges.ToArray();
+
+            i--;
+            n--;
+
+            var first = new GraphSegment {
+                Identifier = "Seg. A: ",
+                Type = SegmentType.Normal,
+                Edges = edges[0..i].ToList(),
+                Info = "first segment"
+            };
+
+            var second = new GraphSegment {
+                Identifier = "Seg. B': ",
+                Type = SegmentType.Reversed,
+                Edges = edges[i..j].ToList(),
+                Info = "second segment"
+            };
+
+            var third = new GraphSegment {
+                Identifier = "Seg. C: ",
+                Type = SegmentType.Normal,
+                Edges = edges[j..n].ToList(),
+                Info = "third segment"
+            };
+
+            var segments = new List<GraphSegment> {
+                first, second, third
+            };
+
+            swapped.Segments = segments;
             return swapped;
         }
 
