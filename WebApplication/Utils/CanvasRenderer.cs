@@ -41,23 +41,23 @@ namespace WebApplication.Utils {
             }
         }
 
-        public static async Task DrawNodes(Context2D context, GraphState state, int cHeight) {
-            foreach (var node in state.Nodes) {
+        public static async Task DrawNodes(Context2D context, List<Node> nodes, int cHeight) {
+            foreach (var node in nodes) {
                 await context.DrawCircle(NodeBrush, NodeSize,
                     Manipulate(node.Position, cHeight));
             }
 
-            foreach (var node in state.Nodes) {
+            foreach (var node in nodes) {
                 await context.WriteText(NodeBrush.TextFont, NodeBrush.TextStyle, node.Index.ToString(),
                     Manipulate(node.Position, cHeight));
             }
         }
 
-        public static async Task DrawEdges(Context2D context, GraphState state, int height) {
+        public static async Task DrawEdges(Context2D context, List<Edge> edges, int height) {
             var brush = EdgeBrush.Copy();
             var ants = false;
 
-            foreach (var edge in state.PathEdges) {                
+            foreach (var edge in edges) {
                 if (edge.Color != null)
                     brush.Color = edge.Color;
 
@@ -77,12 +77,12 @@ namespace WebApplication.Utils {
             }
 
             if (!ants)
-                await DrawEdgeTextBox(context, state, brush, height);
+                await DrawEdgeTextBox(context, edges, brush, height);
         }
 
-        public static async Task DrawEdgeTextBox(Context2D context, GraphState state, Brush brush, int height) {
+        public static async Task DrawEdgeTextBox(Context2D context, List<Edge> edges, Brush brush, int height) {
             var positions = new List<Vector2>();
-            foreach (var edge in state.PathEdges) {
+            foreach (var edge in edges) {
                 var center = edge.FindCenter();
                 //TODO: include small offsets
                 if (positions.Contains(center)) {

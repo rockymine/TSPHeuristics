@@ -186,27 +186,31 @@
                         }
                     </div>
                 </div>
-                @if (algorithmEnum == AlgorithmEnum.SA) {
+                @if (algorithmEnum == AlgorithmEnum.SA && enumerator != null && enumerator.Current != null
+                && enumerator.Current.Segments != null && enumerator.Current.Segments.Count != 0) {
                     <div class="row">
-                        <div class="col">
-                            @if (enumerator != null) {
+                        @*NEW*@
+                        <!-- This seems to work fine -->
+                        @if (additionalCanvases != null && additionalCanvases.Length != 0) {
+                            <div class="col">
                                 <h5 class="font-weight-bold">Details</h5>
                                 <div class="row">
-                                @for (int i = 0; i < enumerator.Current.Segments.Count; i++) {
-                                    <div class="col">
-                                        <div class="card">
-                                            <Canvas @ref="additionalCanvases[i]" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
-                                            <div class="card-body">
-                                                <h5>@enumerator.Current.Segments[i].Identifier</h5>
-                                                <h6 class="card-subtitle mb-2 text-muted">@enumerator.Current.Segments[i].Type</h6>
-                                                <p class="card-text">@enumerator.Current.Segments[i].Info</p>
+                                    @for (int i = 0; i < enumerator.Current.Segments.Count; i++) {
+                                        int j = i;
+                                        <div class="col">
+                                            <div class="card">
+                                                <Canvas @ref="additionalCanvases[j]" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+                                                <div class="card-body">
+                                                    <h5>@enumerator.Current.Segments[j].Identifier</h5>
+                                                    <h6 class="card-subtitle mb-2 text-muted">@enumerator.Current.Segments[j].Type</h6>
+                                                    <p class="card-text">@enumerator.Current.Segments[j].Info</p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                }
+                                    }
                                 </div>
-                            }
-                        </div>
+                            </div>
+                        }
                     </div>
                 }
             </div>
@@ -506,10 +510,15 @@ n,12,11,11";
             await FillCanvas(currentCanvas);
 
             /* Simulated Annealing */
-            @*for (int i = 0; i < enumerator.Current.Segments.Count; i++) {
-                additionalCanvases[i] = new Canvas();
-                await FillCanvas(additionalCanvases[i]);
-            }*@
+            if (enumerator.Current.Segments.Count > 0) {
+                if (additionalCanvases != null && additionalCanvases.Length != 0) {
+                    for (int i = 0; i < additionalCanvases.Length; i++) {
+                        if (additionalCanvases[i] != null) {
+                            await FillCanvas(additionalCanvases[i]);
+                        }
+                    }
+                }
+            }
 
             StateHasChanged();
             @*UpdateVisualsFromGraphState();*@
@@ -520,17 +529,23 @@ n,12,11,11";
         await using (var context = await canvas.GetContext2DAsync()) {
             await ResetCanvas(context);
 
-            if (canvas == previousCanvas) {
+            if (canvas == previousCanvas)
                 await DrawPath(context, previous);
-            } else {
+
+            if (canvas == currentCanvas)
                 await DrawPath(context, enumerator.Current);
-            }            
+
+            for (int i = 0; i < enumerator.Current.Segments.Count; i++) {
+                if (canvas == additionalCanvases[i]) {
+                    await CanvasRenderer.DrawEdges(context, enumerator.Current.Segments[i].Edges, CanvasHeight);
+                }
+            }
         }
     }
 
     private async Task DrawPath(Context2D context, GraphState graph) {
-        await CanvasRenderer.DrawEdges(context, graph, CanvasHeight);
-        await CanvasRenderer.DrawNodes(context, graph, CanvasHeight);
+        await CanvasRenderer.DrawEdges(context, graph.PathEdges, CanvasHeight);
+        await CanvasRenderer.DrawNodes(context, graph.Nodes, CanvasHeight);
     }
 
     private async Task ResetAllCanvases() {
@@ -539,8 +554,15 @@ n,12,11,11";
             await ResetCanvas(await previousCanvas.GetContext2DAsync());
         }
 
-        if (currentCanvas != null)
+        if (currentCanvas != null) {
             await ResetCanvas(await currentCanvas.GetContext2DAsync());
+        }
+        
+        for (int i = 0; i < additionalCanvases.Length; i++) {
+            if (additionalCanvases[i] != null) {
+                await ResetCanvas(await additionalCanvases[i].GetContext2DAsync());
+            }
+        }
     }
 
     private async Task ResetCanvas(Context2D context) {
