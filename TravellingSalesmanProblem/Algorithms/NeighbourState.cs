@@ -34,22 +34,19 @@ namespace TravellingSalesmanProblem.Algorithms {
             var first = new GraphSegment {
                 Identifier = "Seg. A: ",
                 Type = SegmentType.Normal,
-                Edges = edges[0..i].ToList(),
-                Info = "first segment"
+                Edges = edges[0..i].ToList()
             };
 
             var second = new GraphSegment {
                 Identifier = "Seg. B': ",
                 Type = SegmentType.Reversed,
-                Edges = edges[i..j].ToList(),
-                Info = "second segment"
+                Edges = edges[i..j].ToList()
             };
 
             var third = new GraphSegment {
                 Identifier = "Seg. C: ",
                 Type = SegmentType.Normal,
-                Edges = edges[j..n].ToList(),
-                Info = "third segment"
+                Edges = edges[j..n].ToList()
             };
 
             var segments = new List<GraphSegment> {

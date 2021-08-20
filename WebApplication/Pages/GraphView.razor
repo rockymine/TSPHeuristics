@@ -69,6 +69,7 @@
                                     <input type="number" step="0.05" id="alphaSA" class="form-control" @bind="AlphaSA">
                                 </div>
                                 <div class="form-group">
+                                    <label for="selectNeighbourType">Neighbour Function</label>
                                     <select class="form-control" name="neighbourType" id="selectNeighbourType" @bind="neighbourEnum">
                                         <option value="TwoOpt" @onselect="e => neighbourEnum = NeighbourType.TwoOpt">2-Opt</option>
                                         <option value="ThreeOpt" @onselect="e => neighbourEnum = NeighbourType.ThreeOpt">3-Opt</option>
@@ -166,8 +167,16 @@
                             </div>
                         }
                         <hr/>
+                    </div>
+                    <div class="col">
+                        @if (showPrevious) {
+                            <h5 class="font-weight-bold">Previous</h5>
+                            <Canvas @ref="previousCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+                        }
+                    </div>
+                    <div class="col">
                         @if (enumerator != null && enumerator.Current != null) {
-                            <h5 class="font-weight-light">State Messages</h5>
+                            <h5 class="font-weight-bold">State Messages</h5>
                             <span><b>Success</b>: @enumerator.Current.Success</span><br/>
                             <span><b>Finished</b>: @enumerator.Current.Finished</span><br/>
 
@@ -176,13 +185,6 @@
                             }
 
                             <span><b>Elapsed Time</b>: @TimeSpan.Minutes m @TimeSpan.Seconds s @TimeSpan.Milliseconds ms</span><br/>
-                        }
-                        <hr/>
-                    </div>
-                    <div class="col">
-                        @if (showPrevious) {
-                            <h5 class="font-weight-bold">Previous</h5>
-                            <Canvas @ref="previousCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
                         }
                     </div>
                 </div>
@@ -203,7 +205,9 @@
                                                 <div class="card-body">
                                                     <h5>@enumerator.Current.Segments[j].Identifier</h5>
                                                     <h6 class="card-subtitle mb-2 text-muted">@enumerator.Current.Segments[j].Type</h6>
-                                                    <p class="card-text">@enumerator.Current.Segments[j].Info</p>
+                                                    @foreach (var info in enumerator.Current.Segments[j].Info) {
+                                                        <span><b>@info.Key</b>: @info.Value</span><br/>
+                                                    }
                                                 </div>
                                             </div>
                                         </div>
@@ -537,7 +541,8 @@ n,12,11,11";
 
             for (int i = 0; i < enumerator.Current.Segments.Count; i++) {
                 if (canvas == additionalCanvases[i]) {
-                    await CanvasRenderer.DrawEdges(context, enumerator.Current.Segments[i].Edges, CanvasHeight);
+                    await CanvasRenderer.DrawEdges(context, enumerator.Current.Segments[i].Edges, CanvasHeight, false, false);
+                    await CanvasRenderer.DrawNodes(context, enumerator.Current.Segments[i].Nodes, CanvasHeight);
                 }
             }
         }
@@ -558,9 +563,14 @@ n,12,11,11";
             await ResetCanvas(await currentCanvas.GetContext2DAsync());
         }
         
-        for (int i = 0; i < additionalCanvases.Length; i++) {
-            if (additionalCanvases[i] != null) {
-                await ResetCanvas(await additionalCanvases[i].GetContext2DAsync());
+        if (enumerator != null && enumerator.Current != null && enumerator.Current.Segments.Count > 0) {
+            for (int i = 0; i < additionalCanvases.Length; i++) {
+                if (additionalCanvases[i] != null) {
+                    if (neighbourEnum == NeighbourType.TwoOpt) {
+                        if (additionalCanvases[i].GetContext2DAsync() != null)
+                            await ResetCanvas(await additionalCanvases[i].GetContext2DAsync());
+                    }
+                }
             }
         }
     }

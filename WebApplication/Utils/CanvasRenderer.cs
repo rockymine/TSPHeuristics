@@ -42,41 +42,37 @@ namespace WebApplication.Utils {
         }
 
         public static async Task DrawNodes(Context2D context, List<Node> nodes, int cHeight) {
+            var brush = NodeBrush.Copy();
+
             foreach (var node in nodes) {
-                await context.DrawCircle(NodeBrush, NodeSize,
+                await context.DrawCircle(brush, NodeSize,
                     Manipulate(node.Position, cHeight));
             }
 
             foreach (var node in nodes) {
-                await context.WriteText(NodeBrush.TextFont, NodeBrush.TextStyle, node.Index.ToString(),
+                await context.WriteText(brush.TextFont, brush.TextStyle, node.Index.ToString(),
                     Manipulate(node.Position, cHeight));
             }
         }
 
-        public static async Task DrawEdges(Context2D context, List<Edge> edges, int height) {
+        public static async Task DrawEdges(Context2D context, List<Edge> edges, int height, bool color = true, bool text = true) {
             var brush = EdgeBrush.Copy();
-            var ants = false;
 
             foreach (var edge in edges) {
-                if (edge.Color != null)
+                if (edge.Color != null && color)
                     brush.Color = edge.Color;
 
                 if (edge.Pheromone != 0) {
                     brush.Width = edge.Pheromone * 1000;
-                    if (!ants)
-                        ants = true;
+                    text = false;
                 }
-                    
 
                 await context.DrawLine(brush,
                     Manipulate(edge.Node1.Position, height),
                     Manipulate(edge.Node2.Position, height));
-                
-                //await context.WriteText(brush.TextFont, brush.TextStyle, Math.Round(edge.Distance, 1).ToString(),
-                //    Manipulate(edge.FindCenter(), height));
             }
 
-            if (!ants)
+            if (text)
                 await DrawEdgeTextBox(context, edges, brush, height);
         }
 
