@@ -23,12 +23,14 @@
                                 <option value="ACS" @onselect="e => algorithmEnum = AlgorithmEnum.ACS">Ant Colony System</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <div class="custom-control custom-switch">
-                                <input class="custom-control-input" type="checkbox" id="switchPrev" @bind="showPrevious">
-                                <label class="custom-control-label" for="switchPrev">Toggle comparison mode</label>
+                        @if (algorithmEnum == AlgorithmEnum.SA) {
+                            <div class="form-group">
+                                <div class="custom-control custom-switch">
+                                    <input class="custom-control-input" type="checkbox" id="switchPrev" @bind="showPrevious">
+                                    <label class="custom-control-label" for="switchPrev">Toggle comparison mode</label>
+                                </div>
                             </div>
-                        </div>
+                        }
                     </div>
                     <div class="col-md-6 col-sm-6">
                         @if (enumerator != null) {
@@ -40,7 +42,7 @@
                                         <div class="input-group-prepend">
                                             <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode--">-</button>
                                         </div>
-                                        <div class="input-group-text">@graph.Nodes[StartNode].Index</div>
+                                        <div class="input-group-text">@StartNode</div>
                                         <div class="input-group-append">
                                             <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode++">+</button>
                                         </div>
@@ -100,11 +102,9 @@
                                     <input type="number" step="0.05" id="ratio" class="form-control" @bind="ExploitVsExplore">
                                 </div>
                             }
-                            @if (algorithmEnum != AlgorithmEnum.MSNN) {
-                                <div class="form-group">
-                                    <button class="btn btn-warning" type="button" @onclick="e => NextState(true)">Update</button>
-                                </div>
-                            }
+                            <div class="form-group">
+                                <button class="btn btn-danger" type="button" @onclick="e => NextState(true)">Reset</button>
+                            </div>
                         }
                     </div>
                 </div>
@@ -161,15 +161,10 @@
                                 </div>
                             </div>
                         }
-                        @if (previous != null ) {
-                            <div class="form-group">
-                                <button class="btn btn-danger btn-sm" type="button" @onclick="e => NextState(true)">Reset</button>
-                            </div>
-                        }
                         <hr/>
                     </div>
                     <div class="col">
-                        @if (showPrevious) {
+                        @if (showPrevious && algorithmEnum == AlgorithmEnum.SA) {
                             <h5 class="font-weight-bold">Previous</h5>
                             <Canvas @ref="previousCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
                         }
@@ -191,8 +186,6 @@
                 @if (algorithmEnum == AlgorithmEnum.SA && enumerator != null && enumerator.Current != null
                 && enumerator.Current.Segments != null && enumerator.Current.Segments.Count != 0) {
                     <div class="row">
-                        @*NEW*@
-                        <!-- This seems to work fine -->
                         @if (additionalCanvases != null && additionalCanvases.Length != 0) {
                             <div class="col">
                                 <h5 class="font-weight-bold">Details</h5>
@@ -500,8 +493,8 @@ n,12,11,11";
 
             enumerator.MoveNext();
             TimeSpan = stopwatch.Elapsed;
-
-            if (previous != null && showPrevious) {
+            
+            if (previous != null && showPrevious && algorithmEnum == AlgorithmEnum.SA) {
                 previous.ComparePathEdges(enumerator.Current);
                 await FillCanvas(previousCanvas);
             }
@@ -517,7 +510,7 @@ n,12,11,11";
             if (enumerator.Current.Segments.Count > 0) {
                 if (additionalCanvases != null && additionalCanvases.Length != 0) {
                     for (int i = 0; i < additionalCanvases.Length; i++) {
-                        if (additionalCanvases[i] != null) {
+                        if (additionalCanvases[i] != null && algorithmEnum == AlgorithmEnum.SA && neighbourEnum == NeighbourType.TwoOpt) {
                             await FillCanvas(additionalCanvases[i]);
                         }
                     }
@@ -538,9 +531,9 @@ n,12,11,11";
 
             if (canvas == currentCanvas)
                 await DrawPath(context, enumerator.Current);
-
+            
             for (int i = 0; i < enumerator.Current.Segments.Count; i++) {
-                if (canvas == additionalCanvases[i]) {
+                if (canvas == additionalCanvases[i] && !enumerator.Current.Finished) {
                     await CanvasRenderer.DrawEdges(context, enumerator.Current.Segments[i].Edges, CanvasHeight, false, false);
                     await CanvasRenderer.DrawNodes(context, enumerator.Current.Segments[i].Nodes, CanvasHeight);
                 }
@@ -554,7 +547,7 @@ n,12,11,11";
     }
 
     private async Task ResetAllCanvases() {
-        if (previousCanvas != null && showPrevious) {
+        if (previousCanvas != null && showPrevious && algorithmEnum == AlgorithmEnum.SA) {
             previous = null;
             await ResetCanvas(await previousCanvas.GetContext2DAsync());
         }
@@ -566,7 +559,7 @@ n,12,11,11";
         if (enumerator != null && enumerator.Current != null && enumerator.Current.Segments.Count > 0) {
             for (int i = 0; i < additionalCanvases.Length; i++) {
                 if (additionalCanvases[i] != null) {
-                    if (neighbourEnum == NeighbourType.TwoOpt) {
+                    if (algorithmEnum == AlgorithmEnum.SA && neighbourEnum == NeighbourType.TwoOpt) {
                         if (additionalCanvases[i].GetContext2DAsync() != null)
                             await ResetCanvas(await additionalCanvases[i].GetContext2DAsync());
                     }
