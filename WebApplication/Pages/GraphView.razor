@@ -19,11 +19,11 @@
                             <select class="form-control" name="heuristics" id="selectHeuristics" @bind="algorithmEnum">
                                 <option value="NN" @onselect="e => algorithmEnum = AlgorithmEnum.NN">Nearest Neighbor</option>
                                 <option value="SA" @onselect="e => algorithmEnum = AlgorithmEnum.SA">Simulated Annealing</option>
-                                <option value="MSNN" @onselect="e => algorithmEnum = AlgorithmEnum.MSNN">Multi Start (NN)</option>
                                 <option value="ACS" @onselect="e => algorithmEnum = AlgorithmEnum.ACS">Ant Colony System</option>
+                                <option value="HC" @onselect="e => algorithmEnum = AlgorithmEnum.HC">Hill Climbing</option>
                             </select>
                         </div>
-                        @if (algorithmEnum == AlgorithmEnum.SA) {
+                        @if (algorithmEnum == AlgorithmEnum.SA || algorithmEnum == AlgorithmEnum.HC) {
                             <div class="form-group">
                                 <div class="custom-control custom-switch">
                                     <input class="custom-control-input" type="checkbox" id="switchPrev" @bind="showPrevious">
@@ -31,11 +31,17 @@
                                 </div>
                             </div>
                         }
+                        @if (algorithmEnum == AlgorithmEnum.NN || algorithmEnum == AlgorithmEnum.HC) {
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="multi" @bind="multiStart">
+                                <label class="form-check-label" for="multi">Multi Start</label>
+                            </div>
+                        }
                     </div>
                     <div class="col-md-6 col-sm-6">
                         @if (enumerator != null) {
                             <h5 class="font-weight-light">Heuristic Parameters</h5>
-                            @if (algorithmEnum == AlgorithmEnum.NN) {
+                            @if (algorithmEnum == AlgorithmEnum.NN && !multiStart) {
                                 <div class="form-group">
                                     <label for="startnodeselect">Select Start Node</label>
                                     <div id="startnodeselect" class="input-group">
@@ -70,6 +76,8 @@
                                     <label for="alphaSA">Alpha</label>
                                     <input type="number" step="0.05" id="alphaSA" class="form-control" @bind="AlphaSA">
                                 </div>
+                            }
+                            @if (algorithmEnum == AlgorithmEnum.SA || algorithmEnum == AlgorithmEnum.HC) {
                                 <div class="form-group">
                                     <label for="selectNeighbourType">Neighbour Function</label>
                                     <select class="form-control" name="neighbourType" id="selectNeighbourType" @bind="neighbourEnum">
@@ -164,7 +172,7 @@
                         <hr/>
                     </div>
                     <div class="col">
-                        @if (showPrevious && algorithmEnum == AlgorithmEnum.SA) {
+                        @if (showPrevious && (algorithmEnum == AlgorithmEnum.SA || algorithmEnum == AlgorithmEnum.HC)) {
                             <h5 class="font-weight-bold">Previous</h5>
                             <Canvas @ref="previousCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
                         }
@@ -236,6 +244,7 @@
     private NearestNeighbour nearestNeighbour = new();
     private SimulatedAnnealing simulatedAnnealing = new();
     private AntAlgorithm antColonySystem = new();
+    private HillClimbing hillClimbing = new();
 	private IEnumerator<GraphState> enumerator;
 	private AlgorithmEnum algorithmEnum;
     private NeighbourType neighbourEnum;
@@ -257,6 +266,7 @@ n,12,11,11";
     private bool autoAdvance;
     private bool drawComplete;
     private bool showPrevious = true;
+    private bool multiStart;
     
     /* GraphView Parameters */
     private int CanvasWidth;
@@ -494,7 +504,7 @@ n,12,11,11";
             enumerator.MoveNext();
             TimeSpan = stopwatch.Elapsed;
             
-            if (previous != null && showPrevious && algorithmEnum == AlgorithmEnum.SA) {
+            if (previous != null && showPrevious && (algorithmEnum == AlgorithmEnum.SA || algorithmEnum == AlgorithmEnum.HC)) {
                 previous.ComparePathEdges(enumerator.Current);
                 await FillCanvas(previousCanvas);
             }
@@ -580,7 +590,12 @@ n,12,11,11";
         switch (algorithmEnum) {
             case AlgorithmEnum.NN:
                 nearestNeighbour.Start = graph.Nodes[StartNode];
-                enumerator = nearestNeighbour.FindPath(graph).GetEnumerator();
+
+                if (multiStart) {
+                    enumerator = nearestNeighbour.MultiStart(graph).GetEnumerator();
+                } else {
+                    enumerator = nearestNeighbour.FindPath(graph).GetEnumerator();
+                }                
                 break;
             case AlgorithmEnum.SA:
                 simulatedAnnealing.Alpha = AlphaSA;
@@ -591,9 +606,6 @@ n,12,11,11";
                 simulatedAnnealing.NeighbourEnum = neighbourEnum;
                 enumerator = simulatedAnnealing.FindPath(graph).GetEnumerator();
                 break;
-            case AlgorithmEnum.MSNN:
-                enumerator = nearestNeighbour.MultiStart(graph).GetEnumerator();
-                break;
             case AlgorithmEnum.ACS:
                 antColonySystem.AntCount = AntCount;
                 antColonySystem.Alpha = AlphaACS;
@@ -601,6 +613,16 @@ n,12,11,11";
                 antColonySystem.Beta = Beta;
                 antColonySystem.ExploitVsExplore = ExploitVsExplore;
                 enumerator = antColonySystem.FindPath(graph).GetEnumerator();
+                break;
+            case AlgorithmEnum.HC:
+                hillClimbing.NeighbourType = neighbourEnum;
+
+                if (multiStart) {
+                    enumerator = hillClimbing.MultiStart(graph).GetEnumerator();
+                } else {
+                    enumerator = hillClimbing.FindPath(graph).GetEnumerator();
+                }
+                
                 break;
             default: break;
         }

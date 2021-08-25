@@ -179,10 +179,10 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public static GraphProblem Swap(GraphProblem graph) {
             var i = Random.Next(1, graph.Nodes.Count - 2);
-            var j = Random.Next(1, graph.Nodes.Count - 1);
+            var j = Random.Next(i, graph.Nodes.Count - 1);
             
-            if (i == j)
-                Swap(graph);
+            //if (i == j)
+            //    Swap(graph);
 
             var temp = graph.Nodes;
             var node = temp[i];
