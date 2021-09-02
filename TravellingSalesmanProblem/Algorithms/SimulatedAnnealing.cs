@@ -64,18 +64,43 @@ namespace TravellingSalesmanProblem.Algorithms {
                 } else if (MetropolisRule(graph, state)) {
                     x = y;
                 }
+
+                var tu = "Temperature Update";
+                Equations[tu] = new("$T_{k+1} = f(T(k)) = \\alpha \\cdot T_{k}$") {
+                    Dummy = "$T_{?k+1?} = ?alpha? \\cdot ?current?$",
+                    Variables = new Dictionary<string, object> {
+                        { "k+1", state.Iteration + 1},
+                        { "current", state.Temperature},
+                        { "alpha", Alpha}
+                    }
+                };
                 state.Iteration++;
                 state.Temperature *= Alpha;
+
+                Equations[tu].Result = $"$T_{{{state.Iteration}}} = {state.Temperature}$";
             }
 
             yield return UpdateState(state, true);
         }
 
-        private static bool MetropolisRule(GraphProblem x, GraphState s) {
-            var p = Math.Exp(-(x.Costs - s.Distance) / s.Temperature);
+        private bool MetropolisRule(GraphProblem x, GraphState state) {
+            var p = Math.Exp(-(x.Costs - state.Distance) / state.Temperature);
             var r = Random.NextDouble();
+            bool condition = p > r;
 
-            if (p > r)
+            var mp = "Metropolis Rule";
+            Equations[mp] = new("$\\text{exp}(\\frac{f(x) - f(y)}{T_{k}}) > \\text{rand}(0,1)$") {
+                Dummy = "$\\text{exp}(\\frac{?f(x)? - ?f(y)?}{?temp?}) > ?rand?$",
+                Variables = new Dictionary<string, object> {
+                    { "f(x)", x.Costs },
+                    { "f(y)", state.Distance },
+                    { "temp", state.Temperature },
+                    { "rand", r }
+                },
+                Result = $"$\\text{{{condition}}}$"
+            };
+
+            if (condition)
                 return true;
 
             return false;
@@ -89,6 +114,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Distance = CurrentBest.Costs;
             state.Path = CurrentBest.Nodes;
             state.PathEdges = CurrentBest.Edges;
+            state.Equations = Equations;
 
             if (finished)
                 state.Finished = true;
