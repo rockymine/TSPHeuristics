@@ -92,6 +92,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Path = GlobalBest.Nodes;
             state.PathEdges = DistributedMemory.Edges;
             state.Distance = GlobalBest.CalcCosts();
+            state.Equations = Equations;
             UpdateStateMessages(state);
             return state;
         }
@@ -134,27 +135,58 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         private void GlobalUpdatingRule(bool acs = true) {
+            var gur = "Global Updating Rule";
+            Equations[gur] = new("$\\tau(r, s) \\leftarrow(1 -\\alpha) \\cdot \\tau(r, s) + \\alpha \\cdot \\triangle \\tau(r, s)$") {
+                Dummy = "$\\tau(?r?,?s?) = (1-?alpha?) \\cdot ?tau? + ?alpha? \\cdot ?triangle?$"
+            };
+
             foreach (var edge in DistributedMemory.Edges) {
                 edge.Pheromone = (1 - Alpha) * edge.Pheromone;
 
                 if (acs) {
                     //only those edges belonging to the globally best tour are reinforced.
-                    if (IsEdgeInTour(edge, GlobalBest.Edges))
-                        edge.Pheromone += Alpha * Math.Pow(GlobalBest.CalcCosts(), -1);
+                    if (IsEdgeInTour(edge, GlobalBest.Edges)) {
+                        var lgbInversed = Math.Pow(GlobalBest.CalcCosts(), -1);
+                        Equations[gur].Variables = new Dictionary<string, object> {
+                            { "r", edge.Node1.Index },
+                            { "s", edge.Node2.Index },
+                            { "alpha", Alpha },
+                            { "tau", edge.Pheromone },
+                            { "triangle", lgbInversed }
+                        };
+
+                        edge.Pheromone += Alpha * lgbInversed;
+                        Equations[gur].Result = $"$\\tau({edge.Node1.Index},{edge.Node2.Index}) = {edge.Pheromone}$";
+                    }
                 } else {
                     edge.Pheromone += Colony
                         .Where(k => IsEdgeInTour(edge, k.Path.Edges))
                         .Sum(k => 1 / k.Path.Nodes.Count);
-                }                
+                }
             }
         }
 
         //ants visit edges and change their pheromone level
         //local updating will help to avoid ants converging to a common path
-        private void LocalUpdatingRule(Ant k) {       
+        private void LocalUpdatingRule(Ant k) {
+            var lur = "Local Updating Rule";
+            Equations[lur] = new("$\\tau(r,s) \\leftarrow (1-\\rho) \\cdot \\tau(r,s) + \\rho \\cdot \\triangle \\tau(r,s)$") {
+                Dummy = "$\\tau(?r?,?s?) = (1-?rho?) \\cdot ?tau? + ?rho? \\cdot ?triangle?$"
+            };
+
             foreach (var edge in DistributedMemory.Edges) {
-                if (IsEdgeInTour(edge, k.Path.Edges))
+                if (IsEdgeInTour(edge, k.Path.Edges)) {
+                    Equations[lur].Variables = new Dictionary<string, object> {
+                        { "r", edge.Node1.Index },
+                        { "s", edge.Node2.Index },
+                        { "rho", Rho },
+                        { "tau", edge.Pheromone },
+                        { "triangle", InitialPheromone }
+                    };
+
                     edge.Pheromone = ((1 - Rho) * edge.Pheromone) + (Rho * InitialPheromone);
+                    Equations[lur].Result = $"$\\tau({edge.Node1.Index},{edge.Node2.Index}) = {edge.Pheromone}$";
+                } 
             }
         }
 

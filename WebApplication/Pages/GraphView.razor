@@ -170,6 +170,7 @@
                             </div>
                         }
                         <hr/>
+                        
                     </div>
                     <div class="col">
                         @if (showPrevious && (algorithmEnum == AlgorithmEnum.SA || algorithmEnum == AlgorithmEnum.HC)) {
@@ -191,6 +192,23 @@
                         }
                     </div>
                 </div>
+                <h3 class="font-weight-bold">Formulas</h3>
+                @*<p><b>ACS Global Updating Rule</b></p>
+                <StardustDL.RazorComponents.Markdown.MarkdownRenderer Value="$\tau(r,s) \leftarrow (1-\alpha) \cdot \tau(r,s) + \alpha \cdot \triangle \tau(r,s)$"/>
+                <p>where</p>
+                <StardustDL.RazorComponents.Markdown.MarkdownRenderer Value="$\triangle \tau(r,s) = \begin{cases}(L_{gb})^{-1}, & \text{if } (r,s) \in \text{global-best-tour}\\0, & \text{otherwise}\end{cases}$"/>
+                <p><b>ACS State Transition Rule</b></p>
+                <StardustDL.RazorComponents.Markdown.MarkdownRenderer Value="$s = \begin{cases}\text{arg max}_{u \in J_{k}(r)}\{[\tau(r,u)] \cdot [\eta(r,u)]^\beta\} & \text{if } q \leq q_{0} \text{ (exploitation)}\\S, & \text{otherwise (biased exploration)}\end{cases}$"/>
+                <p><b>Random-proportional Rule</b></p>
+                <StardustDL.RazorComponents.Markdown.MarkdownRenderer Value="$p_{k}(r,s) = \begin{cases}\frac{[\tau(r,s)] \cdot [\eta(r,s)]^\beta}{\sum\limits_{u \in J_{k}(r)}[\tau(r,u)] \cdot [\eta(r,u)]^\beta}, & \text{if } s \in J_{k}(r)\\0, & \text{otherwise}\end{cases}$"/>*@
+                @if (enumerator != null && enumerator.Current != null && enumerator.Current.Equations.Count != 0) {
+                    foreach (var kvp in enumerator.Current.Equations) {
+                        <p><b>@kvp.Key</b></p>
+                        <StardustDL.RazorComponents.Markdown.MarkdownRenderer Value="@kvp.Value.Latex"/>
+                        <StardustDL.RazorComponents.Markdown.MarkdownRenderer Value="@kvp.Value.Generate()"/>
+                        <StardustDL.RazorComponents.Markdown.MarkdownRenderer Value="@kvp.Value.Result"/>
+                    }
+                }
                 @if (algorithmEnum == AlgorithmEnum.SA && enumerator != null && enumerator.Current != null
                 && enumerator.Current.Segments != null && enumerator.Current.Segments.Count != 0) {
                     <div class="row">
@@ -220,7 +238,10 @@
                 }
             </div>
         </div>
+        
     </div>
+
+    
 </div>
 
 @*@if (algorithmEnum == AlgorithmEnum.NN) {

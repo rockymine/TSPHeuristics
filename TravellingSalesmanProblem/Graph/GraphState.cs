@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TravellingSalesmanProblem.Algorithms;
 
 namespace TravellingSalesmanProblem.Graph {
     public class GraphState {
@@ -16,6 +17,7 @@ namespace TravellingSalesmanProblem.Graph {
         public double Temperature { get; set; }
         public int Iteration { get; set; }
         public Dictionary<string, string> Messages { get; set; } = new();
+        public Dictionary<string, MathString> Equations { get; set; } = new();
 
         public GraphProblem ToGraphProblem() {
             return new GraphProblem {
