@@ -12,14 +12,13 @@ namespace TravellingSalesmanProblem.Algorithms {
         public double StartTemp { get; set; }
         public double MinTemp { get; set; }
         public double Alpha { get; set; }
+        public NeighbourType NeighbourEnum { get; set; }
+
         private GraphProblem CurrentBest = new();
-        public NeighbourType NeighbourEnum;
 
         private static readonly Random Random = new();
 
         public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
-            /* TODO: Create tour using tour constructive heuristic.
-             This tour will be improved by the Simulated Annealing heuristic. */
             var x = GraphProblem.OrderedGraphProblem(graph);
             CurrentBest = x;
 
@@ -33,23 +32,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             yield return state;
             
             while (state.Temperature >= MinTemp) {
-                /* Create a neighbor y from N(x) and check if it is better than x */
-                var y = new GraphProblem();
-                switch (NeighbourEnum) {
-                    case NeighbourType.Swap:
-                        y = NeighbourState.Swap(x);
-                        break;
-                    case NeighbourType.TwoOpt:
-                        y = NeighbourState.TwoOpt(x);
-                        break;
-                    case NeighbourType.ThreeOpt:
-                        y = NeighbourState.ThreeOpt(x);
-                        break;
-                    case NeighbourType.FourOpt:
-                        y = NeighbourState.DoubleBridgeFourOpt(x);
-                        break;
-                }
-
+                /* Create a neighbor y from N(x) */
+                var y = CreateNeighbourSolution(x);
                 state.Segments = y.Segments;
 
                 if (y.Costs <= x.Costs) {
@@ -81,6 +65,26 @@ namespace TravellingSalesmanProblem.Algorithms {
             }
 
             yield return UpdateState(state, true);
+        }
+
+        private GraphProblem CreateNeighbourSolution(GraphProblem x) {
+            var y = new GraphProblem();
+            switch (NeighbourEnum) {
+                case NeighbourType.Swap:
+                    y = NeighbourState.Swap(x);
+                    break;
+                case NeighbourType.TwoOpt:
+                    y = NeighbourState.TwoOpt(x);
+                    break;
+                case NeighbourType.ThreeOpt:
+                    y = NeighbourState.ThreeOpt(x);
+                    break;
+                case NeighbourType.FourOpt:
+                    y = NeighbourState.DoubleBridgeFourOpt(x);
+                    break;
+            }
+
+            return y;
         }
 
         private bool MetropolisRule(GraphProblem x, GraphState state) {

@@ -1,0 +1,68 @@
+﻿<h5>Random Graph</h5>
+<div class="row">
+    <div class="col">
+        <div class="form-group">
+            <label for="maxWidth">Max. X</label>
+            <input type="number" id="maxWidth" class="form-control" @bind="MaxX">
+        </div>
+    </div>
+    <div class="col">
+        <div class="form-group">
+            <label for="maxHeight">Max. Y</label>
+            <input type="number" id="maxHeight" class="form-control" @bind="MaxY">
+        </div>
+    </div>
+    <div class="col">
+        <div class="form-group">
+            <label for="maxNodes">Nodes</label>
+            <input type="number" id="maxNodes" class="form-control" @bind="NodeCount">
+        </div>
+    </div>
+</div>
+
+@code {
+    private int maxX;
+    [Parameter]
+    public int MaxX {
+        get => maxX;
+        set {
+            if (value == maxX)
+                return;
+
+            maxX = value;
+            MaxXChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<int> MaxXChanged { get; set; }
+
+    private int maxY;
+    [Parameter]
+    public int MaxY {
+        get => maxY;
+        set {
+            if (value == maxY)
+                return;
+
+            maxY = value;
+            MaxYChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<int> MaxYChanged { get; set; }
+
+    private int nodeCount;
+    [Parameter]
+    public int NodeCount {
+        get => nodeCount;
+        set {
+            if (value == nodeCount)
+                return;
+
+            nodeCount = value;
+            NodeCountChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<int> NodeCountChanged { get; set; }
+}

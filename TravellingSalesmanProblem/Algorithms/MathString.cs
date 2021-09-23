@@ -7,6 +7,7 @@ namespace TravellingSalesmanProblem.Algorithms {
     public class MathString {
         public Dictionary<string, object> Variables { get; set; } = new();
         public string Latex { get; set; }
+        public string Description { get; set; }
         public string Dummy { get; set; }
         public string Result { get; set; }
         public MathString(string latex) {

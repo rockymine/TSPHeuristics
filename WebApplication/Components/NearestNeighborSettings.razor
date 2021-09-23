@@ -1,0 +1,29 @@
+﻿<div class="form-group">
+    <label for="startnodeselect">Select Start Node</label>
+    <div id="startnodeselect" class="input-group">
+        <div class="input-group-prepend">
+            <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode--">-</button>
+        </div>
+        <div class="input-group-text">@StartNode</div>
+        <div class="input-group-append">
+            <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode++">+</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int startNode;
+    [Parameter]
+    public int StartNode {
+        get => startNode;
+        set {
+            if (value == startNode)
+                return;
+
+            startNode = value;
+            StartNodeChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<int> StartNodeChanged { get; set; }
+}

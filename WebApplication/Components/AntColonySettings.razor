@@ -1,0 +1,109 @@
+﻿<div class="row">
+    <div class="col">
+        <div class="form-group">
+            <label for="ants">Ant Count</label>
+            <input type="number" id="ants" class="form-control" @bind="AntCount">
+        </div>
+    </div>
+    <div class="col">
+        <div class="form-group">
+            <label for="alphaACS">Alpha</label>
+            <input type="number" step="0.05" id="alphaACS" class="form-control" @bind="AlphaACS">
+        </div>
+    </div>
+    <div class="col">
+        <div class="form-group">
+            <label for="rho">Rho</label>
+            <input type="number" step="0.05" id="rho" class="form-control" @bind="Rho">
+        </div>
+    </div>
+    <div class="col">
+        <div class="form-group">
+        <label for="beta">Beta</label>
+        <input type="number" step="0.5" id="beta" class="form-control" @bind="Beta">
+    </div>
+    </div>
+    <div class="col">
+        <div class="form-group">
+            <label for="ratio">Exploit vs. Explore</label>
+            <input type="number" step="0.05" id="ratio" class="form-control" @bind="ExploitVsExplore">
+        </div>
+    </div>
+</div>
+
+@code {
+    private int antCount;
+    [Parameter]
+    public int AntCount {
+        get => antCount;
+        set {
+            if (value == antCount)
+                return;
+
+            antCount = value;
+            AntCountChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<int> AntCountChanged { get; set; }
+
+    private double alphaACS;
+    [Parameter]
+    public double AlphaACS {
+        get => alphaACS;
+        set {
+            if (value == alphaACS)
+                return;
+
+            alphaACS = value;
+            AlphaACSChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<double> AlphaACSChanged { get; set; }
+
+    private double rho;
+    [Parameter]
+    public double Rho {
+        get => rho;
+        set {
+            if (value == rho)
+                return;
+
+            rho = value;
+            RhoChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<double> RhoChanged { get; set; }
+
+    private double beta;
+    [Parameter]
+    public double Beta {
+        get => beta;
+        set {
+            if (value == beta)
+                return;
+
+            beta = value;
+            BetaChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<double> BetaChanged { get; set; }
+
+    private double exploitVsExplore;
+    [Parameter]
+    public double ExploitVsExplore {
+        get => exploitVsExplore;
+        set {
+            if (value == exploitVsExplore)
+                return;
+
+            exploitVsExplore = value;
+            ExploitVsExploreChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<double> ExploitVsExploreChanged { get; set; }
+}

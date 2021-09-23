@@ -126,18 +126,52 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         private double RandomProportionalRule(Ant k, Node r, Node s) {
             var sum = k.Unvisited.Sum(n => PheromoneClosenessProduct(r, n));
-            return PheromoneClosenessProduct(r, s) / sum;
+            var edge = DistributedMemory.Edges.Find(e => e.IsBetween(r, s));
+            var rpr = "Random Proportional Rule";
+
+            Equations[rpr] = new("$p_{k}(r,s) = \\begin{cases}\\frac{[\\tau(r,s)] \\cdot [\\eta(r,s)]^\\beta}{\\sum\\limits_{u \\in J_{k}(r)}[\\tau(r,u)] \\cdot [\\eta(r,u)]^\\beta}, & \\text{if } s \\in J_{k}(r)\\\\0, & \\text{otherwise}\\end{cases}$") {
+                Dummy = "$p_{?k?}(?r?,?s?) = \\begin{cases}\\frac{[?tau?] \\cdot [?eta?]^?beta?}{\\sum\\limits_{u \\in J_{?k?}(?r?)}[\\tau(?r?,u)] \\cdot [\\eta(?r?,u)]^?beta?}, & \\text{if } s \\in J_{?k?}(?r?)\\\\0, & \\text{otherwise}\\end{cases}$",
+                Variables = new Dictionary<string, object> {
+                    { "k", Colony.IndexOf(k) },
+                    { "r", r.Index },
+                    { "s", s.Index },
+                    { "tau", edge.Pheromone },
+                    { "eta" , edge.Visibility },
+                    { "beta", Beta }
+                }
+            };
+
+            var pcp = PheromoneClosenessProduct(r, s);
+            Equations[rpr].Result = $"$p_{Colony.IndexOf(k)}({r.Index},{s.Index}) = \\frac{{{pcp}}}{{{sum}}} = {pcp / sum}$";
+
+            return pcp / sum;
         }
 
         private double PheromoneClosenessProduct(Node from, Node to) {
             var edge = DistributedMemory.Edges.Find(e => e.IsBetween(from, to));
-            return edge.Pheromone * Math.Pow(edge.Visibility, Beta);
+            var result = edge.Pheromone * Math.Pow(edge.Visibility, Beta);
+            var pcp = "Pheromone Cloneness Product";
+
+            Equations[pcp] = new("$\\omega(r,s) = [\\tau(r,s)] \\cdot [\\eta(r,s)]^\\beta$") {
+                Dummy = "$\\omega(?r?,?s?) = ?tau? \\cdot ?eta?^?beta?$",
+                Variables = new Dictionary<string, object> {
+                    { "r", from.Index },
+                    { "s", to.Index },
+                    { "tau", edge.Pheromone },
+                    { "eta", edge.Visibility },
+                    { "beta", Beta }
+                },
+                Result = $"$\\omega({from.Index},{to.Index}) = {result}$"
+            };
+            
+            return result;
         }
 
         private void GlobalUpdatingRule(bool acs = true) {
             var gur = "Global Updating Rule";
             Equations[gur] = new("$\\tau(r, s) \\leftarrow(1 -\\alpha) \\cdot \\tau(r, s) + \\alpha \\cdot \\triangle \\tau(r, s)$") {
-                Dummy = "$\\tau(?r?,?s?) = (1-?alpha?) \\cdot ?tau? + ?alpha? \\cdot ?triangle?$"
+                Dummy = "$\\tau(?r?,?s?) = (1-?alpha?) \\cdot ?tau? + ?alpha? \\cdot ?triangle?$",
+                Description = "$\\text{ Once all ants have constructed their tour, the amount of pheromone is modified by applying the global updating rule. Here, only the globally best ant is allowed to deposit pheromone. } \\triangle \\tau(r, s) \\text{ is set to the inversed length of the globally best tour } (L_{ gb })^{ -1 } \\text{ and } 0 < \\alpha < 1 \\text{ is the pheromone decay parameter.}$"
             };
 
             foreach (var edge in DistributedMemory.Edges) {
@@ -171,7 +205,8 @@ namespace TravellingSalesmanProblem.Algorithms {
         private void LocalUpdatingRule(Ant k) {
             var lur = "Local Updating Rule";
             Equations[lur] = new("$\\tau(r,s) \\leftarrow (1-\\rho) \\cdot \\tau(r,s) + \\rho \\cdot \\triangle \\tau(r,s)$") {
-                Dummy = "$\\tau(?r?,?s?) = (1-?rho?) \\cdot ?tau? + ?rho? \\cdot ?triangle?$"
+                Dummy = "$\\tau(?r?,?s?) = (1-?rho?) \\cdot ?tau? + ?rho? \\cdot ?triangle?$",
+                Description = "$\\text{While building a solution (i.e., a tour) of the TSP, ants visit edges and change their pheromone level by applying the local updating rule. Ants build their tours by both heuristic information (they prefer to choose short edges) and pheromone information. The term } \\triangle \\tau(r,s) \\text{ is set to the initial pheromone value } \\tau_0.$"
             };
 
             foreach (var edge in DistributedMemory.Edges) {

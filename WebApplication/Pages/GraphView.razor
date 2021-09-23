@@ -5,172 +5,80 @@
 @using TravellingSalesmanProblem.Algorithms
 @using TravellingSalesmanProblem.Graph
 @using WebApplication.Utils
+@using WebApplication.Components
+@using StardustDL.RazorComponents.Markdown
 <div class="container-fluid">
-    <div class="col">
-        <h2 class="font-weight-bold">Web Application for the interactive visualization of different heuristics</h2>
-        <h4 class="font-weight-light">Master thesis project of Michael Ganske at the University of Hildesheim</h4>
-        <div class="row">
-            <div class="col-md-4 col-sm-6">
-                <h3 class="font-weight-bold">Settings</h3>
-                <div class="row">
-                    <div class="col-md-6 col-sm-6">
-                        <h5 class="font-weight-light">Select Heuristics</h5>
+    <h2 class="font-weight-bold">Interactive visualization of different TSP heuristics</h2>
+    <div class="row">
+        <div class="col-md-3 p-0"><!-- Settings -->
+            <div class="bg-custom-light custom-input-group">
+                <AlgorithmSettings @bind-algorithmEnum="@algorithmEnum" @bind-MultiStart="@multiStart"
+                    @bind-ShowPrevious="@showPrevious"></AlgorithmSettings>
+            </div>
+        </div>
+        <div class="col-md-9 p-0">
+            <div class="bg-custom-light custom-input-group">
+                <h5>Heuristic Settings</h5>
+                @if (enumerator != null) {
+                    @if (algorithmEnum == AlgorithmEnum.NN && !multiStart) {
+                        <NearestNeighborSettings @bind-StartNode="@StartNode"></NearestNeighborSettings>
+                    }
+                    @if (algorithmEnum == AlgorithmEnum.SA) {
+                        <SimulatedAnnealingSettings @bind-AlphaSA="@AlphaSA" @bind-MaxIter1="@MaxIter1" @bind-MaxIter2="@MaxIter2"
+                            @bind-MinTemp="@MinTemp" @bind-StartTemp="@StartTemp"></SimulatedAnnealingSettings>
+                    }
+                    @if (algorithmEnum == AlgorithmEnum.HC) {
+                        <SimulatedAnnealingSettings @bind-NeighbourEnum="neighbourEnum"></SimulatedAnnealingSettings>
+                    }
+                    @if (algorithmEnum == AlgorithmEnum.ACS) {
+                        <AntColonySettings @bind-AlphaACS="AlphaACS" @bind-AntCount="AntCount" @bind-Beta="Beta"
+                            @bind-Rho="Rho" @bind-ExploitVsExplore="ExploitVsExplore"></AntColonySettings>
+                    }
+                    <div class="form-group">
+                        <button class="btn btn-danger" type="button" @onclick="e => NextState(true)">Reset</button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <p>
+            <button class="btn btn-primary" @onclick="@(e => graphSettingsCollapse = graphSettingsCollapse == "" ? "collapse" : "")">
+                Graph settings ˅
+            </button>
+        </p>
+        <div class="@graphSettingsCollapse" id="collapseExample">
+            <div class="row">
+                <div class="col-md-6 p-0">
+                    <div class="bg-custom-light custom-input-group">
+                        <h5>Text-based graph</h5>
                         <div class="form-group">
-                            <select class="form-control" name="heuristics" id="selectHeuristics" @bind="algorithmEnum">
-                                <option value="NN" @onselect="e => algorithmEnum = AlgorithmEnum.NN">Nearest Neighbor</option>
-                                <option value="SA" @onselect="e => algorithmEnum = AlgorithmEnum.SA">Simulated Annealing</option>
-                                <option value="ACS" @onselect="e => algorithmEnum = AlgorithmEnum.ACS">Ant Colony System</option>
-                                <option value="HC" @onselect="e => algorithmEnum = AlgorithmEnum.HC">Hill Climbing</option>
-                            </select>
+                            <textarea class="form-control" @bind="graphDefinition" style="height: 200px;"></textarea>
                         </div>
-                        @if (algorithmEnum == AlgorithmEnum.SA || algorithmEnum == AlgorithmEnum.HC) {
-                            <div class="form-group">
-                                <div class="custom-control custom-switch">
-                                    <input class="custom-control-input" type="checkbox" id="switchPrev" @bind="showPrevious">
-                                    <label class="custom-control-label" for="switchPrev">Toggle comparison mode</label>
-                                </div>
-                            </div>
-                        }
-                        @if (algorithmEnum == AlgorithmEnum.NN || algorithmEnum == AlgorithmEnum.HC) {
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="multi" @bind="multiStart">
-                                <label class="form-check-label" for="multi">Multi Start</label>
-                            </div>
-                        }
-                    </div>
-                    <div class="col-md-6 col-sm-6">
-                        @if (enumerator != null) {
-                            <h5 class="font-weight-light">Heuristic Parameters</h5>
-                            @if (algorithmEnum == AlgorithmEnum.NN && !multiStart) {
-                                <div class="form-group">
-                                    <label for="startnodeselect">Select Start Node</label>
-                                    <div id="startnodeselect" class="input-group">
-                                        <div class="input-group-prepend">
-                                            <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode--">-</button>
-                                        </div>
-                                        <div class="input-group-text">@StartNode</div>
-                                        <div class="input-group-append">
-                                            <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode++">+</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                            @if (algorithmEnum == AlgorithmEnum.SA) {
-                                <div class="form-group">
-                                    <label for="iter1">MaxIter1</label>
-                                    <input type="number" id="iter1" class="form-control" @bind="MaxIter1">
-                                </div>
-                                <div class="form-group">
-                                    <label for="iter2">MaxIter2</label>
-                                    <input type="number" id="iter2" class="form-control" @bind="MaxIter2">
-                                </div>
-                                <div class="form-group">
-                                    <label for="temp1">StartTemp</label>
-                                    <input type="number" id="temp1" class="form-control" @bind="StartTemp">
-                                </div>
-                                <div class="form-group">
-                                    <label for="temp2">MinTemp</label>
-                                    <input type="number" step="0.005" id="temp2" class="form-control" @bind="MinTemp">
-                                </div>
-                                <div class="form-group">
-                                    <label for="alphaSA">Alpha</label>
-                                    <input type="number" step="0.05" id="alphaSA" class="form-control" @bind="AlphaSA">
-                                </div>
-                            }
-                            @if (algorithmEnum == AlgorithmEnum.SA || algorithmEnum == AlgorithmEnum.HC) {
-                                <div class="form-group">
-                                    <label for="selectNeighbourType">Neighbour Function</label>
-                                    <select class="form-control" name="neighbourType" id="selectNeighbourType" @bind="neighbourEnum">
-                                        <option value="TwoOpt" @onselect="e => neighbourEnum = NeighbourType.TwoOpt">2-Opt</option>
-                                        <option value="ThreeOpt" @onselect="e => neighbourEnum = NeighbourType.ThreeOpt">3-Opt</option>
-                                        <option value="FourOpt" @onselect="e => neighbourEnum = NeighbourType.FourOpt">Double-bridge 4-Opt</option>
-                                        <option value="Swap" @onselect="e => neighbourEnum = NeighbourType.Swap">Swap</option>
-                                    </select>
-                                </div>
-                            }
-                            @if (algorithmEnum == AlgorithmEnum.ACS) {
-                                <div class="form-group">
-                                    <label for="ants">Ant Count</label>
-                                    <input type="number" id="ants" class="form-control" @bind="AntCount">
-                                </div>
-                                <div class="form-group">
-                                    <label for="alphaACS">Alpha</label>
-                                    <input type="number" step="0.05" id="alphaACS" class="form-control" @bind="AlphaACS">
-                                </div>
-                                <div class="form-group">
-                                    <label for="rho">Rho</label>
-                                    <input type="number" step="0.05" id="rho" class="form-control" @bind="Rho">
-                                </div>
-                                <div class="form-group">
-                                    <label for="beta">Beta</label>
-                                    <input type="number" step="0.5" id="beta" class="form-control" @bind="Beta">
-                                </div>
-                                <div class="form-group">
-                                    <label for="ratio">Exploit vs. Explore</label>
-                                    <input type="number" step="0.05" id="ratio" class="form-control" @bind="ExploitVsExplore">
-                                </div>
-                            }
-                            <div class="form-group">
-                                <button class="btn btn-danger" type="button" @onclick="e => NextState(true)">Reset</button>
-                            </div>
-                        }
-                    </div>
-                </div>
-                <hr/>
-                <h5 class="font-font-weight-light">Parameters for text-based graph</h5>
-                <div class="form-group">
-                    <textarea class="form-control" @bind="graphDefinition" style="height: 200px;"></textarea>
-                </div>
-                <div class="form-group">
-                    <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(true)">Draw From Text</button>
-                </div>
-                <hr/>
-                <h5 class="font-font-weight-light">Parameters for random graph</h5>
-                <div class="row">
-                    <div class="col">
                         <div class="form-group">
-                            <label for="maxWidth">Max. X</label>
-                            <input type="number" id="maxWidth" class="form-control" @bind="MaxX">
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="form-group">
-                            <label for="maxHeight">Max. Y</label>
-                            <input type="number" id="maxHeight" class="form-control" @bind="MaxY">
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="form-group">
-                            <label for="maxNodes">Nodes</label>
-                            <input type="number" id="maxNodes" class="form-control" @bind="NodeCount">
+                            <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(true)">Draw From Text</button>
                         </div>
                     </div>
                 </div>
-                <div class="form-group">
-                    <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(false)">Draw Random Graph</button>
+                <div class="col-md-6 p-0">
+                    <div class="bg-custom-light custom-input-group">
+                        <RandomGraphSettings @bind-NodeCount="NodeCount" @bind-MaxX="MaxX" @bind-MaxY="MaxY"></RandomGraphSettings>
+                        <div class="form-group">
+                            <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(false)">Draw Random Graph</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-8 col-sm-6">
-                <h3 class="font-weight-bold">Graphs</h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-8 p-0">
+            <div class="bg-custom-light custom-input-group">
+                <h5>Graph View</h5>
                 <div class="row">
                     <div class="col">
                         <h5 class="font-weight-bold">Current</h5>
                         <Canvas @ref="currentCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
-                        @if (enumerator != null && !enumerator.Current.Finished) {
-                            @if (!autoAdvance) {
-                                <div class="form-group">
-                                    <button class="btn btn-primary btn-sm" type="button" @onclick="e => NextState(false)">Advance to next Graph State</button>
-                                </div>
-                            }
-                            <div class="form-group">
-                                <div class="custom-control custom-switch">
-                                    <input class="custom-control-input" type="checkbox" id="switch" @bind="autoAdvance">
-                                    <label class="custom-control-label" for="switch">Toggle auto-advance</label>
-                                </div>
-                            </div>
-                        }
-                        <hr/>
-                        
                     </div>
                     <div class="col">
                         @if (showPrevious && (algorithmEnum == AlgorithmEnum.SA || algorithmEnum == AlgorithmEnum.HC)) {
@@ -178,70 +86,91 @@
                             <Canvas @ref="previousCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
                         }
                     </div>
-                    <div class="col">
-                        @if (enumerator != null && enumerator.Current != null) {
-                            <h5 class="font-weight-bold">State Messages</h5>
-                            <span><b>Success</b>: @enumerator.Current.Success</span><br/>
-                            <span><b>Finished</b>: @enumerator.Current.Finished</span><br/>
-
-                            @foreach (var kvp in enumerator.Current.Messages) {
-                                <span><b>@kvp.Key</b>: @kvp.Value</span><br/>
-                            }
-
-                            <span><b>Elapsed Time</b>: @TimeSpan.Minutes m @TimeSpan.Seconds s @TimeSpan.Milliseconds ms</span><br/>
-                        }
-                    </div>
                 </div>
-                <h3 class="font-weight-bold">Formulas</h3>
-                @*<p><b>ACS Global Updating Rule</b></p>
-                <StardustDL.RazorComponents.Markdown.MarkdownRenderer Value="$\tau(r,s) \leftarrow (1-\alpha) \cdot \tau(r,s) + \alpha \cdot \triangle \tau(r,s)$"/>
-                <p>where</p>
-                <StardustDL.RazorComponents.Markdown.MarkdownRenderer Value="$\triangle \tau(r,s) = \begin{cases}(L_{gb})^{-1}, & \text{if } (r,s) \in \text{global-best-tour}\\0, & \text{otherwise}\end{cases}$"/>
-                <p><b>ACS State Transition Rule</b></p>
-                <StardustDL.RazorComponents.Markdown.MarkdownRenderer Value="$s = \begin{cases}\text{arg max}_{u \in J_{k}(r)}\{[\tau(r,u)] \cdot [\eta(r,u)]^\beta\} & \text{if } q \leq q_{0} \text{ (exploitation)}\\S, & \text{otherwise (biased exploration)}\end{cases}$"/>
-                <p><b>Random-proportional Rule</b></p>
-                <StardustDL.RazorComponents.Markdown.MarkdownRenderer Value="$p_{k}(r,s) = \begin{cases}\frac{[\tau(r,s)] \cdot [\eta(r,s)]^\beta}{\sum\limits_{u \in J_{k}(r)}[\tau(r,u)] \cdot [\eta(r,u)]^\beta}, & \text{if } s \in J_{k}(r)\\0, & \text{otherwise}\end{cases}$"/>*@
-                @if (enumerator != null && enumerator.Current != null && enumerator.Current.Equations.Count != 0) {
-                    foreach (var kvp in enumerator.Current.Equations) {
-                        <p><b>@kvp.Key</b></p>
-                        <StardustDL.RazorComponents.Markdown.MarkdownRenderer Value="@kvp.Value.Latex"/>
-                        <StardustDL.RazorComponents.Markdown.MarkdownRenderer Value="@kvp.Value.Generate()"/>
-                        <StardustDL.RazorComponents.Markdown.MarkdownRenderer Value="@kvp.Value.Result"/>
-                    }
-                }
-                @if (algorithmEnum == AlgorithmEnum.SA && enumerator != null && enumerator.Current != null
-                && enumerator.Current.Segments != null && enumerator.Current.Segments.Count != 0) {
-                    <div class="row">
-                        @if (additionalCanvases != null && additionalCanvases.Length != 0) {
-                            <div class="col">
-                                <h5 class="font-weight-bold">Details</h5>
-                                <div class="row">
-                                    @for (int i = 0; i < enumerator.Current.Segments.Count; i++) {
-                                        int j = i;
-                                        <div class="col">
-                                            <div class="card">
-                                                <Canvas @ref="additionalCanvases[j]" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
-                                                <div class="card-body">
-                                                    <h5>@enumerator.Current.Segments[j].Identifier</h5>
-                                                    <h6 class="card-subtitle mb-2 text-muted">@enumerator.Current.Segments[j].Type</h6>
-                                                    @foreach (var info in enumerator.Current.Segments[j].Info) {
-                                                        <span><b>@info.Key</b>: @info.Value</span><br/>
-                                                    }
-                                                </div>
-                                            </div>
-                                        </div>
-                                    }
+            </div>
+        </div>
+        <div class="col-md-4 p-0">
+            <div class="bg-custom-light custom-input-group">
+                <h5>State</h5>
+                @if (enumerator != null && !enumerator.Current.Finished) {
+                    <div class="row g-3">
+                        <div class="input-group">
+                            <div class="col-auto">
+                                @if (!autoAdvance) {
+                                    <div class="form-group">
+                                        <button class="btn btn-primary btn-sm" type="button" @onclick="e => NextState(false)">Next</button>
+                                    </div>
+                                }
+                            </div>
+                            <div class="col-auto">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="switch" @bind="autoAdvance">
+                                    <label class="form-check-label" for="switch">Auto</label>
                                 </div>
                             </div>
-                        }
+                        </div>
                     </div>
+                }
+                @if (enumerator != null && enumerator.Current != null) {
+                    <span><b>Success</b>: @enumerator.Current.Success</span><br/>
+                    <span><b>Finished</b>: @enumerator.Current.Finished</span><br/>
+                    <span><b>Elapsed Time</b>: @TimeSpan.Minutes m @TimeSpan.Seconds s @TimeSpan.Milliseconds ms</span><br/>
+
+                    @foreach (var kvp in enumerator.Current.Messages) {
+                        <span><b>@kvp.Key</b>: @kvp.Value</span><br/>
+                    }
                 }
             </div>
         </div>
-        
     </div>
-
-    
+    <div class="row">
+        <div class="col-md-12">
+            <h5>Details</h5>
+            @if (enumerator != null && enumerator.Current != null && enumerator.Current.Equations.Count != 0) {
+                <div class="row">
+                <div class="col-md-6 col-sm-6">
+                    <h3 class="font-weight-bold">Formulas</h3>
+                        @foreach (var kvp in enumerator.Current.Equations) {
+                            <p><b>@kvp.Key</b></p>
+                            <MarkdownRenderer Value="@kvp.Value.Latex"/>
+                            @*if (kvp.Value.Description != null) {
+                                <MarkdownRenderer Value="@kvp.Value.Description"/>
+                            }*@
+                            <MarkdownRenderer Value="@kvp.Value.Generate()"/>
+                            <MarkdownRenderer Value="@kvp.Value.Result"/>
+                        }
+                    </div>
+                </div> 
+            }
+            @if (algorithmEnum == AlgorithmEnum.SA && enumerator != null && enumerator.Current != null
+            && enumerator.Current.Segments != null && enumerator.Current.Segments.Count != 0) {
+                <div class="row">
+                    @if (additionalCanvases != null && additionalCanvases.Length != 0) {
+                        <div class="col">
+                            <h5 class="font-weight-bold">Details</h5>
+                            <div class="row">
+                                @for (int i = 0; i < enumerator.Current.Segments.Count; i++) {
+                                    int j = i;
+                                    <div class="col">
+                                        <div class="card">
+                                            <Canvas @ref="additionalCanvases[j]" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+                                            <div class="card-body">
+                                                <h5>@enumerator.Current.Segments[j].Identifier</h5>
+                                                <h6 class="card-subtitle mb-2 text-muted">@enumerator.Current.Segments[j].Type</h6>
+                                                @foreach (var info in enumerator.Current.Segments[j].Info) {
+                                                    <span><b>@info.Key</b>: @info.Value</span><br/>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
 </div>
 
 @*@if (algorithmEnum == AlgorithmEnum.NN) {
@@ -288,10 +217,13 @@ n,12,11,11";
     private bool drawComplete;
     private bool showPrevious = true;
     private bool multiStart;
+    private string graphSettingsCollapse = "collapse";
     
     /* GraphView Parameters */
     private int CanvasWidth;
     private int CanvasHeight;
+
+
     private int _horizontal = 30;
     private int _vertical = 30;
     private int _count = 30;

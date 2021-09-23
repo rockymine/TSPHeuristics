@@ -6,6 +6,11 @@
       "provider": "jsdelivr",
       "library": "bootstrap-dark-5@1.1.0",
       "destination": "wwwroot/lib/bootstrap-dark-5/"
+    },
+    {
+      "provider": "jsdelivr",
+      "library": "bootstrap@5.1.1",
+      "destination": "wwwroot/lib/bootstrap/"
     }
   ]
 }

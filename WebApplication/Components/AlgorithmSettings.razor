@@ -1,0 +1,71 @@
+﻿@using TravellingSalesmanProblem.Algorithms
+<h5>Settings</h5>
+<div class="form-group">
+    <select class="form-control" name="heuristics" id="selectHeuristics" @bind="algorithmEnum">
+        <option value="NN" @onselect="e => algorithmEnum = AlgorithmEnum.NN">Nearest Neighbor</option>
+        <option value="SA" @onselect="e => algorithmEnum = AlgorithmEnum.SA">Simulated Annealing</option>
+        <option value="ACS" @onselect="e => algorithmEnum = AlgorithmEnum.ACS">Ant Colony System</option>
+        <option value="HC" @onselect="e => algorithmEnum = AlgorithmEnum.HC">Hill Climbing</option>
+    </select>
+</div>
+@if (algorithmEnum == AlgorithmEnum.SA || algorithmEnum == AlgorithmEnum.HC) {
+    <div class="form-group">
+        <div class="custom-control custom-switch">
+            <input class="custom-control-input" type="checkbox" id="switchPrev" @bind="ShowPrevious">
+            <label class="custom-control-label" for="switchPrev">Toggle comparison mode</label>
+        </div>
+    </div>
+}
+@if (algorithmEnum == AlgorithmEnum.NN || algorithmEnum == AlgorithmEnum.HC) {
+    <div class="form-check">
+        <input type="checkbox" class="form-check-input" id="multi" @bind="MultiStart">
+        <label class="form-check-label" for="multi">Multi Start</label>
+    </div>
+}
+
+@code {
+    private AlgorithmEnum _algorithmEnum;
+    [Parameter]
+    public AlgorithmEnum algorithmEnum {
+        get => _algorithmEnum;
+        set {
+            if (value == _algorithmEnum)
+                return;
+
+            _algorithmEnum = value;
+            algorithmEnumChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<AlgorithmEnum> algorithmEnumChanged { get; set; }
+
+    private bool _showPrevious;
+    [Parameter]
+    public bool ShowPrevious {
+        get => _showPrevious;
+        set {
+            if (value == _showPrevious)
+                return;
+
+            _showPrevious = value;
+            ShowPreviousChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<bool> ShowPreviousChanged { get; set; }
+
+    private bool _multiStart;
+    [Parameter]
+    public bool MultiStart {
+        get => _multiStart;
+        set {
+            if (value == _multiStart)
+                return;
+
+            _multiStart = value;
+            MultiStartChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<bool> MultiStartChanged { get; set; }
+}

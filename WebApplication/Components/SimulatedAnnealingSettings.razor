@@ -1,0 +1,126 @@
+﻿@using TravellingSalesmanProblem.Algorithms
+<div class="row">
+    <div class="col">
+        <div class="form-group">
+            <label for="iter1">MaxIter1</label>
+            <input type="number" id="iter1" class="form-control" @bind="MaxIter1">
+        </div>
+    </div>
+    <div class="col">
+        <div class="form-group">
+            <label for="iter2">MaxIter2</label>
+            <input type="number" id="iter2" class="form-control" @bind="MaxIter2">
+        </div>
+    </div>
+    <div class="col">
+        <div class="form-group">
+            <label for="temp1">StartTemp</label>
+            <input type="number" id="temp1" class="form-control" @bind="StartTemp">
+        </div>
+    </div>
+    <div class="col">
+        <div class="form-group">
+            <label for="temp2">MinTemp</label>
+            <input type="number" step="0.005" id="temp2" class="form-control" @bind="MinTemp">
+        </div>
+    </div>
+    <div class="col">
+        <div class="form-group">
+            <label for="alphaSA">Alpha</label>
+            <input type="number" step="0.05" id="alphaSA" class="form-control" @bind="AlphaSA">
+        </div>
+    </div>
+    <SimulatedAnnealingSettings @bind-NeighbourEnum="@NeighbourEnum"></SimulatedAnnealingSettings>
+</div>
+
+@code {
+    private NeighbourType neighbourEnum;
+    [Parameter]
+    public NeighbourType NeighbourEnum {
+        get => neighbourEnum;
+        set {
+            if (value == neighbourEnum)
+                return;
+
+            neighbourEnum = value;
+            NeighbourEnumChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<NeighbourType> NeighbourEnumChanged { get; set; }
+
+    private int maxIter1;
+    [Parameter]
+    public int MaxIter1 {
+        get => maxIter1;
+        set {
+            if (value == maxIter1)
+                return;
+
+            maxIter1 = value;
+            MaxIter1Changed.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<int> MaxIter1Changed { get; set; }
+
+    private int maxIter2;
+    [Parameter]
+    public int MaxIter2 {
+        get => maxIter2;
+        set {
+            if (value == maxIter2)
+                return;
+
+            maxIter2 = value;
+            MaxIter2Changed.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<int> MaxIter2Changed { get; set; }
+
+    private double startTemp;
+    [Parameter]
+    public double StartTemp {
+        get => startTemp;
+        set {
+            if (value == startTemp)
+                return;
+
+            startTemp = value;
+            StartTempChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<double> StartTempChanged { get; set; }
+
+    private double minTemp;
+    [Parameter]
+    public double MinTemp {
+        get => minTemp;
+        set {
+            if (value == minTemp)
+                return;
+
+            minTemp = value;
+            MinTempChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<double> MinTempChanged { get; set; }
+
+    private double alphaSA;
+    [Parameter]
+    public double AlphaSA {
+        get => alphaSA;
+        set {
+            if (value == alphaSA)
+                return;
+
+            alphaSA = value;
+            AlphaSAChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<double> AlphaSAChanged { get; set; }
+}
