@@ -12,27 +12,27 @@
     <div class="row">
         <div class="col-md-3 p-0"><!-- Settings -->
             <div class="bg-custom-light custom-input-group">
-                <AlgorithmSettings @bind-algorithmEnum="@algorithmEnum" @bind-MultiStart="@multiStart"
-                    @bind-ShowPrevious="@showPrevious"></AlgorithmSettings>
+                <AlgorithmSettings @bind-AlgorithmEnum="@AlgorithmEnum" @bind-MultiStart="@MultiStart"
+                    @bind-ShowPrevious="@ShowPrevious"></AlgorithmSettings>
             </div>
         </div>
         <div class="col-md-9 p-0">
             <div class="bg-custom-light custom-input-group">
                 <h5>Heuristic Settings</h5>
-                @if (enumerator != null) {
-                    @if (algorithmEnum == AlgorithmEnum.NN && !multiStart) {
+                @if (StateEnumerator != null) {
+                    @if (AlgorithmEnum == AlgorithmEnum.NN && !MultiStart) {
                         <NearestNeighborSettings @bind-StartNode="@StartNode"></NearestNeighborSettings>
                     }
-                    @if (algorithmEnum == AlgorithmEnum.SA) {
+                    @if (AlgorithmEnum == AlgorithmEnum.SA) {
                         <SimulatedAnnealingSettings @bind-AlphaSA="@AlphaSA" @bind-MaxIter1="@MaxIter1" @bind-MaxIter2="@MaxIter2"
                             @bind-MinTemp="@MinTemp" @bind-StartTemp="@StartTemp"></SimulatedAnnealingSettings>
                     }
-                    @if (algorithmEnum == AlgorithmEnum.HC) {
-                        <SimulatedAnnealingSettings @bind-NeighbourEnum="neighbourEnum"></SimulatedAnnealingSettings>
+                    @if (AlgorithmEnum == AlgorithmEnum.HC) {
+                        <NeighborFunctionSettings @bind-NeighbourEnum="@NeighbourEnum"></NeighborFunctionSettings>
                     }
-                    @if (algorithmEnum == AlgorithmEnum.ACS) {
-                        <AntColonySettings @bind-AlphaACS="AlphaACS" @bind-AntCount="AntCount" @bind-Beta="Beta"
-                            @bind-Rho="Rho" @bind-ExploitVsExplore="ExploitVsExplore"></AntColonySettings>
+                    @if (AlgorithmEnum == AlgorithmEnum.ACS) {
+                        <AntColonySettings @bind-AlphaACS="AlphaACS" @bind-AntCount="@AntCount" @bind-Beta="@Beta"
+                            @bind-Rho="@Rho" @bind-ExploitVsExplore="@StateTransition"></AntColonySettings>
                     }
                     <div class="form-group">
                         <button class="btn btn-danger" type="button" @onclick="e => NextState(true)">Reset</button>
@@ -43,17 +43,17 @@
     </div>
     <div class="row">
         <p>
-            <button class="btn btn-primary" @onclick="@(e => graphSettingsCollapse = graphSettingsCollapse == "" ? "collapse" : "")">
+            <button class="btn btn-primary" @onclick="@(e => SettingsCollapse = SettingsCollapse == "" ? "collapse" : "")">
                 Graph settings ˅
             </button>
         </p>
-        <div class="@graphSettingsCollapse" id="collapseExample">
+        <div class="@SettingsCollapse" id="collapseExample">
             <div class="row">
                 <div class="col-md-6 p-0">
                     <div class="bg-custom-light custom-input-group">
                         <h5>Text-based graph</h5>
                         <div class="form-group">
-                            <textarea class="form-control" @bind="graphDefinition" style="height: 200px;"></textarea>
+                            <textarea class="form-control" @bind="DefaultGraph" style="height: 200px;"></textarea>
                         </div>
                         <div class="form-group">
                             <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(true)">Draw From Text</button>
@@ -78,12 +78,15 @@
                 <div class="row">
                     <div class="col">
                         <h5 class="font-weight-bold">Current</h5>
-                        <Canvas @ref="currentCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+                        <Canvas @ref="@CurrentCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
                     </div>
                     <div class="col">
-                        @if (showPrevious && (algorithmEnum == AlgorithmEnum.SA || algorithmEnum == AlgorithmEnum.HC)) {
+                        @*@if (AlgorithmEnum == AlgorithmEnum.NN) {
+                            <TableGenerator @ref="TableGenerator"/>
+                        }*@
+                        @if (ShowPrevious && (AlgorithmEnum == AlgorithmEnum.SA || AlgorithmEnum == AlgorithmEnum.HC)) {
                             <h5 class="font-weight-bold">Previous</h5>
-                            <Canvas @ref="previousCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+                            <Canvas @ref="@PreviousCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
                         }
                     </div>
                 </div>
@@ -92,11 +95,11 @@
         <div class="col-md-4 p-0">
             <div class="bg-custom-light custom-input-group">
                 <h5>State</h5>
-                @if (enumerator != null && !enumerator.Current.Finished) {
+                @if (StateEnumerator != null && !StateEnumerator.Current.Finished) {
                     <div class="row g-3">
                         <div class="input-group">
                             <div class="col-auto">
-                                @if (!autoAdvance) {
+                                @if (!AutoAdvance) {
                                     <div class="form-group">
                                         <button class="btn btn-primary btn-sm" type="button" @onclick="e => NextState(false)">Next</button>
                                     </div>
@@ -104,19 +107,19 @@
                             </div>
                             <div class="col-auto">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="switch" @bind="autoAdvance">
+                                    <input class="form-check-input" type="checkbox" id="switch" @bind="AutoAdvance">
                                     <label class="form-check-label" for="switch">Auto</label>
                                 </div>
                             </div>
                         </div>
                     </div>
                 }
-                @if (enumerator != null && enumerator.Current != null) {
-                    <span><b>Success</b>: @enumerator.Current.Success</span><br/>
-                    <span><b>Finished</b>: @enumerator.Current.Finished</span><br/>
+                @if (StateEnumerator != null && StateEnumerator.Current != null) {
+                    <span><b>Success</b>: @StateEnumerator.Current.Success</span><br/>
+                    <span><b>Finished</b>: @StateEnumerator.Current.Finished</span><br/>
                     <span><b>Elapsed Time</b>: @TimeSpan.Minutes m @TimeSpan.Seconds s @TimeSpan.Milliseconds ms</span><br/>
 
-                    @foreach (var kvp in enumerator.Current.Messages) {
+                    @foreach (var kvp in StateEnumerator.Current.Messages) {
                         <span><b>@kvp.Key</b>: @kvp.Value</span><br/>
                     }
                 }
@@ -126,38 +129,35 @@
     <div class="row">
         <div class="col-md-12">
             <h5>Details</h5>
-            @if (enumerator != null && enumerator.Current != null && enumerator.Current.Equations.Count != 0) {
+            @if (StateEnumerator != null && StateEnumerator.Current != null && StateEnumerator.Current.Equations.Count != 0) {
                 <div class="row">
                 <div class="col-md-6 col-sm-6">
                     <h3 class="font-weight-bold">Formulas</h3>
-                        @foreach (var kvp in enumerator.Current.Equations) {
+                        @foreach (var kvp in StateEnumerator.Current.Equations) {
                             <p><b>@kvp.Key</b></p>
                             <MarkdownRenderer Value="@kvp.Value.Latex"/>
-                            @*if (kvp.Value.Description != null) {
-                                <MarkdownRenderer Value="@kvp.Value.Description"/>
-                            }*@
                             <MarkdownRenderer Value="@kvp.Value.Generate()"/>
                             <MarkdownRenderer Value="@kvp.Value.Result"/>
                         }
                     </div>
                 </div> 
             }
-            @if (algorithmEnum == AlgorithmEnum.SA && enumerator != null && enumerator.Current != null
-            && enumerator.Current.Segments != null && enumerator.Current.Segments.Count != 0) {
+            @if (AlgorithmEnum == AlgorithmEnum.SA && StateEnumerator != null && StateEnumerator.Current != null
+            && StateEnumerator.Current.Segments != null && StateEnumerator.Current.Segments.Count != 0) {
                 <div class="row">
-                    @if (additionalCanvases != null && additionalCanvases.Length != 0) {
+                    @if (CanvasArray != null && CanvasArray.Length != 0) {
                         <div class="col">
                             <h5 class="font-weight-bold">Details</h5>
                             <div class="row">
-                                @for (int i = 0; i < enumerator.Current.Segments.Count; i++) {
+                                @for (int i = 0; i < StateEnumerator.Current.Segments.Count; i++) {
                                     int j = i;
                                     <div class="col">
                                         <div class="card">
-                                            <Canvas @ref="additionalCanvases[j]" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+                                            <Canvas @ref="CanvasArray[j]" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
                                             <div class="card-body">
-                                                <h5>@enumerator.Current.Segments[j].Identifier</h5>
-                                                <h6 class="card-subtitle mb-2 text-muted">@enumerator.Current.Segments[j].Type</h6>
-                                                @foreach (var info in enumerator.Current.Segments[j].Info) {
+                                                <h5>@StateEnumerator.Current.Segments[j].Identifier</h5>
+                                                <h6 class="card-subtitle mb-2 text-muted">@StateEnumerator.Current.Segments[j].Type</h6>
+                                                @foreach (var info in StateEnumerator.Current.Segments[j].Info) {
                                                     <span><b>@info.Key</b>: @info.Value</span><br/>
                                                 }
                                             </div>
@@ -173,32 +173,25 @@
     </div>
 </div>
 
-@*@if (algorithmEnum == AlgorithmEnum.NN) {
-    <TableGenerator @ref="tableGenerator"/>
-}
-@if (algorithmEnum == AlgorithmEnum.SA) {
-    <ChartGenerator @ref="chartGenerator"/>
-}*@
-
 @code {
-    //components
-	private Canvas currentCanvas;
-    private Canvas previousCanvas;
-    private Canvas[] additionalCanvases = new Canvas[5];
-	private TableGenerator tableGenerator;
-    private ChartGenerator chartGenerator;
+    private Canvas CurrentCanvas;
+    private Canvas PreviousCanvas;
+    private Canvas[] CanvasArray = new Canvas[5];
 
-	//graph
-	private GraphProblem graph;
-    private GraphState previous;
-    private NearestNeighbour nearestNeighbour = new();
-    private SimulatedAnnealing simulatedAnnealing = new();
-    private AntAlgorithm antColonySystem = new();
-    private HillClimbing hillClimbing = new();
-	private IEnumerator<GraphState> enumerator;
-	private AlgorithmEnum algorithmEnum;
-    private NeighbourType neighbourEnum;
-	private string graphDefinition = @"n,1,11,5
+    private TableGenerator TableGenerator;
+
+	private GraphProblem Instance;
+    private GraphState PreviousState;
+    private IEnumerator<GraphState> StateEnumerator;
+
+    private AlgorithmEnum AlgorithmEnum;
+    private NeighbourType NeighbourEnum;
+    private NearestNeighbour NearestNeighbor = new();
+    private SimulatedAnnealing SimulatedAnnealing = new();
+    private AntAlgorithm AntAlgorithm = new();
+    private HillClimbing HillClimbing = new();
+	
+	private string DefaultGraph = @"n,1,11,5
 n,2,6,4
 n,3,4,10
 n,4,4,2
@@ -210,82 +203,74 @@ n,9,5,7
 n,10,7,1
 n,11,1,6
 n,12,11,11";
-
-    private const float Scale = 20;
-    private const int Delay = 1;
-    private bool autoAdvance;
-    private bool drawComplete;
-    private bool showPrevious = true;
-    private bool multiStart;
-    private string graphSettingsCollapse = "collapse";
     
-    /* GraphView Parameters */
+    private const int AnimationDelay = 1;
+    private bool AutoAdvance;
+    private bool DrawComplete;
+    private bool ShowPrevious = true;
+    private bool MultiStart;
+    private string SettingsCollapse = "collapse";
+    
+    /* Canvas and Graph Parameters */
+    private float CanvasScale = 20;
     private int CanvasWidth;
-    private int CanvasHeight;
+    private int CanvasHeight;   
 
-
-    private int _horizontal = 30;
-    private int _vertical = 30;
-    private int _count = 30;
-
+    private int _maxX = 30;
     private int MaxX {
-        get => _horizontal;
+        get => _maxX;
         set {
-            if (value == _horizontal)
+            if (value == _maxX)
                 return;
             if (value < 10 || value > 90)
                 return;
 
-            _horizontal = value;
+            _maxX = value;
         }
     }
-    
+
+    private int _maxY = 30;
     private int MaxY {
-        get => _vertical;
+        get => _maxY;
         set {
-            if (value == _vertical)
+            if (value == _maxY)
                 return;
             if (value < 10 || value > 90)
                 return;
 
-            _vertical = value;
+            _maxY = value;
         }
     }
     
+    private int _nodeCount = 30;
     private int NodeCount {
-        get => _count;
+        get => _nodeCount;
         set {
-            if (value == _count)
+            if (value == _nodeCount)
                 return;
             if (value < 5 || value > 90)
                 return;
 
-            _count = value;
+            _nodeCount = value;
         }
     }
 
-    /* Nearest Neighbor Parameters */
-    private int _nodeValue;
-
+    /* Nearest Neighbor */
+    private int _startNode;
     private int StartNode {
-        get => _nodeValue;
+        get => _startNode;
         set {
-            if (value == _nodeValue)
+            if (value == _startNode)
                 return;
-            if (value < 0 || value > graph.Nodes.Count - 1)
+            if (value < 0 || value > Instance.Nodes.Count - 1)
                 return;
 
-            _nodeValue = value;
+            _startNode = value;
         }
     }
 
-    /* Simulated Annealing Parameters */
+    /* Simulated Annealing */
     private int _maxIter1 = 20; //iterations without temperature change
-    private int _maxIter2 = 400; //temperature changes
-    private double _startTemp = 100;
-    private double _minTemp = Math.Pow(10,-8);
-    private double _alphaSA = 0.98;
-
     private int MaxIter1 {
         get => _maxIter1;
         set {
@@ -298,6 +283,7 @@ n,12,11,11";
         }
     }
 
+    private int _maxIter2 = 400; //maximum temperature changes
     private int MaxIter2 {
         get => _maxIter2;
         set {
@@ -310,6 +296,7 @@ n,12,11,11";
         }
     }
 
+    private double _startTemp = 100;
     private double StartTemp {
         get => _startTemp;
         set {
@@ -323,6 +310,7 @@ n,12,11,11";
         }
     }
 
+    private double _minTemp = Math.Pow(10,-8);
     private double MinTemp {
         get => _minTemp;
         set {
@@ -335,6 +323,7 @@ n,12,11,11";
         }
     }
 
+    private double _alphaSA = 0.98;
     private double AlphaSA {
         get => _alphaSA;
         set {
@@ -347,13 +336,8 @@ n,12,11,11";
         }
     }
 
-    /* Ant Colony Search Parameters */
+    /* Ant Algorithm */
     private double _alphaACS = 0.1;
-    private double _beta = 2;
-    private double _rho = 0.1;
-    private double _exploitVsExplore = 0.9;
-    private int _antCount = 10;
-
     private double AlphaACS {
         get => _alphaACS;
         set {
@@ -366,6 +350,7 @@ n,12,11,11";
         }
     }
 
+    private double _beta = 2;
     private double Beta {
         get => _beta;
         set {
@@ -378,6 +363,7 @@ n,12,11,11";
         }
     }
 
+    private double _rho = 0.1;
     private double Rho {
         get => _rho;
         set {
@@ -390,31 +376,33 @@ n,12,11,11";
         }
     }
 
-    private double ExploitVsExplore {
-        get => _exploitVsExplore;
+    private double _stateTransition = 0.9;
+    private double StateTransition {
+        get => _stateTransition;
         set {
-            if (value == _exploitVsExplore)
+            if (value == _stateTransition)
                 return;
             if (value < 0.5 || value >= 1)
                 return;
 
-            _exploitVsExplore = value;
+            _stateTransition = value;
         }
     }
 
+    private int _antCount = 10;
     private int AntCount {
         get => _antCount;
         set {
             if (value == _antCount)
                 return;
-            if (value < 1 || value > enumerator.Current.Nodes.Count)
+            if (value < 1 || value > StateEnumerator.Current.Nodes.Count)
                 return;
 
             _antCount = value;
         }
     }
 
-    private Stopwatch stopwatch = new();
+    private Stopwatch Stopwatch = new();
     private TimeSpan TimeSpan = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
@@ -424,9 +412,9 @@ n,12,11,11";
 
             Task.Run(async () => {
                 while (true) {
-                    await Task.Delay(Delay);
+                    await Task.Delay(AnimationDelay);
 
-                    if (autoAdvance)
+                    if (AutoAdvance)
                         await NextState(false);
                 }
             });
@@ -434,47 +422,47 @@ n,12,11,11";
     }
 
     private async Task InitiateGraph(bool textbased) {
-        graph = textbased ? GraphProblem.FromText(graphDefinition) :
+        Instance = textbased ? GraphProblem.FromText(DefaultGraph) :
         GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
-        CanvasWidth = (int)(Scale * (graph.FindMax().X + 1));
-        CanvasHeight = (int)(Scale * (graph.FindMax().Y + 1));
+        CanvasWidth = (int)(CanvasScale * (Instance.FindMax().X + 1));
+        CanvasHeight = (int)(CanvasScale * (Instance.FindMax().Y + 1));
         await NextState(true);
     }   
 
     private async Task NextState(bool reset) {
         if (reset) {
-            stopwatch.Restart();
+            Stopwatch.Restart();
             await UpdateEnumerator();
         }
             
-        if (enumerator == null)
+        if (StateEnumerator == null)
             await InitiateGraph(true);
 
-        if (!drawComplete) {
-            if (enumerator.Current != null)
-                previous = enumerator.Current.DeepCopy();
+        if (!DrawComplete) {
+            if (StateEnumerator.Current != null)
+                PreviousState = StateEnumerator.Current.DeepCopy();
 
-            enumerator.MoveNext();
-            TimeSpan = stopwatch.Elapsed;
+            StateEnumerator.MoveNext();
+            TimeSpan = Stopwatch.Elapsed;
             
-            if (previous != null && showPrevious && (algorithmEnum == AlgorithmEnum.SA || algorithmEnum == AlgorithmEnum.HC)) {
-                previous.ComparePathEdges(enumerator.Current);
-                await FillCanvas(previousCanvas);
+            if (PreviousState != null && ShowPrevious && (AlgorithmEnum == AlgorithmEnum.SA || AlgorithmEnum == AlgorithmEnum.HC)) {
+                PreviousState.ComparePathEdges(StateEnumerator.Current);
+                await FillCanvas(PreviousCanvas);
             }
 
-            if (enumerator.Current.Finished) {
-                drawComplete = true;
-                stopwatch.Stop();
+            if (StateEnumerator.Current.Finished) {
+                DrawComplete = true;
+                Stopwatch.Stop();
             }
 
-            await FillCanvas(currentCanvas);
+            await FillCanvas(CurrentCanvas);
 
             /* Simulated Annealing */
-            if (enumerator.Current.Segments.Count > 0) {
-                if (additionalCanvases != null && additionalCanvases.Length != 0) {
-                    for (int i = 0; i < additionalCanvases.Length; i++) {
-                        if (additionalCanvases[i] != null && algorithmEnum == AlgorithmEnum.SA && neighbourEnum == NeighbourType.TwoOpt) {
-                            await FillCanvas(additionalCanvases[i]);
+            if (StateEnumerator.Current.Segments.Count > 0) {
+                if (CanvasArray != null && CanvasArray.Length != 0) {
+                    for (int i = 0; i < CanvasArray.Length; i++) {
+                        if (CanvasArray[i] != null && AlgorithmEnum == AlgorithmEnum.SA && NeighbourEnum == NeighbourType.TwoOpt) {
+                            await FillCanvas(CanvasArray[i]);
                         }
                     }
                 }
@@ -489,16 +477,16 @@ n,12,11,11";
         await using (var context = await canvas.GetContext2DAsync()) {
             await ResetCanvas(context);
 
-            if (canvas == previousCanvas)
-                await DrawPath(context, previous);
+            if (canvas == PreviousCanvas)
+                await DrawPath(context, PreviousState);
 
-            if (canvas == currentCanvas)
-                await DrawPath(context, enumerator.Current);
+            if (canvas == CurrentCanvas)
+                await DrawPath(context, StateEnumerator.Current);
             
-            for (int i = 0; i < enumerator.Current.Segments.Count; i++) {
-                if (canvas == additionalCanvases[i] && !enumerator.Current.Finished) {
-                    await CanvasRenderer.DrawEdges(context, enumerator.Current.Segments[i].Edges, CanvasHeight, false, false);
-                    await CanvasRenderer.DrawNodes(context, enumerator.Current.Segments[i].Nodes, CanvasHeight);
+            for (int i = 0; i < StateEnumerator.Current.Segments.Count; i++) {
+                if (canvas == CanvasArray[i] && !StateEnumerator.Current.Finished) {
+                    await CanvasRenderer.DrawEdges(context, StateEnumerator.Current.Segments[i].Edges, CanvasHeight, false, false);
+                    await CanvasRenderer.DrawNodes(context, StateEnumerator.Current.Segments[i].Nodes, CanvasHeight);
                 }
             }
         }
@@ -510,21 +498,21 @@ n,12,11,11";
     }
 
     private async Task ResetAllCanvases() {
-        if (previousCanvas != null && showPrevious && algorithmEnum == AlgorithmEnum.SA) {
-            previous = null;
-            await ResetCanvas(await previousCanvas.GetContext2DAsync());
+        if (PreviousCanvas != null && ShowPrevious && AlgorithmEnum == AlgorithmEnum.SA) {
+            PreviousState = null;
+            await ResetCanvas(await PreviousCanvas.GetContext2DAsync());
         }
 
-        if (currentCanvas != null) {
-            await ResetCanvas(await currentCanvas.GetContext2DAsync());
+        if (CurrentCanvas != null) {
+            await ResetCanvas(await CurrentCanvas.GetContext2DAsync());
         }
         
-        if (enumerator != null && enumerator.Current != null && enumerator.Current.Segments.Count > 0) {
-            for (int i = 0; i < additionalCanvases.Length; i++) {
-                if (additionalCanvases[i] != null) {
-                    if (algorithmEnum == AlgorithmEnum.SA && neighbourEnum == NeighbourType.TwoOpt) {
-                        if (additionalCanvases[i].GetContext2DAsync() != null)
-                            await ResetCanvas(await additionalCanvases[i].GetContext2DAsync());
+        if (StateEnumerator != null && StateEnumerator.Current != null && StateEnumerator.Current.Segments.Count > 0) {
+            for (int i = 0; i < CanvasArray.Length; i++) {
+                if (CanvasArray[i] != null) {
+                    if (AlgorithmEnum == AlgorithmEnum.SA && NeighbourEnum == NeighbourType.TwoOpt) {
+                        if (CanvasArray[i].GetContext2DAsync() != null)
+                            await ResetCanvas(await CanvasArray[i].GetContext2DAsync());
                     }
                 }
             }
@@ -533,58 +521,47 @@ n,12,11,11";
 
     private async Task ResetCanvas(Context2D context) {
         await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
-        await CanvasRenderer.DrawGrid(context, graph.FindMax(), CanvasHeight);
+        await CanvasRenderer.DrawGrid(context, Instance.FindMax(), CanvasHeight);
     }
 
     private async Task UpdateEnumerator() {
-        drawComplete = false;
+        DrawComplete = false;
         await ResetAllCanvases();
 
-        switch (algorithmEnum) {
+        switch (AlgorithmEnum) {
             case AlgorithmEnum.NN:
-                nearestNeighbour.Start = graph.Nodes[StartNode];
-
-                if (multiStart) {
-                    enumerator = nearestNeighbour.MultiStart(graph).GetEnumerator();
-                } else {
-                    enumerator = nearestNeighbour.FindPath(graph).GetEnumerator();
-                }                
+                NearestNeighbor.Start = Instance.Nodes[StartNode];
+                StateEnumerator = MultiStart ? NearestNeighbor.MultiStart(Instance).GetEnumerator() :
+                    NearestNeighbor.FindPath(Instance).GetEnumerator();
                 break;
             case AlgorithmEnum.SA:
-                simulatedAnnealing.Alpha = AlphaSA;
-                simulatedAnnealing.MaxIter1 = MaxIter1;
-                simulatedAnnealing.MaxIter2 = MaxIter2;
-                simulatedAnnealing.StartTemp = StartTemp;
-                simulatedAnnealing.MinTemp = MinTemp;
-                simulatedAnnealing.NeighbourEnum = neighbourEnum;
-                enumerator = simulatedAnnealing.FindPath(graph).GetEnumerator();
+                SimulatedAnnealing.Alpha = AlphaSA;
+                SimulatedAnnealing.MaxIter1 = MaxIter1;
+                SimulatedAnnealing.MaxIter2 = MaxIter2;
+                SimulatedAnnealing.StartTemp = StartTemp;
+                SimulatedAnnealing.MinTemp = MinTemp;
+                SimulatedAnnealing.NeighbourEnum = NeighbourEnum;
+                StateEnumerator = SimulatedAnnealing.FindPath(Instance).GetEnumerator();
                 break;
             case AlgorithmEnum.ACS:
-                antColonySystem.AntCount = AntCount;
-                antColonySystem.Alpha = AlphaACS;
-                antColonySystem.Rho = Rho;
-                antColonySystem.Beta = Beta;
-                antColonySystem.ExploitVsExplore = ExploitVsExplore;
-                enumerator = antColonySystem.FindPath(graph).GetEnumerator();
+                AntAlgorithm.AntCount = AntCount;
+                AntAlgorithm.Alpha = AlphaACS;
+                AntAlgorithm.Rho = Rho;
+                AntAlgorithm.Beta = Beta;
+                AntAlgorithm.StateTransition = StateTransition;
+                StateEnumerator = AntAlgorithm.FindPath(Instance).GetEnumerator();
                 break;
             case AlgorithmEnum.HC:
-                hillClimbing.NeighbourType = neighbourEnum;
-
-                if (multiStart) {
-                    enumerator = hillClimbing.MultiStart(graph).GetEnumerator();
-                } else {
-                    enumerator = hillClimbing.FindPath(graph).GetEnumerator();
-                }
-                
+                HillClimbing.NeighbourType = NeighbourEnum;
+                StateEnumerator = MultiStart ? HillClimbing.MultiStart(Instance).GetEnumerator() :
+                    HillClimbing.FindPath(Instance).GetEnumerator();
                 break;
             default: break;
         }
     }
 
-    @*private void UpdateVisualsFromGraphState() {
-        if (algorithmEnum == AlgorithmEnum.NN)
-            tableGenerator.UpdateFromGraphState(enumerator.Current);
-        if (algorithmEnum == AlgorithmEnum.SA)
-            chartGenerator.UpdateFromGraphState(enumerator.Current);
-    }*@
+    private void UpdateVisualsFromGraphState() {
+        if (AlgorithmEnum == AlgorithmEnum.NN)
+            TableGenerator.UpdateFromGraphState(StateEnumerator.Current);
+    }
 }

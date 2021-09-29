@@ -10,10 +10,8 @@ namespace TravellingSalesmanProblem.Algorithms {
         public NeighbourType NeighbourType { get; set; }
         private GraphProblem CurrentBest = new();
         public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
-            Console.WriteLine("HillClimbing: FindPath(GraphProblem graph)");
             var x = GraphProblem.OrderedGraphProblem(graph);
             var y = new GraphProblem();
-
             var state = new GraphState {
                 Nodes = graph.Nodes,
                 Distance = double.MaxValue
@@ -25,19 +23,15 @@ namespace TravellingSalesmanProblem.Algorithms {
                 switch (NeighbourType) {
                     case NeighbourType.Swap:
                         y = NeighbourState.Swap(x);
-                        Console.WriteLine("Swap");
                         break;
                     case NeighbourType.TwoOpt:
                         y = NeighbourState.TwoOpt(x);
-                        Console.WriteLine("TwoOpt");
                         break;
                     case NeighbourType.ThreeOpt:
                         y = NeighbourState.ThreeOpt(x);
-                        Console.WriteLine("ThreeOpt");
                         break;
                     case NeighbourType.FourOpt:
                         y = NeighbourState.DoubleBridgeFourOpt(x);
-                        Console.WriteLine("FourOpt");
                         break;
                 }
 
@@ -54,9 +48,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public override IEnumerable<GraphState> MultiStart(GraphProblem graph) {
-            var best = new GraphState {
-                Nodes = graph.Nodes
-            };
+            var best = new GraphState { Nodes = graph.Nodes };
             var costs = double.MaxValue;
 
             for (int i = 0; i < graph.Nodes.Count; i++) {
@@ -83,8 +75,6 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Distance = CurrentBest.Costs;
             state.Path = CurrentBest.Nodes;
             state.PathEdges = CurrentBest.Edges;
-
-            Console.WriteLine(string.Join("-", state.Path.Select(n => n.Index)));
 
             if (finished)
                 state.Finished = true;

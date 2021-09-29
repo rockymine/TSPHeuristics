@@ -12,70 +12,45 @@ namespace TravellingSalesmanProblem.Algorithms {
         public double Alpha { get; set; }
         public double Rho { get; set; }
         public double Beta { get; set; }
-        public double ExploitVsExplore { get; set; }
+        public double StateTransition { get; set; } //ExploitVsExplore
         public double InitialPheromone { get; set; }
         private static readonly Random Random = new();
         private GraphProblem GlobalBest = new();
         private GraphProblem DistributedMemory = new();
         public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
-            /* Set up ant colony. */
-            //AntCount = graph.Nodes.Count;
-            Colony = new List<Ant>();
-            for (int j = 0; j < AntCount; j++) {
-                Colony.Add(new Ant());
-            }
+            var state = new GraphState { Nodes = graph.Nodes };
+            var nearestNeighbor = new NearestNeighbour { Start = graph.Nodes[Random.Next(0, graph.Nodes.Count)] };
 
+            Colony = Enumerable.Range(1, AntCount).Select(i => new Ant()).ToList();
+            GlobalBest = nearestNeighbor.FindPath(graph).Last().ToGraphProblem();
+            InitialPheromone = Math.Pow((GlobalBest.Nodes.Count) * GlobalBest.CalcCosts(), -1);
             DistributedMemory = GraphProblem.ConnectedGraphProblem(graph);
 
-            /* Create tour using tour constructive heuristic.
-             This tour will be improved by the ACS heuristic. */
-            NearestNeighbour nn = new();
-            nn.Start = graph.Nodes[Random.Next(0, graph.Nodes.Count)];
-            var initial = nn.FindPath(graph).Last();
-
-            GlobalBest = new GraphProblem {
-                Nodes = initial.Path,
-                Edges = initial.PathEdges
-            };
-
-            InitialPheromone = Math.Pow((GlobalBest.Nodes.Count) * GlobalBest.CalcCosts(), -1);
-            foreach (var edge in DistributedMemory.Edges) {
-                edge.Pheromone += InitialPheromone;
-            }
-
-            var state = new GraphState {
-                Nodes = graph.Nodes
-            };
-
+            DistributedMemory.Edges.ForEach(e => e.Pheromone += InitialPheromone);
             yield return UpdateState(state);
 
-            int i = 0;
-            /* Main ACS loop */
-            for (; i < 100; i++) {
+            for (int i = 0; i < 100; i++) {
                 state.Iteration++;
-
                 if (i > 0)
                     Colony.ForEach(a => a.Reset());
 
-                /* 1) Initialization phase */
+                /* 1) Initialization */
                 ScatterAnts(graph);
 
-                /* 2) This is the phase in which ants build their tours.
-                The tour of an ant k is stored in k.Path.Nodes */
+                /* 2) Ants build their tours */
                 AntPathBuilding(graph);
 
-                /* 3) In this phase global updating occurs and pheromone is updated. */
-                var best = Colony.OrderBy(x => x.Length).FirstOrDefault().Path;
+                var best = Colony
+                    .OrderBy(x => x.Path.CalcCosts())
+                    .FirstOrDefault().Path;
 
-                //if (best.Costs == state.Distance)
-                //    state.Finished = true;
                 if (Colony.TrueForAll(a => a.Path.Costs == best.Costs))
                     state.Finished = true;
 
                 GlobalBest = best;
+
+                /* 3) Global Updating */
                 GlobalUpdatingRule();
-                
-                //yield return UpdateState(state);
                 yield return UpdateGlobalState(state);
             }
         }
@@ -84,6 +59,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Path = GlobalBest.Nodes;
             state.PathEdges = GlobalBest.Edges;
             state.Distance = GlobalBest.CalcCosts();
+
             UpdateStateMessages(state);
             return state;
         }
@@ -93,6 +69,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.PathEdges = DistributedMemory.Edges;
             state.Distance = GlobalBest.CalcCosts();
             state.Equations = Equations;
+
             UpdateStateMessages(state);
             return state;
         }
@@ -103,7 +80,7 @@ namespace TravellingSalesmanProblem.Algorithms {
                     var next = ant.Unvisited.Any() ? StateTransitionRule(ant) : ant.Path.Nodes[0];
                     ant.UpdatePath(ant.Current, next);
                 }
-                /* In this phase local updating occurs and pheromone is updated. */
+                /* Local Updating */
                 foreach (var ant in Colony) {
                     LocalUpdatingRule(ant);
                 }
@@ -178,7 +155,7 @@ namespace TravellingSalesmanProblem.Algorithms {
                 edge.Pheromone = (1 - Alpha) * edge.Pheromone;
 
                 if (acs) {
-                    //only those edges belonging to the globally best tour are reinforced.
+                    /* Only Reinforce Best Edges */
                     if (IsEdgeInTour(edge, GlobalBest.Edges)) {
                         var lgbInversed = Math.Pow(GlobalBest.CalcCosts(), -1);
                         Equations[gur].Variables = new Dictionary<string, object> {
@@ -228,15 +205,10 @@ namespace TravellingSalesmanProblem.Algorithms {
         private Node StateTransitionRule(Ant k) {
             /*every time an ant in node r has to choose a city s to move to,
              it samples a random number 1 <= q <= 1*/
-            var q = k.Random.NextDouble();
-
+            var q = Random.NextDouble();
             //if q <= q0 then the best edge, according to STATETRANSITIONRULE is chosen (exploitation)
-            if (q <= ExploitVsExplore) {
-                return Exploitation(k);
             //otherwise an edge is chosen according to RANDOMPROPORTIONALRULE (biased exploration)
-            } else {
-                return BiasedExploration(k);
-            }
+            return q <= StateTransition ? Exploitation(k) : BiasedExploration(k);
         }
 
         private Node Exploitation(Ant k) {
@@ -270,10 +242,9 @@ namespace TravellingSalesmanProblem.Algorithms {
                 k.MoveProbability[mp.Key] = cumulative;
             }
 
-            var random = Random.NextDouble();
-
             //4. find the first node where a random number is greater than the element
-            return k.MoveProbability.FirstOrDefault(mp => random < mp.Value).Key.Item2;
+            return k.MoveProbability
+                .FirstOrDefault(mp => Random.NextDouble() < mp.Value).Key.Item2;
         }
 
         public void ScatterAnts(GraphProblem graph) {
@@ -294,13 +265,8 @@ namespace TravellingSalesmanProblem.Algorithms {
     public class Ant {
         public GraphProblem Path { get; set; } = new();
         public List<Node> Unvisited { get; set; } = new();
-        public Dictionary<Tuple<Node, Node>, double> MoveProbability { get; set; } = new();
-
-        private static readonly Random random = new();
-        public Random Random = random;
-
         public Node Current => Path.Nodes.Last();
-        public double Length => Path.CalcCosts();
+        public Dictionary<Tuple<Node, Node>, double> MoveProbability { get; set; } = new();
 
         public void UpdatePath(Node from, Node to) {
             Path.Nodes.Add(to);

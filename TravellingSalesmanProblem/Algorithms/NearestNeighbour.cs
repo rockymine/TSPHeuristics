@@ -10,16 +10,14 @@ namespace TravellingSalesmanProblem.Algorithms {
         public Node Start { get; set; }
         public bool Closed { get; set; } = true;
         public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
-            var state = new GraphState {
-                Nodes = graph.Nodes
-            };
-            graph.Reset();
-
+            var state = new GraphState { Nodes = graph.Nodes };
             var current = Start;
             Start.Visited = true;
-            state.Path.Add(current);
 
+            graph.Reset();
+            state.Path.Add(current);
             UpdateStateMessages(state);
+
             yield return state;
 
             while (true) {
@@ -57,22 +55,21 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public override IEnumerable<GraphState> MultiStart(GraphProblem graph) {
-            var best = new GraphState {
-                Nodes = graph.Nodes
-            };
-            graph.Reset();
-
+            var best = new GraphState { Nodes = graph.Nodes };
             var costs = double.MaxValue;
 
+            graph.Reset();            
+
             foreach (var node in graph.Nodes) {
-                Start = node;
                 var current = FindPath(graph).Last();
+                Start = node;
 
                 if (current.CalcCosts() < costs) {
                     costs = current.CalcCosts();
                     best.Path = current.Path;
                     best.PathEdges = current.PathEdges;
                     best.Distance = current.Distance;
+
                     UpdateStateMessages(best);
                     yield return best;
                 }                    
@@ -81,7 +78,6 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Route"] = string.Join('-', state.Path.Select(n => n.Index));
-            //state.Messages["Path Edges"] = string.Join(',', state.PathEdges.Select(n => n.Node1.Index + " <-> " + n.Node2.Index));
             state.Messages["Distance"] = Math.Round(state.Distance, 1).ToString();
         }
     }

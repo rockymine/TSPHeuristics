@@ -20,8 +20,6 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
             var x = GraphProblem.OrderedGraphProblem(graph);
-            CurrentBest = x;
-
             var state = new GraphState {
                 Nodes = graph.Nodes,
                 Path = x.Nodes,
@@ -29,6 +27,8 @@ namespace TravellingSalesmanProblem.Algorithms {
                 Distance = x.Costs,
                 Temperature = StartTemp
             };
+
+            CurrentBest = x;
             yield return state;
             
             while (state.Temperature >= MinTemp) {
@@ -104,10 +104,7 @@ namespace TravellingSalesmanProblem.Algorithms {
                 Result = $"$\\text{{{condition}}}$"
             };
 
-            if (condition)
-                return true;
-
-            return false;
+            return condition;
         }
 
         public override IEnumerable<GraphState> MultiStart(GraphProblem graph) {
