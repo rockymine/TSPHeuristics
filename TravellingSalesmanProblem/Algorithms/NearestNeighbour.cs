@@ -11,13 +11,13 @@ namespace TravellingSalesmanProblem.Algorithms {
         public bool Closed { get; set; } = true;
         public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
             var state = new GraphState { Nodes = graph.Nodes };
+            graph.Reset();
+
             var current = Start;
             Start.Visited = true;
-
-            graph.Reset();
             state.Path.Add(current);
-            UpdateStateMessages(state);
 
+            UpdateStateMessages(state);
             yield return state;
 
             while (true) {
@@ -61,8 +61,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             graph.Reset();            
 
             foreach (var node in graph.Nodes) {
-                var current = FindPath(graph).Last();
                 Start = node;
+                var current = FindPath(graph).Last();
 
                 if (current.CalcCosts() < costs) {
                     costs = current.CalcCosts();

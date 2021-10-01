@@ -55,7 +55,7 @@ namespace WebApplication.Utils {
             }
         }
 
-        public static async Task DrawEdges(Context2D context, List<Edge> edges, int height, bool color = true, bool text = true) {
+        public static async Task DrawEdges(Context2D context, List<Edge> edges, int height, bool color, bool text) {
             var brush = EdgeBrush.Copy();
 
             foreach (var edge in edges) {
