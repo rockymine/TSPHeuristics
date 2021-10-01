@@ -26,7 +26,7 @@
                     }
                     @if (AlgorithmEnum == AlgorithmEnum.SA) {
                         <SimulatedAnnealingSettings @bind-AlphaSA="@AlphaSA" @bind-MaxIter1="@MaxIter1" @bind-MaxIter2="@MaxIter2"
-                            @bind-MinTemp="@MinTemp" @bind-StartTemp="@StartTemp"></SimulatedAnnealingSettings>
+                            @bind-MinTemp="@MinTemp" @bind-StartTemp="@StartTemp" @bind-NeighbourEnum="@NeighbourEnum"></SimulatedAnnealingSettings>
                     }
                     @if (AlgorithmEnum == AlgorithmEnum.HC) {
                         <NeighborFunctionSettings @bind-NeighbourEnum="@NeighbourEnum"></NeighborFunctionSettings>
@@ -154,7 +154,7 @@
                                     int j = i;
                                     <div class="col">
                                         <div class="card">
-                                            <Canvas @ref="CanvasArray[j]" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+                                            <Canvas @ref="@CanvasArray[j]" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
                                             <div class="card-body">
                                                 <h5>@StateEnumerator.Current.Segments[j].Identifier</h5>
                                                 <h6 class="card-subtitle mb-2 text-muted">@StateEnumerator.Current.Segments[j].Type</h6>
@@ -471,7 +471,7 @@ n,12,11,11";
 
             StateHasChanged();
             @*UpdateVisualsFromGraphState();*@
-    }
+        }
     }
 
     private async Task FillCanvas(Canvas canvas) {

@@ -77,6 +77,24 @@ namespace TravellingSalesmanProblem.Graph {
             return closest;
         }
 
+        public static Edge FindLongest(Node node) {
+            Edge longest = null;
+            var longestDistance = double.MinValue;
+
+            foreach (var edge in node.Edges) {
+                if (edge.Opposite(node).Visited)
+                    continue;
+
+                if (edge.Distance > longestDistance) {
+                    longestDistance = edge.Distance;
+                    longest = edge;
+                }
+
+            }
+
+            return longest;
+        }
+
         public Vector2 FindCenter() => Vector2.Add(Node1.Position, Node2.Position) / 2;
     }
 }

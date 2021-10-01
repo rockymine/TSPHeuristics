@@ -20,6 +20,7 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
             var x = GraphProblem.OrderedGraphProblem(graph);
+            //StartTemp = CalculateInitialTemperature(graph);
             var state = new GraphState {
                 Nodes = graph.Nodes,
                 Path = x.Nodes,
@@ -32,22 +33,24 @@ namespace TravellingSalesmanProblem.Algorithms {
             yield return state;
             
             while (state.Temperature >= MinTemp) {
-                /* Create a neighbor y from N(x) */
-                var y = CreateNeighbourSolution(x);
-                state.Segments = y.Segments;
+                //for (int i = 0; i < MaxIter1; i++) {
+                    /* Generate Neighbor */
+                    var y = CreateNeighbourSolution(x);
+                    state.Segments = y.Segments;
 
-                if (y.Costs <= x.Costs) {
-                    x = y;
+                    if (y.Costs <= x.Costs) {
+                        x = y;
 
-                    /* update current best tour */
-                    if (x.Costs < CurrentBest.Costs) {
-                        CurrentBest = x;
-                        yield return UpdateState(state);
+                        /* Update Current Best */
+                        if (x.Costs < CurrentBest.Costs) {
+                            CurrentBest = x;
+                            yield return UpdateState(state);
+                        }
+
+                    } else if (MetropolisRule(graph, state)) {
+                        x = y;
                     }
-
-                } else if (MetropolisRule(graph, state)) {
-                    x = y;
-                }
+                //}
 
                 var tu = "Temperature Update";
                 Equations[tu] = new("$T_{k+1} = f(T(k)) = \\alpha \\cdot T_{k}$") {
@@ -65,6 +68,18 @@ namespace TravellingSalesmanProblem.Algorithms {
             }
 
             yield return UpdateState(state, true);
+        }
+
+        private double CalculateInitialTemperature(GraphProblem graph) {            
+            var nearestNeighbor = new NearestNeighbour { Start = graph.Nodes[Random.Next(0, graph.Nodes.Count)] };
+
+            /* Calculate Best Nearest Neighbor Solution */
+            var best = nearestNeighbor.MultiStart(graph).Last().Distance;
+
+            /* Calculate Worst Nearest Neighbor Solution */
+            var worst = nearestNeighbor.MultiStartLongest(graph).Last().Distance;
+
+            return worst - best;            
         }
 
         private GraphProblem CreateNeighbourSolution(GraphProblem x) {
