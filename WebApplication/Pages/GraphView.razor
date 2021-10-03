@@ -25,7 +25,7 @@
                         <NearestNeighborSettings @bind-StartNode="@StartNode"></NearestNeighborSettings>
                     }
                     @if (AlgorithmEnum == AlgorithmEnum.SA) {
-                        <SimulatedAnnealingSettings @bind-AlphaSA="@AlphaSA" @bind-MaxIter1="@MaxIter1" @bind-MaxIter2="@MaxIter2"
+                        <SimulatedAnnealingSettings @bind-AlphaSA="@AlphaSA" @bind-MaxIter1="@PhaseLength" @bind-MaxIter2="@MaxPhases"
                             @bind-MinTemp="@MinTemp" @bind-StartTemp="@StartTemp" @bind-NeighbourEnum="@NeighbourEnum"></SimulatedAnnealingSettings>
                     }
                     @if (AlgorithmEnum == AlgorithmEnum.HC) {
@@ -273,29 +273,29 @@ n,12,11,11";
     }
 
     /* Simulated Annealing */
-    private int _maxIter1 = 20; //iterations without temperature change
-    private int MaxIter1 {
-        get => _maxIter1;
+    private int _phaseLength = 1;
+    private int PhaseLength {
+        get => _phaseLength;
         set {
-            if (value == _maxIter1)
+            if (value == _phaseLength)
                 return;
-            if (value < 5 || value > 20)
+            if (value < 1 || value > 20)
                 return;
 
-            _maxIter1 = value;
+            _phaseLength = value;
         }
     }
 
-    private int _maxIter2 = 400; //maximum temperature changes
-    private int MaxIter2 {
-        get => _maxIter2;
+    private int _maxPhases = 100;
+    private int MaxPhases {
+        get => _maxPhases;
         set {
-            if (value == _maxIter2)
+            if (value == _maxPhases)
                 return;
             if (value < 100 || value > 1000)
                 return;
 
-            _maxIter2 = value;
+            _maxPhases = value;
         }
     }
 
@@ -527,7 +527,7 @@ n,12,11,11";
 
     private async Task UpdateEnumerator() {
         DrawComplete = false;
-        AutoAdvance = false;
+        //AutoAdvance = false;
         Stopwatch.Restart();
 
         await ResetAllCanvases();
@@ -540,8 +540,8 @@ n,12,11,11";
                 break;
             case AlgorithmEnum.SA:
                 SimulatedAnnealing.Alpha = AlphaSA;
-                SimulatedAnnealing.MaxIter1 = MaxIter1;
-                SimulatedAnnealing.MaxIter2 = MaxIter2;
+                SimulatedAnnealing.PhaseLength = PhaseLength;
+                SimulatedAnnealing.MaxPhases = MaxPhases;
                 SimulatedAnnealing.StartTemp = StartTemp;
                 SimulatedAnnealing.MinTemp = MinTemp;
                 SimulatedAnnealing.NeighbourEnum = NeighbourEnum;

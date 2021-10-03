@@ -7,8 +7,8 @@ using TravellingSalesmanProblem.Graph;
 
 namespace TravellingSalesmanProblem.Algorithms {
     public class SimulatedAnnealing : Algorithm {
-        public int MaxIter1 { get; set; }
-        public int MaxIter2 { get; set; }
+        public int PhaseLength { get; set; }
+        public int MaxPhases { get; set; }
         public double StartTemp { get; set; }
         public double MinTemp { get; set; }
         public double Alpha { get; set; }
@@ -33,7 +33,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             yield return state;
             
             while (state.Temperature >= MinTemp) {
-                //for (int i = 0; i < MaxIter1; i++) {
+                for (int i = 0; i < PhaseLength; i++) {
                     /* Generate Neighbor */
                     var y = CreateNeighbourSolution(x);
                     state.Segments = y.Segments;
@@ -50,7 +50,7 @@ namespace TravellingSalesmanProblem.Algorithms {
                     } else if (MetropolisRule(graph, state)) {
                         x = y;
                     }
-                //}
+                }
 
                 var tu = "Temperature Update";
                 Equations[tu] = new("$T_{k+1} = f(T(k)) = \\alpha \\cdot T_{k}$") {

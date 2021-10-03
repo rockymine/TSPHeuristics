@@ -14,6 +14,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             var y = new GraphProblem();
             var state = new GraphState {
                 Nodes = graph.Nodes,
+                Path = x.Nodes,
+                PathEdges = x.Edges,
                 Distance = double.MaxValue
             };
 
@@ -25,7 +27,7 @@ namespace TravellingSalesmanProblem.Algorithms {
                         y = NeighbourState.Swap(x);
                         break;
                     case NeighbourType.TwoOpt:
-                        y = NeighbourState.TwoOpt(x);
+                        y = NeighbourState.TwoOptFull(x);
                         break;
                     case NeighbourType.ThreeOpt:
                         y = NeighbourState.ThreeOpt(x);
