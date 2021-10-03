@@ -69,27 +69,15 @@ namespace TravellingSalesmanProblem.Algorithms {
                 for (int i = 1; i <= n - 3; i++) {
                     for (int j = i + 1; j <= n - 2; j++) {
                         var tour = best.Nodes.ToArray();
-                        Console.WriteLine($"i: {i} ({tour[i].Index}), j: {j} ({tour[j].Index})");
-                        
-                        Console.WriteLine("Before: " + string.Join('-', best.Nodes.Select(n => n.Index)) + ": " + best.CalcCosts());
-
                         var ij = Edge.GetDistanceRounded(tour[i], tour[j]);
-                        Console.WriteLine($"Edge ij from {tour[i].Index} to {tour[j].Index}: {ij}");
-
                         var i1j1 = Edge.GetDistanceRounded(tour[i + 1], tour[j + 1]);
-                        Console.WriteLine($"Edge i1j1 from {tour[i + 1].Index} to {tour[j + 1].Index}: {i1j1}");
-
                         var ii1 = Edge.GetDistanceRounded(tour[i], tour[i + 1]);
-                        Console.WriteLine($"Edge ii1 from {tour[i].Index} to {tour[i + 1].Index}: {ii1}");
-
                         var jj1 = Edge.GetDistanceRounded(tour[j], tour[j + 1]);
-                        Console.WriteLine($"Edge jj1 from {tour[j].Index} to {tour[j + 1].Index}: {jj1}");
-
                         var delta = Math.Round(ij + i1j1 - ii1 - jj1, 0);
-                        Console.WriteLine($"{ij} + {i1j1} - {ii1} - {jj1} = {delta}");
                         if (delta < 0) {
                             i++;
                             j++;
+
                             var a = tour[0..i];
                             var b = tour[i..j];
                             var c = tour[j..n];
@@ -97,10 +85,7 @@ namespace TravellingSalesmanProblem.Algorithms {
 
                             best = new GraphProblem { Nodes = a.Concat(bRev).Concat(c).ToList() };
                             best.ConnectPathNodes();
-                            Console.WriteLine("Improved: " + string.Join('-', a.Select(n => n.Index)) + " | "
-                                + string.Join('-', bRev.Select(n => n.Index)) + " | "
-                                + string.Join('-', c.Select(n => n.Index)) + ": " + best.CalcCosts());
-                            improvement = true;
+                            
                             goto StartAgain;
                         }
                     }
