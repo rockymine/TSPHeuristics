@@ -16,22 +16,17 @@ namespace TravellingSalesmanProblem.Algorithms {
             i++;
             j++;
 
-            var a = tour[0..i];
-            var b = tour[i..j];//i = i + 1
-            var c = tour[j..n];//j = j + 1
-            var bDash = b.Reverse();
-
-            var final = a.Concat(bDash).Concat(c).ToList();
-            var swapped = new GraphProblem {
-                Nodes = final
-            };
-
-            swapped.ConnectPathNodes();
+            var swapped = SwapEdges(graph, i, j);
             var edges = swapped.Edges.ToArray();
 
             i--;
             n--;
 
+            swapped.Segments = SplitIntoSegments(edges, n, i, j);
+            return swapped;
+        }
+
+        private static List<GraphSegment> SplitIntoSegments(Edge[] edges, int n, int i, int j) {
             var first = new GraphSegment {
                 Identifier = "Seg. A: ",
                 Type = SegmentType.Normal,
@@ -50,48 +45,50 @@ namespace TravellingSalesmanProblem.Algorithms {
                 Edges = edges[j..n].ToList()
             };
 
-            var segments = new List<GraphSegment> {
+            return new List<GraphSegment> {
                 first, second, third
             };
-
-            swapped.Segments = segments;
-            return swapped;
         }
 
         public static GraphProblem TwoOptFull(GraphProblem graph) {
-            var best = graph.DeepCopy();
-            var n = best.Nodes.Count;
+            var n = graph.Nodes.Count;
             var improvement = true;
 
             while (improvement) {
-                StartAgain:
+            StartAgain:
                 improvement = false;
                 for (int i = 1; i <= n - 3; i++) {
                     for (int j = i + 1; j <= n - 2; j++) {
-                        var tour = best.Nodes.ToArray();
-                        var ij = Edge.GetDistanceRounded(tour[i], tour[j]);
-                        var i1j1 = Edge.GetDistanceRounded(tour[i + 1], tour[j + 1]);
-                        var ii1 = Edge.GetDistanceRounded(tour[i], tour[i + 1]);
-                        var jj1 = Edge.GetDistanceRounded(tour[j], tour[j + 1]);
-                        var delta = Math.Round(ij + i1j1 - ii1 - jj1, 0);
-                        if (delta < 0) {
-                            i++;
-                            j++;
-
-                            var a = tour[0..i];
-                            var b = tour[i..j];
-                            var c = tour[j..n];
-                            var bRev = b.Reverse();
-
-                            best = new GraphProblem { Nodes = a.Concat(bRev).Concat(c).ToList() };
-                            best.ConnectPathNodes();
-                            
+                        if (EdgeSwapCost(graph, i, j) < 0) {
+                            graph = SwapEdges(graph, i + 1, j + 1);
                             goto StartAgain;
                         }
                     }
                 }
             }
 
+            return graph;
+        }
+
+        private static double EdgeSwapCost(GraphProblem graph, int i, int j) {
+            var tour = graph.Nodes.ToArray();
+            var ij = Edge.GetDistanceRounded(tour[i], tour[j]);
+            var i1j1 = Edge.GetDistanceRounded(tour[i + 1], tour[j + 1]);
+            var ii1 = Edge.GetDistanceRounded(tour[i], tour[i + 1]);
+            var jj1 = Edge.GetDistanceRounded(tour[j], tour[j + 1]);
+            return Math.Round(ij + i1j1 - ii1 - jj1, 0);
+        }
+
+        private static GraphProblem SwapEdges(GraphProblem graph, int i, int j) {
+            var tour = graph.Nodes.ToArray();
+            var n = tour.Length;
+
+            var a = tour[0..i];
+            var b = tour[i..j];
+            var c = tour[j..n];
+
+            var best = new GraphProblem { Nodes = a.Concat(b.Reverse()).Concat(c).ToList() };
+            best.ConnectPathNodes();
             return best;
         }
 
