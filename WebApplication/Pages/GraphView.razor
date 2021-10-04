@@ -25,8 +25,9 @@
                         <NearestNeighborSettings @bind-StartNode="@StartNode"></NearestNeighborSettings>
                     }
                     @if (AlgorithmEnum == AlgorithmEnum.SA) {
-                        <SimulatedAnnealingSettings @bind-AlphaSA="@AlphaSA" @bind-MaxIter1="@PhaseLength" @bind-MaxIter2="@MaxPhases"
-                            @bind-MinTemp="@MinTemp" @bind-StartTemp="@StartTemp" @bind-NeighbourEnum="@NeighbourEnum"></SimulatedAnnealingSettings>
+                        <SimulatedAnnealingSettings @bind-AlphaSA="@AlphaSA" @bind-MaxIter1="@PhaseLength" 
+                            @bind-MaxIter2="@MaxPhases" @bind-MinTemp="@MinTemp" @bind-StartTemp="@StartTemp"
+                            @bind-NeighbourEnum="@NeighbourEnum"></SimulatedAnnealingSettings>
                     }
                     @if (AlgorithmEnum == AlgorithmEnum.HC) {
                         <NeighborFunctionSettings @bind-NeighbourEnum="@NeighbourEnum"></NeighborFunctionSettings>
@@ -79,7 +80,7 @@
                 <div class="row">
                     <div class="col">
                         <h5 class="font-weight-bold">Current</h5>
-                        <Canvas @ref="@CurrentCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+                        <Canvas @ref="@CurrentCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"></Canvas>
                     </div>
                     <div class="col">
                         @*@if (AlgorithmEnum == AlgorithmEnum.NN) {
@@ -87,7 +88,7 @@
                         }*@
                         @if (ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
                             <h5 class="font-weight-bold">Previous</h5>
-                            <Canvas @ref="@PreviousCanvas" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+                            <Canvas @ref="@PreviousCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"></Canvas>
                         }
                     </div>
                 </div>
@@ -154,7 +155,8 @@
                                     int j = i;
                                     <div class="col">
                                         <div class="card">
-                                            <Canvas @ref="@CanvasArray[j]" width="@CanvasWidth" height="@CanvasHeight"></Canvas>
+                                            <Canvas @ref="@CanvasArray[j]" width="@AdditionalCanvasSettings.Width"
+                                                height="@AdditionalCanvasSettings.Height"></Canvas>
                                             <div class="card-body">
                                                 <h5>@StateEnumerator.Current.Segments[j].Identifier</h5>
                                                 <h6 class="card-subtitle mb-2 text-muted">@StateEnumerator.Current.Segments[j].Type</h6>
@@ -213,11 +215,13 @@ n,12,11,11";
     private bool ShowPrevious = true;
     private bool MultiStart;
     private string SettingsCollapse = "";
+    private CanvasSettings MainCanvasSettings = new();
+    private CanvasSettings AdditionalCanvasSettings = new();
     
     /* Canvas and Graph Parameters */
-    private float CanvasScale = 20;
+    @*private float CanvasScale = 20;
     private int CanvasWidth;
-    private int CanvasHeight;   
+    private int CanvasHeight; *@
 
     private int _maxX = 30;
     private int MaxX {
@@ -410,9 +414,6 @@ n,12,11,11";
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
-            //await InitiateGraph(true);
-            //await NextState(true);
-
             Task.Run(async () => {
                 while (true) {
                     await Task.Delay(AnimationDelay);
@@ -427,8 +428,14 @@ n,12,11,11";
     private async Task InitiateGraph(bool textbased) {
         Instance = textbased ? GraphProblem.FromText(DefaultGraph) :
         GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
-        CanvasWidth = (int)(CanvasScale * (Instance.FindMax().X + 1));
-        CanvasHeight = (int)(CanvasScale * (Instance.FindMax().Y + 1));
+        MainCanvasSettings.Max = Instance.FindMax();
+        MainCanvasSettings.Scale = 30;
+        MainCanvasSettings.NodeRadius = 8;
+
+        AdditionalCanvasSettings.Max = Instance.FindMax();
+        AdditionalCanvasSettings.Scale = 15;
+        AdditionalCanvasSettings.NodeRadius = 6;
+        
         await NextState(true);
     }   
 
@@ -440,72 +447,75 @@ n,12,11,11";
             await InitiateGraph(true);
 
         if (!DrawComplete) {
-            if (StateEnumerator.Current != null)
-                PreviousState = StateEnumerator.Current.DeepCopy();
-
-            StateEnumerator.MoveNext();
-            TimeSpan = Stopwatch.Elapsed;
-            
-            if (PreviousState != null && ShowPrevious && (AlgorithmEnum == AlgorithmEnum.SA || AlgorithmEnum == AlgorithmEnum.HC)) {
-                PreviousState.ComparePathEdges(StateEnumerator.Current);
-                await FillCanvas(PreviousCanvas);
-            }
-
-            if (StateEnumerator.Current.Finished) {
-                DrawComplete = true;
-                Stopwatch.Stop();
-            }
-
-            await FillCanvas(CurrentCanvas);
-
-            /* Simulated Annealing */
-            if (StateEnumerator.Current.Segments.Count > 0) {
-                if (CanvasArray != null && CanvasArray.Length != 0) {
-                    for (int i = 0; i < CanvasArray.Length; i++) {
-                        if (CanvasArray[i] != null && AlgorithmEnum == AlgorithmEnum.SA && NeighbourEnum == NeighbourType.TwoOpt) {
-                            await FillCanvas(CanvasArray[i]);
-                        }
-                    }
-                }
-            }
-
+            StateEnumeratorOperations();
+            await FillCanvases();
             StateHasChanged();
             @*UpdateVisualsFromGraphState();*@
+    }
+    }
+
+    private void StateEnumeratorOperations() {
+        if (StateEnumerator.Current != null)
+            PreviousState = StateEnumerator.Current.DeepCopy();
+
+        StateEnumerator.MoveNext();
+        TimeSpan = Stopwatch.Elapsed;
+        
+        if (StateEnumerator.Current.Finished) {
+            DrawComplete = true;
+            Stopwatch.Stop();
+        }
+    }
+
+    private async Task FillCanvases() {
+        if (PreviousState != null && ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
+            await ResetCanvas(await PreviousCanvas.GetContext2DAsync(), MainCanvasSettings);
+            await FillCanvas(PreviousCanvas);
+        }            
+        
+        await ResetCanvas(await CurrentCanvas.GetContext2DAsync(), MainCanvasSettings);
+        await FillCanvas(CurrentCanvas);
+        
+        for (int i = 0; i < CanvasArray.Length; i++) {
+            if (CanvasArray[i] != null) {
+                await ResetCanvas(await CanvasArray[i].GetContext2DAsync(), AdditionalCanvasSettings);
+                await FillCanvas(CanvasArray[i]);
+            }
         }
     }
 
     private async Task FillCanvas(Canvas canvas) {
         await using (var context = await canvas.GetContext2DAsync()) {
-            await ResetCanvas(context);
+            if (canvas == PreviousCanvas) {
+                PreviousState.ComparePathEdges(StateEnumerator.Current);
+                await CanvasRenderer.DrawPath(context, PreviousState.Nodes, PreviousState.PathEdges,
+                    MainCanvasSettings, AnnotateEdges, ColorizeChanges);
+            }                
 
-            if (canvas == PreviousCanvas)
-                await DrawPath(context, PreviousState);
-
-            if (canvas == CurrentCanvas)
-                await DrawPath(context, StateEnumerator.Current);
+            if (canvas == CurrentCanvas) {
+                await CanvasRenderer.DrawPath(context, StateEnumerator.Current.Nodes, StateEnumerator.Current.PathEdges,
+                    MainCanvasSettings, AnnotateEdges, ColorizeChanges);
+            }                
             
             for (int i = 0; i < StateEnumerator.Current.Segments.Count; i++) {
                 if (canvas == CanvasArray[i] && !StateEnumerator.Current.Finished) {
-                    await CanvasRenderer.DrawEdges(context, StateEnumerator.Current.Segments[i].Edges, CanvasHeight, false, false);
-                    await CanvasRenderer.DrawNodes(context, StateEnumerator.Current.Segments[i].Nodes, CanvasHeight);
+                    var nodes = StateEnumerator.Current.Segments[i].Nodes;
+                    var edges = StateEnumerator.Current.Segments[i].Edges;
+
+                    await CanvasRenderer.DrawPath(context, nodes, edges, AdditionalCanvasSettings, false, false);
                 }
             }
         }
     }
 
-    private async Task DrawPath(Context2D context, GraphState graph) {
-        await CanvasRenderer.DrawEdges(context, graph.PathEdges, CanvasHeight, ColorizeChanges, AnnotateEdges);
-        await CanvasRenderer.DrawNodes(context, graph.Nodes, CanvasHeight);
-    }
-
-    private async Task ResetAllCanvases() {
+    private async Task ResetCanvases() {
         if (PreviousCanvas != null && ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
             PreviousState = null;
-            await ResetCanvas(await PreviousCanvas.GetContext2DAsync());
+            await ResetCanvas(await PreviousCanvas.GetContext2DAsync(), MainCanvasSettings);
         }
 
         if (CurrentCanvas != null) {
-            await ResetCanvas(await CurrentCanvas.GetContext2DAsync());
+            await ResetCanvas(await CurrentCanvas.GetContext2DAsync(), MainCanvasSettings);
         }
         
         if (StateEnumerator != null && StateEnumerator.Current != null && StateEnumerator.Current.Segments.Count > 0) {
@@ -513,16 +523,16 @@ n,12,11,11";
                 if (CanvasArray[i] != null) {
                     if (AlgorithmEnum == AlgorithmEnum.SA && NeighbourEnum == NeighbourType.TwoOpt) {
                         if (CanvasArray[i].GetContext2DAsync() != null)
-                            await ResetCanvas(await CanvasArray[i].GetContext2DAsync());
+                            await ResetCanvas(await CanvasArray[i].GetContext2DAsync(), AdditionalCanvasSettings);
                     }
                 }
             }
         }
     }
 
-    private async Task ResetCanvas(Context2D context) {
-        await context.ClearRectAsync(0, 0, CanvasWidth, CanvasHeight);
-        await CanvasRenderer.DrawGrid(context, Instance.FindMax(), CanvasHeight);
+    private async Task ResetCanvas(Context2D context, CanvasSettings settings) {
+        await context.ClearRectAsync(0, 0, settings.Width, settings.Height);
+        await CanvasRenderer.DrawGrid(context, settings);
     }
 
     private async Task UpdateEnumerator() {
@@ -530,7 +540,7 @@ n,12,11,11";
         //AutoAdvance = false;
         Stopwatch.Restart();
 
-        await ResetAllCanvases();
+        await ResetCanvases();
 
         switch (AlgorithmEnum) {
             case AlgorithmEnum.NN:

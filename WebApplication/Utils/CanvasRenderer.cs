@@ -9,8 +9,8 @@ using WebApplication.Extensions;
 
 namespace WebApplication.Utils {
     public class CanvasRenderer {
-        private const float NodeSize = 8;
-        private const float Scale = 20;
+        //private const float NodeSize = 8;
+        //private const float Scale = 20;
 
         private static readonly Brush EdgeBrush = new() {
             Color = "black",
@@ -26,57 +26,64 @@ namespace WebApplication.Utils {
             TextStyle = "white"
         };
         private static readonly Brush GridBrush = new() { Color = "#999999", Width = 0.75 };
-        private static readonly Vector2 Offset = new(Scale / 2, Scale / 2);
+        //private static readonly Vector2 Offset = new(Scale / 2, Scale / 2);
 
-        public static async Task DrawGrid(Context2D context, Vector2 max, int cHeight) {
-            for (int i = 0; i <= max.Y; i++) {
+        public static async Task DrawGrid(Context2D context, CanvasSettings settings) {
+            for (int i = 0; i <= settings.Max.Y; i++) {
                 await context.DrawLine(GridBrush,
-                    Manipulate(new Vector2(0, i), cHeight),
-                    Manipulate(new Vector2(max.X, i), cHeight));
+                    Manipulate(new Vector2(0, i), settings),
+                    Manipulate(new Vector2(settings.Max.X, i), settings));
             }
-            for (int i = 0; i <= max.X; i++) {
+            for (int i = 0; i <= settings.Max.X; i++) {
                 await context.DrawLine(GridBrush,
-                    Manipulate(new Vector2(i, 0), cHeight),
-                    Manipulate(new Vector2(i, max.Y), cHeight));
+                    Manipulate(new Vector2(i, 0), settings),
+                    Manipulate(new Vector2(i, settings.Max.Y), settings));
             }
         }
 
-        public static async Task DrawNodes(Context2D context, List<Node> nodes, int cHeight) {
+        public static async Task DrawPath(Context2D context, List<Node> nodes, List<Edge> edges, CanvasSettings settings, bool annotate, bool colorize) {
+            settings.Colorize = colorize;
+            settings.Annotate = annotate;
+            await DrawEdges(context, edges, settings);
+            await DrawNodes(context, nodes, settings);
+        }
+
+        private static async Task DrawNodes(Context2D context, List<Node> nodes, CanvasSettings settings) {
             var brush = NodeBrush.Copy();
 
             foreach (var node in nodes) {
-                await context.DrawCircle(brush, NodeSize,
-                    Manipulate(node.Position, cHeight));
+                await context.DrawCircle(brush, settings.NodeRadius,
+                    Manipulate(node.Position, settings));
             }
 
             foreach (var node in nodes) {
                 await context.WriteText(brush.TextFont, brush.TextStyle, node.Index.ToString(),
-                    Manipulate(node.Position, cHeight));
+                    Manipulate(node.Position, settings));
             }
         }
 
-        public static async Task DrawEdges(Context2D context, List<Edge> edges, int height, bool color, bool text) {
+        private static async Task DrawEdges(Context2D context, List<Edge> edges, CanvasSettings settings) {
             var brush = EdgeBrush.Copy();
 
             foreach (var edge in edges) {
-                if (edge.Color != null && color)
+                if (edge.Color != null && settings.Colorize)
                     brush.Color = edge.Color;
 
                 if (edge.Pheromone != 0) {
                     brush.Width = edge.Pheromone * 1000;
-                    text = false;
+                    settings.Annotate = false;
                 }
 
                 await context.DrawLine(brush,
-                    Manipulate(edge.Node1.Position, height),
-                    Manipulate(edge.Node2.Position, height));
+                    Manipulate(edge.Node1.Position, settings),
+                    Manipulate(edge.Node2.Position, settings));
             }
 
-            if (text)
-                await DrawEdgeTextBox(context, edges, brush, height);
+            if (settings.Annotate)
+                await DrawEdgeTextBox(context, edges, brush, settings);
         }
 
-        public static async Task DrawEdgeTextBox(Context2D context, List<Edge> edges, Brush brush, int height) {
+        public static async Task DrawEdgeTextBox(Context2D context, List<Edge> edges, Brush brush, CanvasSettings settings) {
             var positions = new List<Vector2>();
             foreach (var edge in edges) {
                 var center = edge.FindCenter();
@@ -88,11 +95,13 @@ namespace WebApplication.Utils {
                     }
                 }
 
-                await context.DrawTextBox(brush, Manipulate(center, height), Math.Round(edge.Distance, 1).ToString());
+                await context.DrawTextBox(brush, Manipulate(center, settings), Math.Round(edge.Distance, 1).ToString());
                 positions.Add(center);
             }
         }
 
-        private static Vector2 Manipulate(Vector2 v, int CanvasHeight) => (v * Scale + Offset).InverseY(CanvasHeight);
+        private static Vector2 Manipulate(Vector2 vector, CanvasSettings settings) {
+            return (vector * settings.Scale + settings.Offset).InverseY(settings.Height);
+        }
     }
 }
