@@ -10,11 +10,10 @@ namespace TravellingSalesmanProblem.Algorithms {
         public NeighbourType NeighbourType { get; set; }
         private GraphProblem CurrentBest = new();
         public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
-            var x = GraphProblem.OrderedGraphProblem(graph);
+            var x = GraphProblem.OrderedGraphProblem(graph.DeepCopy());
             var y = new GraphProblem();
             var state = new GraphState {
-                Nodes = graph.Nodes,
-                Path = x.Nodes,
+                Nodes = x.Nodes,
                 PathEdges = x.Edges,
                 Distance = double.MaxValue
             };

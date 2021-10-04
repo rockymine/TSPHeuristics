@@ -18,14 +18,13 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         private static readonly Random Random = new();
 
-        public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
-            var x = GraphProblem.OrderedGraphProblem(graph);
+        public override IEnumerable<GraphState> FindPath(GraphProblem graph) {      
+            var x = GraphProblem.OrderedGraphProblem(graph.DeepCopy());
+
             //StartTemp = CalculateInitialTemperature(graph);
             var state = new GraphState {
-                Nodes = graph.Nodes,
-                Path = x.Nodes,
+                Nodes = x.Nodes,
                 PathEdges = x.Edges,
-                Distance = x.Costs,
                 Temperature = StartTemp
             };
 

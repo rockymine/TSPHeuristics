@@ -249,7 +249,7 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public void ScatterAnts(GraphProblem graph) {
             var nodes = graph.Nodes;
-            nodes.Shuffle();       
+            nodes.Shuffle();
 
             for (int i = 0; i < AntCount; i++) {
                 Colony[i].Path = new GraphProblem { Nodes = new List<Node> { nodes[i] } };

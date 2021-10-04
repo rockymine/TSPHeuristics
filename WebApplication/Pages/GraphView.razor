@@ -212,7 +212,7 @@ n,12,11,11";
     private bool DrawComplete;
     private bool ShowPrevious = true;
     private bool MultiStart;
-    private string SettingsCollapse = "collapse";
+    private string SettingsCollapse = "";
     
     /* Canvas and Graph Parameters */
     private float CanvasScale = 20;
@@ -499,7 +499,7 @@ n,12,11,11";
     }
 
     private async Task ResetAllCanvases() {
-        if (PreviousCanvas != null && ShowPrevious && AlgorithmEnum == AlgorithmEnum.SA) {
+        if (PreviousCanvas != null && ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
             PreviousState = null;
             await ResetCanvas(await PreviousCanvas.GetContext2DAsync());
         }

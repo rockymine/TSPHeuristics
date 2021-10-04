@@ -56,9 +56,7 @@ namespace TravellingSalesmanProblem.Graph {
             if (path[0] != path.Last())
                 path.Add(graph.Nodes[0]);
 
-            var ordered = new GraphProblem {
-                Nodes = path
-            };
+            var ordered = new GraphProblem { Nodes = path };
             ordered.ConnectPathNodes();
             return ordered;
         }
