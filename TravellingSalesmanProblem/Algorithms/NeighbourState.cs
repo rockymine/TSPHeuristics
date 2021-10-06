@@ -8,46 +8,37 @@ using TravellingSalesmanProblem.Graph;
 namespace TravellingSalesmanProblem.Algorithms {
     public class NeighbourState {
         private static readonly Random Random = new();
-        public static GraphProblem TwoOpt(GraphProblem graph) {
-            var tour = graph.Nodes.ToArray();
-            var n = tour.Length;
-            var i = Random.Next(1, n - 2);
-            var j = Random.Next(i, n - 1);
-            i++;
-            j++;
 
-            var swapped = SwapEdges(graph, i, j);
-            var edges = swapped.Edges.ToArray();
+        public static GraphProblem Create(GraphProblem graph, NeighbourType type) {
+            var neighbor = new GraphProblem();
+            switch (type) {
+                case NeighbourType.Swap:
+                    neighbor = Swap(graph);
+                    break;
+                case NeighbourType.TwoOpt:
+                    neighbor = TwoOpt(graph);
+                    break;
+                case NeighbourType.ThreeOpt:
+                    neighbor = ThreeOpt(graph);
+                    break;
+                case NeighbourType.FourOpt:
+                    neighbor = DoubleBridgeFourOpt(graph);
+                    break;
+            }
 
-            i--;
-            n--;
-
-            swapped.Segments = SplitIntoSegments(edges, n, i, j);
-            return swapped;
+            return neighbor;
         }
 
-        private static List<GraphSegment> SplitIntoSegments(Edge[] edges, int n, int i, int j) {
-            var first = new GraphSegment {
-                Identifier = "Seg. A: ",
-                Type = SegmentType.Normal,
-                Edges = edges[0..i].ToList()
-            };
+        public static GraphProblem TwoOpt(GraphProblem graph) {
+            var n = graph.Nodes.Count;
+            var i = Random.Next(1, n - 2);
+            var j = Random.Next(i + 1, n - 1);
+            
+            var move = new TwoOptMove(graph, i, j);
+            var swapped = move.SwapEdges();
 
-            var second = new GraphSegment {
-                Identifier = "Seg. B': ",
-                Type = SegmentType.Reversed,
-                Edges = edges[i..j].ToList()
-            };
-
-            var third = new GraphSegment {
-                Identifier = "Seg. C: ",
-                Type = SegmentType.Normal,
-                Edges = edges[j..n].ToList()
-            };
-
-            return new List<GraphSegment> {
-                first, second, third
-            };
+            swapped.Segments = GraphSegment.Split(swapped.Edges, i, j + 1);
+            return swapped;
         }
 
         public static GraphProblem TwoOptFull(GraphProblem graph) {
@@ -59,8 +50,9 @@ namespace TravellingSalesmanProblem.Algorithms {
                 improvement = false;
                 for (int i = 1; i <= n - 3; i++) {
                     for (int j = i + 1; j <= n - 2; j++) {
-                        if (EdgeSwapCost(graph, i, j) < 0) {
-                            graph = SwapEdges(graph, i + 1, j + 1);
+                        var move = new TwoOptMove(graph, i, j);
+                        if (move.EdgeSwapCost() < 0) {
+                            graph = move.SwapEdges();
                             goto StartAgain;
                         }
                     }
@@ -68,28 +60,6 @@ namespace TravellingSalesmanProblem.Algorithms {
             }
 
             return graph;
-        }
-
-        private static double EdgeSwapCost(GraphProblem graph, int i, int j) {
-            var tour = graph.Nodes.ToArray();
-            var ij = Edge.GetDistanceRounded(tour[i], tour[j]);
-            var i1j1 = Edge.GetDistanceRounded(tour[i + 1], tour[j + 1]);
-            var ii1 = Edge.GetDistanceRounded(tour[i], tour[i + 1]);
-            var jj1 = Edge.GetDistanceRounded(tour[j], tour[j + 1]);
-            return Math.Round(ij + i1j1 - ii1 - jj1, 0);
-        }
-
-        private static GraphProblem SwapEdges(GraphProblem graph, int i, int j) {
-            var tour = graph.Nodes.ToArray();
-            var n = tour.Length;
-
-            var a = tour[0..i];
-            var b = tour[i..j];
-            var c = tour[j..n];
-
-            var best = new GraphProblem { Nodes = a.Concat(b.Reverse()).Concat(c).ToList() };
-            best.ConnectPathNodes();
-            return best;
         }
 
         public static GraphProblem ThreeOpt(GraphProblem graph) {
@@ -213,13 +183,13 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public static GraphProblem Swap(GraphProblem graph) {
-            var i = Random.Next(1, graph.Nodes.Count - 2);
-            var j = Random.Next(i, graph.Nodes.Count - 1);
+            var n = graph.Nodes.Count;
+            var x = graph.DeepCopy();
             
-            //if (i == j)
-            //    Swap(graph);
+            var i = Random.Next(1, n - 2);
+            var j = Random.Next(i + 1, n - 1);
 
-            var temp = graph.Nodes;
+            var temp = x.Nodes;
             var node = temp[i];
             temp[i] = temp[j];
             temp[j] = node;

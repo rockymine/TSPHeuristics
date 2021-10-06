@@ -52,6 +52,8 @@ namespace WebApplication.Utils {
             var brush = NodeBrush.Copy();
 
             foreach (var node in nodes) {
+                brush.Color = node.Color != null ? node.Color : NodeBrush.Color;
+
                 await context.DrawCircle(brush, settings.NodeRadius,
                     Manipulate(node.Position, settings));
             }

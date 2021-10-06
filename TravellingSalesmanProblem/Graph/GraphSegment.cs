@@ -12,6 +12,25 @@ namespace TravellingSalesmanProblem.Graph {
         public List<Edge> Edges { get; set; } = new();
         public Dictionary<string, string> Info { get; set; } = new();
 
+        public GraphSegment(string identifier, SegmentType type, Edge[] edges) {
+            Identifier = identifier;
+            Type = type;
+            Edges = edges.ToList();
+        }
+
+        public static List<GraphSegment> Split(List<Edge> edges, int i, int j) {
+            var n = edges.Count;
+            var array = edges.ToArray();            
+
+            var first = new GraphSegment("Seg. A: ", SegmentType.Normal, array[0..i]);
+            var second = new GraphSegment("Seg. B': ", SegmentType.Reversed, array[i..j]);
+            var third = new GraphSegment("Seg. C: ", SegmentType.Normal, array[j..n]);
+
+            return new List<GraphSegment> {
+                first, second, third
+            };
+        }
+
         private List<Node> GetNodes() {
             GenerateInfo();
             var nodes = new List<Node>();

@@ -23,13 +23,14 @@ namespace WebApplication.Extensions {
         public static async Task DrawCircle(this Context2D context, Brush brush, double radius, Vector2 pos) {
             await context.FillStyleAsync(brush.Color);
             await context.LineWidthAsync(brush.Width);
+            await context.BeginPathAsync();
             await context.MoveToAsync(pos.X, pos.Y);
             await context.EllipseAsync(pos.X, pos.Y, radius, radius, 0, 0, 360);
-
-            if (brush.Style == FillStyle.Fill)
-                await context.FillAsync(FillRule.EvenOdd);
-            else if (brush.Style == FillStyle.Stroke)
-                await context.StrokeAsync();
+            await context.FillAsync(FillRule.EvenOdd);
+            //if (brush.Style == FillStyle.Fill)
+            //    await context.FillAsync(FillRule.EvenOdd);
+            //else if (brush.Style == FillStyle.Stroke)
+            //    await context.StrokeAsync();
         }
 
         public static async Task DrawTextBox(this Context2D context, Brush brush, Vector2 pos, string text) {

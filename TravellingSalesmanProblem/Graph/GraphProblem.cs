@@ -97,7 +97,8 @@ namespace TravellingSalesmanProblem.Graph {
 
         public void Reset() {
             Nodes.ForEach(n => n.Visited = false);
-            Nodes.ForEach(n => n.Split = false);
+            Nodes.ForEach(n => n.Color = null);
+            Edges.ForEach(e => e.Color = null);
             Edges.ForEach(e => e.Pheromone = 0);
         }
 

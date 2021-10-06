@@ -145,10 +145,10 @@
                 </div> 
             }
             @if (AlgorithmEnum == AlgorithmEnum.SA && StateEnumerator != null && StateEnumerator.Current != null
-            && StateEnumerator.Current.Segments != null && StateEnumerator.Current.Segments.Count != 0) {
+            && StateEnumerator.Current.Segments != null && StateEnumerator.Current.Segments.Count != 0 && !DrawComplete) {
                 <div class="row">
                     @if (CanvasArray != null && CanvasArray.Length != 0) {
-                        <div class="col">
+                        <div class="col md-2">
                             <h5 class="font-weight-bold">Details</h5>
                             <div class="row">
                                 @for (int i = 0; i < StateEnumerator.Current.Segments.Count; i++) {
@@ -455,29 +455,30 @@ n,12,11,11";
     }
 
     private void StateEnumeratorOperations() {
-        if (StateEnumerator.Current != null)
+        if (StateEnumerator.Current != null) {
             PreviousState = StateEnumerator.Current.DeepCopy();
+
+            if (StateEnumerator.Current.Finished) {
+                DrawComplete = true;
+                Stopwatch.Stop();
+            }
+        }            
 
         StateEnumerator.MoveNext();
         TimeSpan = Stopwatch.Elapsed;
-        
-        if (StateEnumerator.Current.Finished) {
-            DrawComplete = true;
-            Stopwatch.Stop();
-        }
     }
 
     private async Task FillCanvases() {
         if (PreviousState != null && ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
             await ResetCanvas(await PreviousCanvas.GetContext2DAsync(), MainCanvasSettings);
             await FillCanvas(PreviousCanvas);
-        }            
-        
+        }
+
         await ResetCanvas(await CurrentCanvas.GetContext2DAsync(), MainCanvasSettings);
         await FillCanvas(CurrentCanvas);
         
         for (int i = 0; i < CanvasArray.Length; i++) {
-            if (CanvasArray[i] != null) {
+            if (CanvasArray[i] != null && !DrawComplete && StateEnumerator.Current.Segments.Count > 0) {
                 await ResetCanvas(await CanvasArray[i].GetContext2DAsync(), AdditionalCanvasSettings);
                 await FillCanvas(CanvasArray[i]);
             }
@@ -487,7 +488,8 @@ n,12,11,11";
     private async Task FillCanvas(Canvas canvas) {
         await using (var context = await canvas.GetContext2DAsync()) {
             if (canvas == PreviousCanvas) {
-                PreviousState.ComparePathEdges(StateEnumerator.Current);
+                PreviousState.ComparePathEdges(StateEnumerator.Current);                
+
                 await CanvasRenderer.DrawPath(context, PreviousState.Nodes, PreviousState.PathEdges,
                     MainCanvasSettings, AnnotateEdges, ColorizeChanges);
             }                
@@ -531,11 +533,14 @@ n,12,11,11";
     }
 
     private async Task ResetCanvas(Context2D context, CanvasSettings settings) {
+        
+
         await context.ClearRectAsync(0, 0, settings.Width, settings.Height);
         await CanvasRenderer.DrawGrid(context, settings);
     }
 
     private async Task UpdateEnumerator() {
+        Instance.Reset();
         DrawComplete = false;
         //AutoAdvance = false;
         Stopwatch.Restart();

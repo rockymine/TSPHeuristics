@@ -32,7 +32,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             while (state.Temperature >= MinTemp) {
                 for (int i = 0; i < PhaseLength; i++) {
                     /* Generate Neighbor */
-                    var y = CreateNeighbourSolution(x);
+                    x.Reset();
+                    var y = NeighbourState.Create(x, NeighbourEnum);
                     state.Segments = y.Segments;
 
                     if (y.Costs <= x.Costs) {
@@ -45,7 +46,10 @@ namespace TravellingSalesmanProblem.Algorithms {
                         }
 
                     } else if (MetropolisRule(graph, state)) {
+                        /* maybe also return here (make sure to show in the graph
+                         * that a worse solution has been accepted) */
                         x = y;
+                        Console.WriteLine("A worse solution has been chosen");
                     }
                 }
 
@@ -64,7 +68,9 @@ namespace TravellingSalesmanProblem.Algorithms {
                 Equations[tu].Result = $"$T_{{{state.Iteration}}} = {state.Temperature}$";
             }
 
-            yield return UpdateState(state, true);
+            state.Finished = true;
+            UpdateStateMessages(state);
+            //yield return UpdateState(state, true);
         }
 
         private double CalculateInitialTemperature(GraphProblem graph) {            
@@ -77,26 +83,6 @@ namespace TravellingSalesmanProblem.Algorithms {
             var worst = nearestNeighbor.MultiStartLongest(graph).Last().Distance;
 
             return worst - best;            
-        }
-
-        private GraphProblem CreateNeighbourSolution(GraphProblem x) {
-            var y = new GraphProblem();
-            switch (NeighbourEnum) {
-                case NeighbourType.Swap:
-                    y = NeighbourState.Swap(x);
-                    break;
-                case NeighbourType.TwoOpt:
-                    y = NeighbourState.TwoOpt(x);
-                    break;
-                case NeighbourType.ThreeOpt:
-                    y = NeighbourState.ThreeOpt(x);
-                    break;
-                case NeighbourType.FourOpt:
-                    y = NeighbourState.DoubleBridgeFourOpt(x);
-                    break;
-            }
-
-            return y;
         }
 
         private bool MetropolisRule(GraphProblem x, GraphState state) {
