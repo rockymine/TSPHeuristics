@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TravellingSalesmanProblem.Graph;
 
-namespace TravellingSalesmanProblem.Graph {
+namespace TravellingSalesmanProblem.Algorithms {
     public class TwoOptMove {
         public GraphProblem Graph { get; set; }
         public int I { get; set; }
@@ -25,12 +26,11 @@ namespace TravellingSalesmanProblem.Graph {
             return Math.Round(ij + i1j1 - ii1 - jj1, 0);
         }
 
-        public GraphProblem SwapEdges() {
-            //Console.WriteLine(string.Join("-", Graph.Nodes.Select(n => n.Index)));
-            //Console.WriteLine($"Node i: {Graph.Nodes[I].Index}, Node j: {Graph.Nodes[J].Index}");
-
-            Graph.Nodes[I].Color = "orange";
-            Graph.Nodes[J].Color = "pink";
+        public GraphProblem SwapEdges(bool colorize = false) {
+            if (colorize) {
+                Graph.Nodes[I].Color = "orange";
+                Graph.Nodes[J].Color = "pink";
+            }
 
             I++;
             J++;
@@ -42,7 +42,6 @@ namespace TravellingSalesmanProblem.Graph {
             var c = tour[J..n];
 
             var best = new GraphProblem { Nodes = a.Concat(b.Reverse()).Concat(c).ToList() };
-            //Console.WriteLine(string.Join("-", best.Nodes.Select(n => n.Index)));
             best.ConnectPathNodes();
             return best;
         }

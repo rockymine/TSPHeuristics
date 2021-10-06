@@ -35,7 +35,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             var j = Random.Next(i + 1, n - 1);
             
             var move = new TwoOptMove(graph, i, j);
-            var swapped = move.SwapEdges();
+            var swapped = move.SwapEdges(true);
 
             swapped.Segments = GraphSegment.Split(swapped.Edges, i, j + 1);
             return swapped;

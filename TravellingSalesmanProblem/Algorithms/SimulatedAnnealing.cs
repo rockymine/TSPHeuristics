@@ -89,14 +89,11 @@ namespace TravellingSalesmanProblem.Algorithms {
             throw new NotImplementedException();
         }
 
-        private GraphState UpdateState(GraphState state, bool finished = false) {
+        public override GraphState UpdateState(GraphState state) {
             state.Distance = CurrentBest.Costs;
             state.Path = CurrentBest.Nodes;
             state.PathEdges = CurrentBest.Edges;
             state.Equations = Equations;
-
-            if (finished)
-                state.Finished = true;
 
             UpdateStateMessages(state);
             return state;

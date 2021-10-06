@@ -37,6 +37,10 @@ namespace TravellingSalesmanProblem.Graph {
             return false;
         }
 
+        public bool IsInside(List<Edge> edges) {
+            return edges.Any(edge => IsEqual(edge));
+        }
+
         public Node Opposite(Node node) {
             if (node == Node1)
                 return Node2;

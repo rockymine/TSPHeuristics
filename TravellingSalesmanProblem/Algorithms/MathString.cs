@@ -56,15 +56,15 @@ namespace TravellingSalesmanProblem.Algorithms {
             return mathString;
         }
 
-        public static MathString RandomProportionalRule(int antIndex, Node r, Node s, Edge edge, double beta, double pcp, double sum) {
+        public static MathString RandomProportionalRule(int antIndex, Edge edge, double beta, double pcp, double sum) {
             var latex = "$p_{k}(r,s) = \\begin{cases}\\frac{[\\tau(r,s)] \\cdot [\\eta(r,s)]^\\beta}{\\sum\\limits_{u \\in J_{k}(r)}[\\tau(r,u)] \\cdot [\\eta(r,u)]^\\beta}, & \\text{if } s \\in J_{k}(r)\\\\0, & \\text{otherwise}\\end{cases}$";
             var dummy = "$p_{?k?}(?r?,?s?) = \\begin{cases}\\frac{[?tau?] \\cdot [?eta?]^?beta?}{\\sum\\limits_{u \\in J_{?k?}(?r?)}[\\tau(?r?,u)] \\cdot [\\eta(?r?,u)]^?beta?}, & \\text{if } s \\in J_{?k?}(?r?)\\\\0, & \\text{otherwise}\\end{cases}$";
-            var result = $"$p_{antIndex}({r.Index},{s.Index}) = \\frac{{{pcp}}}{{{sum}}} = {pcp / sum}$";
+            var result = $"$p_{antIndex}({edge.Node1.Index},{edge.Node2.Index}) = \\frac{{{pcp}}}{{{sum}}} = {pcp / sum}$";
 
             var mathString = new MathString(latex, dummy, result);
             mathString.SetVar("k", antIndex);
-            mathString.SetVar("r", r.Index);
-            mathString.SetVar("s", s.Index);
+            mathString.SetVar("r", edge.Node1.Index);
+            mathString.SetVar("s", edge.Node2.Index);
             mathString.SetVar("tau", edge.Pheromone);
             mathString.SetVar("eta", edge.Visibility);
             mathString.SetVar("beta", beta);            
@@ -72,14 +72,14 @@ namespace TravellingSalesmanProblem.Algorithms {
             return mathString;
         }
 
-        public static MathString PheromoneClosenessProduct(Node r, Node s, Edge edge, double beta, double pcp) {
+        public static MathString PheromoneClosenessProduct(Edge edge, double beta, double pcp) {
             var latex = "$\\omega(r,s) = [\\tau(r,s)] \\cdot [\\eta(r,s)]^\\beta$";
             var dummy = "$\\omega(?r?,?s?) = ?tau? \\cdot ?eta?^?beta?$";
-            var result = $"$\\omega({r.Index},{s.Index}) = {pcp}$";
+            var result = $"$\\omega({edge.Node1.Index},{edge.Node2.Index}) = {pcp}$";
 
             var mathString = new MathString(latex, dummy, result);
-            mathString.SetVar("r", r.Index);
-            mathString.SetVar("s", s.Index);
+            mathString.SetVar("r", edge.Node1.Index);
+            mathString.SetVar("s", edge.Node2.Index);
             mathString.SetVar("tau", edge.Pheromone);
             mathString.SetVar("eta", edge.Visibility);
             mathString.SetVar("beta", beta);

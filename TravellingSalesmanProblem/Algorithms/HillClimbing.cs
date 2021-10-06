@@ -71,14 +71,11 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Messages["Distance"] = state.Distance.ToString();
         }
 
-        private GraphState UpdateState(GraphState state, bool finished = false) {
+        public override GraphState UpdateState(GraphState state) {
             state.Iteration++;
             state.Distance = CurrentBest.Costs;
             state.Path = CurrentBest.Nodes;
             state.PathEdges = CurrentBest.Edges;
-
-            if (finished)
-                state.Finished = true;
 
             UpdateStateMessages(state);
             return state;

@@ -100,10 +100,9 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public override IEnumerable<GraphState> MultiStart(GraphProblem graph) {
+            graph.Reset();
             var best = new GraphState { Nodes = graph.Nodes };
-            var costs = double.MaxValue;
-
-            graph.Reset();            
+            var costs = double.MaxValue;            
 
             foreach (var node in graph.Nodes) {
                 Start = node;
@@ -145,6 +144,10 @@ namespace TravellingSalesmanProblem.Algorithms {
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Route"] = string.Join('-', state.Path.Select(n => n.Index));
             state.Messages["Distance"] = Math.Round(state.Distance, 1).ToString();
+        }
+
+        public override GraphState UpdateState(GraphState state) {
+            throw new NotImplementedException();
         }
     }
 }
