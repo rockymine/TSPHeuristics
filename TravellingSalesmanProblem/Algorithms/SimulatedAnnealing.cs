@@ -53,19 +53,9 @@ namespace TravellingSalesmanProblem.Algorithms {
                     }
                 }
 
-                var tu = "Temperature Update";
-                Equations[tu] = new("$T_{k+1} = f(T(k)) = \\alpha \\cdot T_{k}$") {
-                    Dummy = "$T_{?k+1?} = ?alpha? \\cdot ?current?$",
-                    Variables = new Dictionary<string, object> {
-                        { "k+1", state.Iteration + 1},
-                        { "current", state.Temperature},
-                        { "alpha", Alpha}
-                    }
-                };
+                Equations["Temperature Update"] = MathString.UpdateTemperature(state, Alpha);
                 state.Iteration++;
-                state.Temperature *= Alpha;
-
-                Equations[tu].Result = $"$T_{{{state.Iteration}}} = {state.Temperature}$";
+                state.Temperature *= Alpha;                
             }
 
             state.Finished = true;
@@ -90,17 +80,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             var r = Random.NextDouble();
             bool condition = p > r;
 
-            var mp = "Metropolis Rule";
-            Equations[mp] = new("$\\text{exp}(\\frac{f(x) - f(y)}{T_{k}}) > \\text{rand}(0,1)$") {
-                Dummy = "$\\text{exp}(\\frac{?f(x)? - ?f(y)?}{?temp?}) > ?rand?$",
-                Variables = new Dictionary<string, object> {
-                    { "f(x)", x.Costs },
-                    { "f(y)", state.Distance },
-                    { "temp", state.Temperature },
-                    { "rand", r }
-                },
-                Result = $"$\\text{{{condition}}}$"
-            };
+            Equations["Metropolis Rule"] = MathString.MetropolisRule(x, state, r, condition);
 
             return condition;
         }
@@ -128,5 +108,4 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Messages["Distance"] = state.Distance.ToString();
             state.Messages["Temperature"] = state.Temperature.ToString();
         }
-    }
-}
+    }}
