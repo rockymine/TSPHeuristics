@@ -27,6 +27,7 @@ namespace TravellingSalesmanProblem.Algorithms {
                         break;
                     case NeighbourType.TwoOpt:
                         y = NeighbourState.TwoOptFull(x);
+                        state.SwapInfo = y.SwapInfo;
                         break;
                     case NeighbourType.ThreeOpt:
                         y = NeighbourState.ThreeOpt(x);

@@ -83,9 +83,6 @@
                         <Canvas @ref="@CurrentCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"></Canvas>
                     </div>
                     <div class="col">
-                        @*@if (AlgorithmEnum == AlgorithmEnum.NN) {
-                            <TableGenerator @ref="TableGenerator"/>
-                        }*@
                         @if (ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
                             <h5 class="font-weight-bold">Previous</h5>
                             <Canvas @ref="@PreviousCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"></Canvas>
@@ -174,6 +171,7 @@
             }
         </div>
     </div>
+    <TableGenerator @ref="@TableGenerator"></TableGenerator>
 </div>
 
 @code {
@@ -207,7 +205,6 @@ n,10,7,1
 n,11,1,6
 n,12,11,11";
     
-    private int AnimationDelay = 1;
     private bool AutoAdvance;
     private bool AnnotateEdges;
     private bool ColorizeChanges = true;
@@ -217,11 +214,22 @@ n,12,11,11";
     private string SettingsCollapse = "";
     private CanvasSettings MainCanvasSettings = new();
     private CanvasSettings AdditionalCanvasSettings = new();
-    
-    /* Canvas and Graph Parameters */
-    @*private float CanvasScale = 20;
-    private int CanvasWidth;
-    private int CanvasHeight; *@
+
+    private Stopwatch Stopwatch = new();
+    private TimeSpan TimeSpan = new();
+
+    private int _animationDelay = 1;
+    private int AnimationDelay {
+        get => _animationDelay;
+        set {
+            if (value == _animationDelay)
+                return;
+            if (value < 1 || value > 5000)
+                return;
+
+            _animationDelay = value;
+        }
+    }
 
     private int _maxX = 30;
     private int MaxX {
@@ -409,9 +417,6 @@ n,12,11,11";
         }
     }
 
-    private Stopwatch Stopwatch = new();
-    private TimeSpan TimeSpan = new();
-
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
             Task.Run(async () => {
@@ -450,8 +455,8 @@ n,12,11,11";
             StateEnumeratorOperations();
             await FillCanvases();
             StateHasChanged();
-            @*UpdateVisualsFromGraphState();*@
-    }
+            UpdateVisualsFromGraphState();
+        }
     }
 
     private void StateEnumeratorOperations() {
@@ -533,8 +538,6 @@ n,12,11,11";
     }
 
     private async Task ResetCanvas(Context2D context, CanvasSettings settings) {
-        
-
         await context.ClearRectAsync(0, 0, settings.Width, settings.Height);
         await CanvasRenderer.DrawGrid(context, settings);
     }
@@ -542,8 +545,8 @@ n,12,11,11";
     private async Task UpdateEnumerator() {
         Instance.Reset();
         DrawComplete = false;
-        //AutoAdvance = false;
         Stopwatch.Restart();
+        TableGenerator.Reset();
 
         await ResetCanvases();
 
@@ -580,7 +583,12 @@ n,12,11,11";
     }
 
     private void UpdateVisualsFromGraphState() {
-        if (AlgorithmEnum == AlgorithmEnum.NN)
-            TableGenerator.UpdateFromGraphState(StateEnumerator.Current);
+        if (AlgorithmEnum == AlgorithmEnum.NN) {
+            TableGenerator.UpdateFromGraphState(StateEnumerator.Current, TableType.DistanceMatrix);
+        } else if ((AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) && NeighbourEnum is NeighbourType.TwoOpt) {
+            TableGenerator.UpdateFromGraphState(StateEnumerator.Current, TableType.SwapSummary);
+        } else {
+            TableGenerator.UpdateFromGraphState(StateEnumerator.Current, TableType.RouteSummary);
+        }
     }
 }

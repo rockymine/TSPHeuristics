@@ -31,13 +31,20 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public static GraphProblem TwoOpt(GraphProblem graph) {
             var n = graph.Nodes.Count;
-            var i = Random.Next(1, n - 2);
-            var j = Random.Next(i + 1, n - 1);
-            
-            var move = new TwoOptMove(graph, i, j);
-            var swapped = move.SwapEdges(true);
+            var i = Random.Next(1, n - 3);
+            var j = Random.Next(i + 1, n - 2);
 
+            Console.WriteLine($"Random Numbers: i: {i}, j: {j}");
+            Console.WriteLine("Path: " + string.Join('-', graph.Nodes.Select(n => n.Index)));
+            Console.WriteLine($"Two Opt: i: ({graph.Nodes[i].Index}),j: ({graph.Nodes[j].Index})");
+            Console.WriteLine($"Two Opt: i+1: ({graph.Nodes[i + 1].Index}),j: ({graph.Nodes[j + 1].Index})");
+
+            var move = new TwoOptMove(graph, i, j);
+
+            var swapped = move.SwapEdges(true);
+            swapped.SwapInfo = move.SwapInfo;
             swapped.Segments = GraphSegment.Split(swapped.Edges, i, j + 1);
+
             return swapped;
         }
 
@@ -51,8 +58,9 @@ namespace TravellingSalesmanProblem.Algorithms {
                 for (int i = 1; i <= n - 3; i++) {
                     for (int j = i + 1; j <= n - 2; j++) {
                         var move = new TwoOptMove(graph, i, j);
-                        if (move.EdgeSwapCost() < 0) {
+                        if (move.Costs < 0) {
                             graph = move.SwapEdges();
+                            graph.SwapInfo = move.SwapInfo;
                             goto StartAgain;
                         }
                     }

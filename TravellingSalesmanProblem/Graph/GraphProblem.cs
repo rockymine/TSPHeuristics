@@ -10,11 +10,10 @@ using TravellingSalesmanProblem.Algorithms;
 
 namespace TravellingSalesmanProblem.Graph {
     public class GraphProblem {
-        //optional (for multistart in NN)
-        public Node Start { get; set; }
         public List<Node> Nodes { get; set; } = new();
         public List<Edge> Edges { get; set; } = new();
         public List<GraphSegment> Segments { get; set; } = new();
+        public SwapInfo SwapInfo { get; set; }
         public double Costs => CalcCosts();
         private static readonly Random Random = new();
         public GraphProblem() {

@@ -23,10 +23,11 @@ namespace TravellingSalesmanProblem.Algorithms {
             var state = new GraphState {
                 Nodes = x.Nodes,
                 PathEdges = x.Edges,
-                Temperature = StartTemp
+                Temperature = CalculateInitialTemperature(x)
             };
 
             CurrentBest = x;
+            UpdateStateMessages(state);
             yield return state;
             
             while (state.Temperature >= MinTemp) {
@@ -34,6 +35,7 @@ namespace TravellingSalesmanProblem.Algorithms {
                     /* Generate Neighbor */
                     x.Reset();
                     var y = NeighbourState.Create(x, NeighbourEnum);
+                    state.SwapInfo = y.SwapInfo;
                     state.Segments = y.Segments;
 
                     if (y.Costs <= x.Costs) {
@@ -45,11 +47,8 @@ namespace TravellingSalesmanProblem.Algorithms {
                             yield return UpdateState(state);
                         }
 
-                    } else if (MetropolisRule(graph, state)) {
-                        /* maybe also return here (make sure to show in the graph
-                         * that a worse solution has been accepted) */
+                    } else if (MetropolisRule(y, state)) {
                         x = y;
-                        Console.WriteLine("A worse solution has been chosen");
                     }
                 }
 
@@ -63,7 +62,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             //yield return UpdateState(state, true);
         }
 
-        private double CalculateInitialTemperature(GraphProblem graph) {            
+        private static double CalculateInitialTemperature(GraphProblem graph) {            
             var nearestNeighbor = new NearestNeighbour { Start = graph.Nodes[Random.Next(0, graph.Nodes.Count)] };
 
             /* Calculate Best Nearest Neighbor Solution */
@@ -72,11 +71,13 @@ namespace TravellingSalesmanProblem.Algorithms {
             /* Calculate Worst Nearest Neighbor Solution */
             var worst = nearestNeighbor.MultiStartLongest(graph).Last().Distance;
 
-            return worst - best;            
+            return worst - best;
         }
 
         private bool MetropolisRule(GraphProblem x, GraphState state) {
             var p = Math.Exp(-(x.Costs - state.Distance) / state.Temperature);
+            Console.WriteLine($"x:" + string.Join(",", x.Nodes.Select(n => n.Index)));
+            Console.WriteLine($"x.Costs: {x.Costs}");
             var r = Random.NextDouble();
             bool condition = p > r;
 

@@ -1,11 +1,12 @@
 ﻿@using TravellingSalesmanProblem.Graph
 @using WebApplication.Utils
+@using StardustDL.RazorComponents.Markdown
 @if (tableInfo.HasData) {
 	<table class="table table-responsive" style="text-align: center">
 		<thead>
 			<tr>
 				@foreach (var head in tableInfo.Header) {
-					<th>@head</th>
+					<th><MarkdownRenderer Value=@head/></th>
 				}
 			</tr>	  
 		</thead>
@@ -13,7 +14,7 @@
 			@for (int i = 0; i < tableInfo.Cells.GetLength(0); i++) {
 				<tr>
 					@for (int j = 0; j < tableInfo.Cells.GetLength(1); j++) {
-						<td class="@tableInfo.Cells[i,j].Class">@tableInfo.Cells[i,j].Value</td>
+						<td class="@tableInfo.Cells[i,j].Class"><MarkdownRenderer Value="@tableInfo.Cells[i,j].Value"/></td>
 					}
 				</tr>
 			}
@@ -24,23 +25,41 @@
 @code {
 	private TableInfo tableInfo = new();
 
-	public void UpdateFromGraphState(GraphState graph) {
-		tableInfo.Header.Clear();
-		tableInfo.Header.Add("");
+	public void Reset() => tableInfo = new TableInfo();
 
-		var size = graph.Nodes.Count + 1;
+	public void UpdateFromGraphState(GraphState state, TableType type) {
+		tableInfo.Header.Clear();
+		
+		switch (type) {
+			case TableType.DistanceMatrix:
+				CreateDistanceMatrix(state);
+				break;
+			case TableType.RouteSummary:
+				CreateIterationTable(state);
+				break;
+			case TableType.SwapSummary:
+				CreateSwapSummary(state);
+				break;
+		}
+		
+		StateHasChanged();
+	}
+
+	private void CreateDistanceMatrix(GraphState state) {
+		tableInfo.Header.Add("");
+		var size = state.Nodes.Count + 1;
 		tableInfo.Cells = new TableCellInfo[size - 1, size];
 
 		for (int i = 0; i < size - 1; i++) {
 			for (int j = 0; j < size; j++) {
-				var node1 = graph.Nodes[i];
+				var node1 = state.Nodes[i];
 
 				if (j == 0) {
 					tableInfo.Cells[i, j] = new TableCellInfo(node1.Index.ToString(), "font-weight-bold");
 					continue;
 				}
-				
-				var node2 = graph.Nodes[j - 1];
+
+				var node2 = state.Nodes[j - 1];
 
 				if (i == 0)
 					tableInfo.Header.Add(node2.Index.ToString());
@@ -48,14 +67,52 @@
 					tableInfo.Cells[i, j] = new TableCellInfo("-", null);
 					continue;
 				}
-				
+
 				var distance = Math.Round(Edge.GetDistanceRounded(node1, node2), 1);
 
 				tableInfo.Cells[i, j] = new TableCellInfo(distance.ToString(),
-					InPath(graph.Path, node1, node2) ? "table-danger" : null);
+					InPath(state.Path, node1, node2) ? "table-danger" : null);
 			}
-		}		
-		StateHasChanged();
+		}
+	}
+
+	private void CreateIterationTable(GraphState state) {
+		tableInfo.Header = new List<string> { "Iteration", "Tour", "Distance" };
+
+		if (tableInfo.Cells is null)
+			tableInfo.Cells = new TableCellInfo[0, tableInfo.Header.Count];
+
+		if (state.Path.Count > 0) {
+			var temp = TableInfo.AddRow(tableInfo.Cells);
+			var lastRow = temp.GetLength(0) - 1;
+
+			temp[lastRow, 0] = new TableCellInfo(state.Iteration.ToString(), null);
+			temp[lastRow, 1] = new TableCellInfo("(" + string.Join('-', state.Path.Select(n => n.Index)) + ")", null);
+			temp[lastRow, 2] = new TableCellInfo(state.Distance.ToString(), null);
+
+			tableInfo.Cells = temp;
+		}
+	}
+
+	private void CreateSwapSummary(GraphState state) {
+		tableInfo.Header = new List<string> { "Iteration", "$i$", "$j$", "$\\triangle=d_{i,j}+d_{i+1,j+1}-d_{i,i+1}-d_{j,j+1}$", "Tour" , "Distance"};
+
+		if (tableInfo.Cells is null)
+			tableInfo.Cells = new TableCellInfo[0, tableInfo.Header.Count];
+
+		if (state.SwapInfo != null) {
+			var temp = TableInfo.AddRow(tableInfo.Cells);
+			var lastRow = temp.GetLength(0) - 1;
+
+			temp[lastRow, 0] = new TableCellInfo($"${state.Iteration}$", null);
+			temp[lastRow, 1] = new TableCellInfo($"${state.SwapInfo.Nodes[0].Index}$", null);
+			temp[lastRow, 2] = new TableCellInfo($"${state.SwapInfo.Nodes[1].Index}$", null);
+			temp[lastRow, 3] = new TableCellInfo(state.SwapInfo.Calculation, null);
+			temp[lastRow, 4] = new TableCellInfo("(" + $"${string.Join(',', state.Path.Select(n => n.Color != null ? "\\underset{i=" + state.Path.IndexOf(n) + "}{\\text{" + n.Index + "}}" : n.Index.ToString()))}$" + ")", null);
+			temp[lastRow, 5] = new TableCellInfo(Math.Round(state.Distance, 1).ToString(), null);
+
+			tableInfo.Cells = temp;
+		}
 	}
 
 	private bool InPath(List<Node> path, Node node1, Node node2) {
