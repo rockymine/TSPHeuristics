@@ -8,50 +8,49 @@ using TravellingSalesmanProblem.Graph;
 namespace TravellingSalesmanProblem.Algorithms {
     public class NearestNeighbour : Algorithm {
         public Node Start { get; set; }
-        public bool Closed { get; set; } = true;
+        private Node Current = new();
+        private Edge Edge = new();
         public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
+            graph.Reset(); //mark nodes as unvisited
             var state = new GraphState { Nodes = graph.Nodes };
-            graph.Reset();
-
-            var current = Start;
-            Start.Visited = true;
-            state.Path.Add(current);
-
-            UpdateStateMessages(state);
-            yield return state;
+            yield return UpdateState(state);
 
             while (true) {
-                var edge = Edge.FindShortest(current);
+                Edge = Edge.FindShortest(Current);
 
-                if (edge == null) {
-                    var isClosed = true;
-
-                    if (Closed) {
-                        edge = current.Edges.Find(e => e.IsBetween(current, Start));
-                        isClosed = edge != null;
-
-                        if (edge != null) {
-                            state.Path.Add(edge.Opposite(current));
-                            state.PathEdges.Add(edge);
-                            state.Distance += edge.Distance;
-                        }
-                    }
-
-                    state.Finished = true;
-                    state.Success = graph.Nodes.All(n => n.Visited) && isClosed;
-                    UpdateStateMessages(state);
+                if (Edge == null) {
+                    Edge = Current.Edges.Find(e => e.IsBetween(Current, Start));
+                    state = UpdateState(state, true);
                     yield break;
                 }
 
-                state.Distance += edge.Distance;
-                current = edge.Opposite(current);
-                current.Visited = true;
-
-                state.Path.Add(current);
-                state.PathEdges.Add(edge);
-                UpdateStateMessages(state);
-                yield return state;
+                yield return UpdateState(state);
             }
+        }
+
+        private GraphState UpdateState(GraphState state, bool finished = false) {
+            if (!Start.Visited) { //add first node
+                Current = Start;
+                Start.Visited = true;
+                state.Path.Add(Current);
+            } else {
+                var opposite = Edge.Opposite(Current);
+
+                if (finished) { //algorithm is finished
+                    state.Finished = true;
+                } else {
+                    Current = opposite;
+                    Current.Visited = true;
+                }
+
+                //add nodes and edges
+                state.Path.Add(opposite);
+                state.PathEdges.Add(Edge);
+                state.Distance += Edge.Distance;
+            }
+
+            UpdateStateMessages(state);
+            return state;
         }
 
         public IEnumerable<GraphState> FindLongestPath(GraphProblem graph) {
@@ -70,20 +69,15 @@ namespace TravellingSalesmanProblem.Algorithms {
 
                 if (edge == null) {
                     var isClosed = true;
+                    edge = current.Edges.Find(e => e.IsBetween(current, Start));
 
-                    if (Closed) {
-                        edge = current.Edges.Find(e => e.IsBetween(current, Start));
-                        isClosed = edge != null;
-
-                        if (edge != null) {
-                            state.Path.Add(edge.Opposite(current));
-                            state.PathEdges.Add(edge);
-                            state.Distance += edge.Distance;
-                        }
+                    if (edge != null) {
+                        state.Path.Add(edge.Opposite(current));
+                        state.PathEdges.Add(edge);
+                        state.Distance += edge.Distance;
                     }
 
                     state.Finished = true;
-                    state.Success = graph.Nodes.All(n => n.Visited) && isClosed;
                     UpdateStateMessages(state);
                     yield break;
                 }
@@ -144,10 +138,6 @@ namespace TravellingSalesmanProblem.Algorithms {
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Route"] = string.Join('-', state.Path.Select(n => n.Index));
             state.Messages["Distance"] = Math.Round(state.Distance, 1).ToString();
-        }
-
-        public override GraphState UpdateState(GraphState state) {
-            throw new NotImplementedException();
         }
     }
 }

@@ -10,6 +10,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         private static readonly Random Random = new();
 
         public static GraphProblem Create(GraphProblem graph, NeighbourType type) {
+            graph.Reset();
             var neighbor = new GraphProblem();
             switch (type) {
                 case NeighbourType.Swap:

@@ -72,7 +72,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Messages["Distance"] = state.Distance.ToString();
         }
 
-        public override GraphState UpdateState(GraphState state) {
+        private GraphState UpdateState(GraphState state) {
             state.Iteration++;
             state.Distance = CurrentBest.Costs;
             state.Path = CurrentBest.Nodes;

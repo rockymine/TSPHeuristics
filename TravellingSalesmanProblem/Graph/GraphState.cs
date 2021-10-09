@@ -13,7 +13,6 @@ namespace TravellingSalesmanProblem.Graph {
         public List<GraphSegment> Segments { get; set; } = new();
         public SwapInfo SwapInfo { get; set; }
         public bool Finished { get; set; } = false;
-        public bool Success { get; set; }
         public double Distance { get; set; }
         public double Temperature { get; set; }
         public int Iteration { get; set; }
@@ -37,7 +36,6 @@ namespace TravellingSalesmanProblem.Graph {
             state.Segments.AddRange(Segments);
             state.SwapInfo = SwapInfo;
             state.Finished = Finished;
-            state.Success = Success;
             state.Distance = Distance;
             state.Temperature = Temperature;
             state.Iteration = Iteration;

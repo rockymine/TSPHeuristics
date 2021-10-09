@@ -10,7 +10,6 @@ namespace TravellingSalesmanProblem.Algorithms {
         public Dictionary<string, MathString> Equations { get; set; } = new();
         public abstract IEnumerable<GraphState> FindPath(GraphProblem graph);
         public abstract IEnumerable<GraphState> MultiStart(GraphProblem graph);
-        public abstract GraphState UpdateState(GraphState state);
         public abstract void UpdateStateMessages(GraphState state);
     }
 

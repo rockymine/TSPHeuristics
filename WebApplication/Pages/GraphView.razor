@@ -114,7 +114,6 @@
                     </div>
                 }
                 @if (StateEnumerator != null && StateEnumerator.Current != null) {
-                    <span><b>Success</b>: @StateEnumerator.Current.Success</span><br/>
                     <span><b>Finished</b>: @StateEnumerator.Current.Finished</span><br/>
                     <span><b>Elapsed Time</b>: @TimeSpan.Minutes m @TimeSpan.Seconds s @TimeSpan.Milliseconds ms</span><br/>
 
@@ -175,7 +174,7 @@
 </div>
 
 @code {
-    private LinkedList<GraphState> GraphHistory;
+    private LinkedList<GraphState> GraphHistory = new();
     
     private Canvas CurrentCanvas;
     private Canvas PreviousCanvas;
@@ -475,6 +474,14 @@ n,12,11,11";
         TimeSpan = Stopwatch.Elapsed;
     }
 
+
+    private void LinkedListOperations() {
+        //Save previous state
+        //If Current is finished -> drawComplete = true; Stopwatch.Stop()
+        //Move to next state
+        //TimeSpan = Stopwatch.Elapsed;
+    }
+
     private async Task FillCanvases() {
         if (PreviousState != null && ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
             await ResetCanvas(await PreviousCanvas.GetContext2DAsync(), MainCanvasSettings);
@@ -495,7 +502,7 @@ n,12,11,11";
     private async Task FillCanvas(Canvas canvas) {
         await using (var context = await canvas.GetContext2DAsync()) {
             if (canvas == PreviousCanvas) {
-                PreviousState.ComparePathEdges(StateEnumerator.Current);                
+                PreviousState.ComparePathEdges(StateEnumerator.Current);
 
                 await CanvasRenderer.DrawPath(context, PreviousState.Nodes, PreviousState.PathEdges,
                     MainCanvasSettings, AnnotateEdges, ColorizeChanges);

@@ -14,7 +14,7 @@ namespace TravellingSalesmanProblem.Graph {
         public List<Edge> Edges { get; set; } = new();
         public List<GraphSegment> Segments { get; set; } = new();
         public SwapInfo SwapInfo { get; set; }
-        public double Costs => CalcCosts();
+        public double Costs => Edges.Sum(e => e.Distance);
         private static readonly Random Random = new();
         public GraphProblem() {
             Nodes = new List<Node>();
@@ -168,7 +168,5 @@ namespace TravellingSalesmanProblem.Graph {
         }
 
         public bool EqualPosition(Node node) => Nodes.Find(n => n.Position == node.Position) != null;
-
-        public double CalcCosts() => Edges.Sum(e => e.Distance);
     }
 }

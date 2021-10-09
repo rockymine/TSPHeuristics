@@ -14,52 +14,55 @@ namespace TravellingSalesmanProblem.Algorithms {
         public double Alpha { get; set; }
         public NeighbourType NeighbourEnum { get; set; }
 
-        private GraphProblem CurrentBest = new();
+        private GraphProblem X = new();
+        private GraphProblem XBest = new();
+        private GraphProblem Y = new();
 
         private static readonly Random Random = new();
 
         public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
-            var x = GraphProblem.OrderedGraphProblem(graph.DeepCopy());
+            graph.Reset();
+            X = GraphProblem.OrderedGraphProblem(graph);
+
             var state = new GraphState {
-                Nodes = x.Nodes,
-                PathEdges = x.Edges,
-                Temperature = CalculateInitialTemperature(x)
+                Nodes = X.Nodes,
+                PathEdges = X.Edges,
+                Temperature = CalculateInitialTemperature(X)
             };
 
-            CurrentBest = x;
+            XBest = X;
             UpdateStateMessages(state);
             yield return state;
             
             while (state.Temperature >= MinTemp) {
                 for (int i = 0; i < PhaseLength; i++) {
-                    /* Generate Neighbor */
-                    x.Reset();
-                    var y = NeighbourState.Create(x, NeighbourEnum);
-                    state.SwapInfo = y.SwapInfo;
-                    state.Segments = y.Segments;
+                    GenerateRandomNeighbour(state);
 
-                    if (y.Costs <= x.Costs) {
-                        x = y;
+                    if (Y.Costs <= X.Costs) {
+                        X = Y;
 
-                        /* Update Current Best */
-                        if (x.Costs < CurrentBest.Costs) {
-                            CurrentBest = x;
+                        if (X.Costs < XBest.Costs) {
+                            XBest = X;
                             yield return UpdateState(state);
                         }
-
-                    } else if (MetropolisRule(y, state)) {
-                        x = y;
+                    } else if (MetropolisRule(state)) {
+                        X = Y;
                     }
                 }
 
                 Equations["Temperature Update"] = MathString.UpdateTemperature(state, Alpha);
                 state.Iteration++;
-                state.Temperature *= Alpha;                
+                state.Temperature *= Alpha;
             }
 
             state.Finished = true;
-            UpdateStateMessages(state);
-            //yield return UpdateState(state, true);
+            yield return UpdateState(state);
+        }
+
+        private void GenerateRandomNeighbour(GraphState state) {
+            Y = NeighbourState.Create(X, NeighbourEnum);
+            state.SwapInfo = Y.SwapInfo;
+            state.Segments = Y.Segments;
         }
 
         private static double CalculateInitialTemperature(GraphProblem graph) {            
@@ -74,15 +77,11 @@ namespace TravellingSalesmanProblem.Algorithms {
             return worst - best;
         }
 
-        private bool MetropolisRule(GraphProblem x, GraphState state) {
-            var p = Math.Exp(-(x.Costs - state.Distance) / state.Temperature);
-            Console.WriteLine($"x:" + string.Join(",", x.Nodes.Select(n => n.Index)));
-            Console.WriteLine($"x.Costs: {x.Costs}");
+        private bool MetropolisRule(GraphState state) {
             var r = Random.NextDouble();
-            bool condition = p > r;
+            bool condition = Math.Exp(X.Costs - Y.Costs / state.Temperature) > r;
 
-            Equations["Metropolis Rule"] = MathString.MetropolisRule(x, state, r, condition);
-
+            Equations["Metropolis Rule"] = MathString.MetropolisRule(X, Y, state, r, condition);
             return condition;
         }
 
@@ -90,10 +89,10 @@ namespace TravellingSalesmanProblem.Algorithms {
             throw new NotImplementedException();
         }
 
-        public override GraphState UpdateState(GraphState state) {
-            state.Distance = CurrentBest.Costs;
-            state.Path = CurrentBest.Nodes;
-            state.PathEdges = CurrentBest.Edges;
+        private GraphState UpdateState(GraphState state) {
+            state.Distance = XBest.Costs;
+            state.Path = XBest.Nodes;
+            state.PathEdges = XBest.Edges;
             state.Equations = Equations;
 
             UpdateStateMessages(state);

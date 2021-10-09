@@ -42,14 +42,14 @@ namespace TravellingSalesmanProblem.Algorithms {
             return mathString;
         }
 
-        public static MathString MetropolisRule(GraphProblem graph, GraphState state, double random, bool condition) {
+        public static MathString MetropolisRule(GraphProblem x, GraphProblem y, GraphState state, double random, bool condition) {
             var latex = "$\\text{exp}(\\frac{f(x) - f(y)}{T_{k}}) > \\text{rand}(0,1)$";
             var dummy = "$\\text{exp}(\\frac{?f(x)? - ?f(y)?}{?temp?}) > ?rand?$";
             var result = $"$\\text{{{condition}}}$";
             
             var mathString = new MathString(latex, dummy, result);
-            mathString.SetVar("f(x)", graph.Costs);
-            mathString.SetVar("f(y)", state.Distance);
+            mathString.SetVar("f(x)", x.Costs);
+            mathString.SetVar("f(y)", y.Costs);
             mathString.SetVar("temp", state.Temperature);
             mathString.SetVar("rand", random);   
 
