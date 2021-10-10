@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -29,7 +30,6 @@ namespace TravellingSalesmanProblem.Algorithms {
                     break;
                 }
 
-                Equations["Hello World"] = new MathString("Hello", "World", Edge.Distance.ToString());
                 history.AddLast(AdvanceState(history.Last.Value));
             }
 
@@ -47,7 +47,6 @@ namespace TravellingSalesmanProblem.Algorithms {
             newState.Path.Add(opposite);
             newState.PathEdges.Add(Edge);
             newState.Distance += Edge.Distance;
-            newState.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
 
             UpdateStateMessages(newState);
             return newState;

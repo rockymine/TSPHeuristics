@@ -29,10 +29,10 @@ namespace TravellingSalesmanProblem.Graph {
         }
 
         public double CalcDistance() {
-            if (Node1 == null)
-                Console.WriteLine($"Node1 not found ID: {Node1Id}");
-            if (Node1 == null)
-                Console.WriteLine($"Node2 not found ID: {Node2Id}");
+            //if (Node1 == null || Node2 == null) {
+            //    Console.WriteLine("Node not found.");
+            //    return -1;
+            //}
 
             return Vector2.Distance(Node1.Position, Node2.Position);
         }

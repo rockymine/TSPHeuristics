@@ -29,11 +29,10 @@ namespace TravellingSalesmanProblem.Graph {
             //graph.Segments.AddRange(Segments);
             graph.SwapInfo = SwapInfo?.DeepCopy();
             graph.Nodes = Nodes.Select(n => n.Copy()).ToList();
-            
             graph.Edges = Edges.Select(e => e.Copy()).ToList();
-            Console.WriteLine(JsonConvert.SerializeObject(graph).ToString());
+
+            //Console.WriteLine(JsonConvert.SerializeObject(graph, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }).ToString());
             PostProcess(graph);
-            
             return graph;
         }
 
@@ -96,6 +95,7 @@ namespace TravellingSalesmanProblem.Graph {
         }
 
         public void ConnectPathNodes() {
+            Edges.Clear();
             for (int i = 0; i < Nodes.Count - 1; i++) {
                 var edge = Edge.Between(Nodes[i], Nodes[i + 1]);
                 Edges.Add(edge);

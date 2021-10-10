@@ -193,41 +193,39 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public static GraphProblem Swap(GraphProblem graph) {
-            //Graph = Graph.DeepCopy();
-            //var n = Graph.Nodes.Count;
+            graph = graph.DeepCopy();
+            var n = graph.Nodes.Count;
+            var i = Random.Next(1, n - 2);
+            var j = Random.Next(i + 1, n - 1);
+
+            graph.Nodes[i].Color = "green";
+            graph.Nodes[j].Color = "red";
+
+            var nodes = graph.Nodes;
+            var node = nodes[i];
+            nodes[i] = nodes[j];
+            nodes[j] = node;
+
+            graph.Nodes = nodes;
+            graph.ConnectPathNodes();
+            return graph;
+
+            //var n = graph.Nodes.Count;
+
             //var i = Random.Next(1, n - 2);
             //var j = Random.Next(i + 1, n - 1);
 
-            //Graph.Nodes[i].Color = "green";
-            //Graph.Nodes[j].Color = "red";
-
-            //var temp = Graph.Nodes;
+            //var temp = graph.DeepCopy().Nodes;
             //var node = temp[i];
             //temp[i] = temp[j];
             //temp[j] = node;
 
-            //Graph.Nodes.Clear();
-            //Graph.Nodes.AddRange(temp);
-            //Graph.ConnectPathNodes();
-            //return Graph;
+            //var final = new GraphProblem {
+            //    Nodes = temp
+            //};
 
-            var n = graph.Nodes.Count;
-            var x = graph.DeepCopy();
-
-            var i = Random.Next(1, n - 2);
-            var j = Random.Next(i + 1, n - 1);
-
-            var temp = x.Nodes;
-            var node = temp[i];
-            temp[i] = temp[j];
-            temp[j] = node;
-
-            var final = new GraphProblem {
-                Nodes = temp
-            };
-
-            final.ConnectPathNodes();
-            return final;
+            //final.ConnectPathNodes();
+            //return final;
         }
     }
 

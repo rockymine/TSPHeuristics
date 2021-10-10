@@ -82,14 +82,18 @@ namespace TravellingSalesmanProblem.Algorithms {
             var newState = state.DeepCopy();
 
             newState.Distance = XBest.Costs;
-            newState.Path.Clear();
-            newState.Path.AddRange(XBest.Nodes);
-            newState.PathEdges.Clear();
-            newState.PathEdges.AddRange(XBest.Edges);
-            newState.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
+            newState.Path = XBest.Nodes;
+            newState.PathEdges = XBest.Edges;
+            newState.Equations = Equations;
+            newState.SwapInfo = XBest.SwapInfo;
+            //newState.Path.Clear();
+            //newState.Path.AddRange(XBest.Nodes);
+            //newState.PathEdges.Clear();
+            //newState.PathEdges.AddRange(XBest.Edges);
+            //newState.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
             newState.Temperature = temperature;
             newState.Iteration = iteration;
-            newState.SwapInfo = Y.SwapInfo?.DeepCopy();
+            //newState.SwapInfo = Y.SwapInfo?.DeepCopy();
             //newState.Segments = Y.Segments;
 
             UpdateStateMessages(newState);

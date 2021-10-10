@@ -52,10 +52,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             if (!initialize)
                 newState.Iteration++;
 
-            Console.WriteLine(string.Join("-", GlobalBest.Nodes.Select(n => n.Index)));
             newState.Path.Clear();
             newState.Path.AddRange(GlobalBest.Nodes);
-            Console.WriteLine(string.Join("-", newState.Path.Select(n => n.Index)));
             newState.PathEdges.Clear();
             newState.PathEdges.AddRange(DistributedMemory.Edges);
             newState.Distance = GlobalBest.Costs;
