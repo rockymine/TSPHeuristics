@@ -32,6 +32,8 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public GraphProblem SwapEdges(bool colorize = false) {
+            Graph = Graph.DeepCopy();
+            
             if (colorize) {
                 NodeI.Color = "orange";
                 NodeJ.Color = "pink";
@@ -45,9 +47,9 @@ namespace TravellingSalesmanProblem.Algorithms {
             var c = tour[j..^0];
             var nodes = a.Concat(b.Reverse()).Concat(c).ToList();
 
-            var best = new GraphProblem { Nodes = nodes };
-            best.ConnectPathNodes();
-            return best;
+            Graph.Nodes = nodes; //clear and then addrange?
+            Graph.ConnectPathNodes();
+            return Graph;
         }
     }
 
@@ -58,5 +60,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             Nodes = nodes;
             Calculation = calculation;
         }
+
+        public SwapInfo DeepCopy() => new(new List<Node>(Nodes), Calculation);
     }
 }

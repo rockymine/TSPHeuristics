@@ -20,7 +20,7 @@
         <div class="col-md-9 p-0">
             <div class="bg-custom-light custom-input-group">
                 <h5>Heuristic Settings</h5>
-                @if (StateEnumerator != null) {
+                @if (GraphHistory != null) {
                     @if (AlgorithmEnum == AlgorithmEnum.NN && !MultiStart) {
                         <NearestNeighborSettings @bind-StartNode="@StartNode"></NearestNeighborSettings>
                     }
@@ -37,7 +37,7 @@
                             @bind-Rho="@Rho" @bind-ExploitVsExplore="@StateTransition"></AntColonySettings>
                     }
                     <div class="form-group">
-                        <button class="btn btn-danger" type="button" @onclick="e => NextState(true)">Reset</button>
+                        <button class="btn btn-danger" type="button" @onclick="e => UpdateEnumerator()">Reset</button>
                     </div>
                 }
             </div>
@@ -94,30 +94,34 @@
         <div class="col-md-4 p-0">
             <div class="bg-custom-light custom-input-group">
                 <h5>State</h5>
-                @if (StateEnumerator != null && !StateEnumerator.Current.Finished) {
+                @if (GraphHistory != null) {
                     <div class="row g-3">
                         <div class="input-group">
                             <div class="col-auto">
                                 @if (!AutoAdvance) {
                                     <div class="form-group">
-                                        <button class="btn btn-primary btn-sm" type="button" @onclick="e => NextState(false)">Next</button>
+                                        <button type="button" disabled="@(GraphHistory.First == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump First" @onclick="e => JumpFirst()">«</button>
+                                        <button type="button" disabled="@(GraphHistory.First == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse" @onclick="e => ReverseHistory()">‹</button>
+                                        <button type="button" disabled="@(GraphHistory.Last == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Advance" @onclick="e => AdvanceHistory()">›</button>
+                                        <button type="button" disabled="@(GraphHistory.Last == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump Last" @onclick="e => JumpLast()">»</button>
                                     </div>
                                 }
                             </div>
-                            <div class="col-auto">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="switchAdvance" @bind="@AutoAdvance">
-                                    <label class="form-check-label" for="switchAdvance">Auto</label>
-                                </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input-group">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="switchAdvance" @bind="@AutoAdvance">
+                                <label class="form-check-label" for="switchAdvance">Auto Advance</label>
                             </div>
                         </div>
                     </div>
                 }
-                @if (StateEnumerator != null && StateEnumerator.Current != null) {
-                    <span><b>Finished</b>: @StateEnumerator.Current.Finished</span><br/>
+                @if (CurrentHistoryNode != null) {
                     <span><b>Elapsed Time</b>: @TimeSpan.Minutes m @TimeSpan.Seconds s @TimeSpan.Milliseconds ms</span><br/>
 
-                    @foreach (var kvp in StateEnumerator.Current.Messages) {
+                    @foreach (var kvp in CurrentHistoryNode.Value.Messages) {
                         <span><b>@kvp.Key</b>: @kvp.Value</span><br/>
                     }
                 }
@@ -127,11 +131,11 @@
     <div class="row">
         <div class="col-md-12">
             <h5>Details</h5>
-            @if (StateEnumerator != null && StateEnumerator.Current != null && StateEnumerator.Current.Equations.Count != 0) {
+            @if (GraphHistory != null && CurrentHistoryNode.Value != null && CurrentHistoryNode.Value.Equations.Count != 0) {
                 <div class="row">
                 <div class="col-md-6 col-sm-6">
                     <h3 class="font-weight-bold">Formulas</h3>
-                        @foreach (var kvp in StateEnumerator.Current.Equations) {
+                        @foreach (var kvp in CurrentHistoryNode.Value.Equations) {
                             <p><b>@kvp.Key</b></p>
                             <MarkdownRenderer Value="@kvp.Value.Latex"/>
                             <MarkdownRenderer Value="@kvp.Value.Generate()"/>
@@ -140,7 +144,7 @@
                     </div>
                 </div> 
             }
-            @if (AlgorithmEnum == AlgorithmEnum.SA && StateEnumerator != null && StateEnumerator.Current != null
+            @*@if (AlgorithmEnum == AlgorithmEnum.SA && StateEnumerator != null && StateEnumerator.Current != null
             && StateEnumerator.Current.Segments != null && StateEnumerator.Current.Segments.Count != 0 && !DrawComplete) {
                 <div class="row">
                     @if (CanvasArray != null && CanvasArray.Length != 0) {
@@ -167,14 +171,15 @@
                         </div>
                     }
                 </div>
-            }
+            }*@
         </div>
     </div>
     <TableGenerator @ref="@TableGenerator"></TableGenerator>
 </div>
 
 @code {
-    private LinkedList<GraphState> GraphHistory = new();
+    private LinkedList<GraphState> GraphHistory;
+    private LinkedListNode<GraphState> CurrentHistoryNode;
     
     private Canvas CurrentCanvas;
     private Canvas PreviousCanvas;
@@ -418,22 +423,25 @@ n,12,11,11";
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender) {
+    protected override Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
             Task.Run(async () => {
                 while (true) {
                     await Task.Delay(AnimationDelay);
 
                     if (AutoAdvance)
-                        await NextState(false);
+                        await AdvanceHistory();
                 }
             });
         }
+
+        return base.OnAfterRenderAsync(firstRender);
     }
 
     private async Task InitiateGraph(bool textbased) {
-        Instance = textbased ? GraphProblem.FromText(DefaultGraph) :
-        GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
+        Instance = textbased ? GraphProblem.FromText(DefaultGraph)
+            : GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
+
         MainCanvasSettings.Max = Instance.FindMax();
         MainCanvasSettings.Scale = 30;
         MainCanvasSettings.NodeRadius = 8;
@@ -441,67 +449,97 @@ n,12,11,11";
         AdditionalCanvasSettings.Max = Instance.FindMax();
         AdditionalCanvasSettings.Scale = 15;
         AdditionalCanvasSettings.NodeRadius = 6;
-        
-        await NextState(true);
-    }   
 
-    private async Task NextState(bool reset) {
-        if (reset)
-            await UpdateEnumerator();
-            
-        if (StateEnumerator == null)
-            await InitiateGraph(true);
+        //await NextState(true);
+        await UpdateEnumerator();
+    }
 
-        if (!DrawComplete) {
-            StateEnumeratorOperations();
-            await FillCanvases();
-            StateHasChanged();
-            UpdateVisualsFromGraphState();
+    private async Task JumpFirst() {
+        var canChange = await CanChangeHistory();
+        if (!canChange)
+            return;
+
+        if (GraphHistory.First == null)
+            return;
+
+        CurrentHistoryNode = GraphHistory.First;
+        await Redraw();
+    }
+
+    private async Task JumpLast() {
+        var canChange = await CanChangeHistory();
+        if (!canChange)
+            return;
+
+        if (GraphHistory.Last == null)
+            return;
+
+        CurrentHistoryNode = GraphHistory.Last;
+        await Redraw();
+    }
+
+    private async Task AdvanceHistory() {
+        var canChange = await CanChangeHistory();
+        if (!canChange)
+            return;
+
+        if (CurrentHistoryNode.Next == null)
+            return;
+
+        CurrentHistoryNode = CurrentHistoryNode.Next;
+        await Redraw();
+    }
+
+    private async Task ReverseHistory() {
+        var canChange = await CanChangeHistory();
+        if (!canChange)
+            return;
+
+        if (CurrentHistoryNode.Previous == null)
+            return;
+
+        CurrentHistoryNode = CurrentHistoryNode.Previous;
+        await Redraw();
+    }
+
+    private async Task<bool> CanChangeHistory() {
+        if (GraphHistory == null)
+            return false;
+        if (CurrentHistoryNode == null) {
+            CurrentHistoryNode = GraphHistory.First;
+            await Redraw();
+            return false;
         }
+
+        return true;
     }
 
-    private void StateEnumeratorOperations() {
-        if (StateEnumerator.Current != null) {
-            PreviousState = StateEnumerator.Current.DeepCopy();
-
-            if (StateEnumerator.Current.Finished) {
-                DrawComplete = true;
-                Stopwatch.Stop();
-            }
-        }            
-
-        StateEnumerator.MoveNext();
-        TimeSpan = Stopwatch.Elapsed;
-    }
-
-
-    private void LinkedListOperations() {
-        //Save previous state
-        //If Current is finished -> drawComplete = true; Stopwatch.Stop()
-        //Move to next state
-        //TimeSpan = Stopwatch.Elapsed;
+    private async Task Redraw() {
+        await FillCanvases();
+        UpdateVisualsFromGraphState();
+        StateHasChanged();
     }
 
     private async Task FillCanvases() {
-        if (PreviousState != null && ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
+        if (CurrentHistoryNode.Previous != null && ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
             await ResetCanvas(await PreviousCanvas.GetContext2DAsync(), MainCanvasSettings);
-            await FillCanvas(PreviousCanvas);
+            await FillCanvas(PreviousCanvas, CurrentHistoryNode.Previous.Value);
         }
 
         await ResetCanvas(await CurrentCanvas.GetContext2DAsync(), MainCanvasSettings);
-        await FillCanvas(CurrentCanvas);
+        await FillCanvas(CurrentCanvas, CurrentHistoryNode.Value);
         
-        for (int i = 0; i < CanvasArray.Length; i++) {
-            if (CanvasArray[i] != null && !DrawComplete && StateEnumerator.Current.Segments.Count > 0) {
+        @*for (int i = 0; i < CanvasArray.Length; i++) {
+            if (CanvasArray[i] != null && !DrawComplete && CurrentHistoryNode.Value.Segments.Count > 0) {
                 await ResetCanvas(await CanvasArray[i].GetContext2DAsync(), AdditionalCanvasSettings);
                 await FillCanvas(CanvasArray[i]);
             }
-        }
+        }*@
     }
 
-    private async Task FillCanvas(Canvas canvas) {
+    private async Task FillCanvas(Canvas canvas, GraphState state) {
         await using (var context = await canvas.GetContext2DAsync()) {
-            if (canvas == PreviousCanvas) {
+            @*if (canvas == PreviousCanvas) {
                 PreviousState.ComparePathEdges(StateEnumerator.Current);
 
                 await CanvasRenderer.DrawPath(context, PreviousState.Nodes, PreviousState.PathEdges,
@@ -511,17 +549,20 @@ n,12,11,11";
             if (canvas == CurrentCanvas) {
                 await CanvasRenderer.DrawPath(context, StateEnumerator.Current.Nodes, StateEnumerator.Current.PathEdges,
                     MainCanvasSettings, AnnotateEdges, ColorizeChanges);
-            }                
+            }*@                
             
-            for (int i = 0; i < StateEnumerator.Current.Segments.Count; i++) {
+            await CanvasRenderer.DrawPath(context, state.Nodes, state.PathEdges,
+                    MainCanvasSettings, AnnotateEdges, ColorizeChanges);
+
+            @*for (int i = 0; i < StateEnumerator.Current.Segments.Count; i++) {
                 if (canvas == CanvasArray[i] && !StateEnumerator.Current.Finished) {
                     var nodes = StateEnumerator.Current.Segments[i].Nodes;
                     var edges = StateEnumerator.Current.Segments[i].Edges;
 
                     await CanvasRenderer.DrawPath(context, nodes, edges, AdditionalCanvasSettings, false, false);
                 }
-            }
-        }
+            }*@
+    }
     }
 
     private async Task ResetCanvases() {
@@ -558,12 +599,11 @@ n,12,11,11";
         TableGenerator.Reset();
 
         await ResetCanvases();
-
+        //surround with Stopwatch 
         switch (AlgorithmEnum) {
             case AlgorithmEnum.NN:
                 NearestNeighbor.Start = Instance.Nodes[StartNode];
-                StateEnumerator = MultiStart ? NearestNeighbor.MultiStart(Instance).GetEnumerator() :
-                    NearestNeighbor.FindPath(Instance).GetEnumerator();
+                GraphHistory = NearestNeighbor.FindPath(Instance);
                 break;
             case AlgorithmEnum.SA:
                 SimulatedAnnealing.Alpha = AlphaSA;
@@ -572,7 +612,7 @@ n,12,11,11";
                 SimulatedAnnealing.StartTemp = StartTemp;
                 SimulatedAnnealing.MinTemp = MinTemp;
                 SimulatedAnnealing.NeighbourEnum = NeighbourEnum;
-                StateEnumerator = SimulatedAnnealing.FindPath(Instance).GetEnumerator();
+                GraphHistory = SimulatedAnnealing.FindPath(Instance);
                 break;
             case AlgorithmEnum.ACS:
                 AntAlgorithm.AntCount = AntCount;
@@ -580,7 +620,9 @@ n,12,11,11";
                 AntAlgorithm.Rho = Rho;
                 AntAlgorithm.Beta = Beta;
                 AntAlgorithm.StateTransition = StateTransition;
-                StateEnumerator = AntAlgorithm.FindPath(Instance).GetEnumerator();
+                //StateEnumerator = AntAlgorithm.FindPath(Instance).GetEnumerator();
+
+                GraphHistory = AntAlgorithm.FindPath(Instance);
                 break;
             case AlgorithmEnum.HC:
                 HillClimbing.NeighbourType = NeighbourEnum;
@@ -589,15 +631,18 @@ n,12,11,11";
                 break;
             default: break;
         }
+
+        CurrentHistoryNode = GraphHistory.First;
+        await Redraw();
     }
 
     private void UpdateVisualsFromGraphState() {
         if (AlgorithmEnum == AlgorithmEnum.NN) {
-            TableGenerator.UpdateFromGraphState(StateEnumerator.Current, TableType.DistanceMatrix);
+            TableGenerator.UpdateFromGraphState(CurrentHistoryNode.Value, TableType.DistanceMatrix);
         } else if ((AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) && NeighbourEnum is NeighbourType.TwoOpt) {
-            TableGenerator.UpdateFromGraphState(StateEnumerator.Current, TableType.SwapSummary);
+            TableGenerator.UpdateFromGraphState(CurrentHistoryNode.Value, TableType.SwapSummary);
         } else {
-            TableGenerator.UpdateFromGraphState(StateEnumerator.Current, TableType.RouteSummary);
+            TableGenerator.UpdateFromGraphState(CurrentHistoryNode.Value, TableType.RouteSummary);
         }
     }
 }

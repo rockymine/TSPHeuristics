@@ -34,30 +34,30 @@ namespace TravellingSalesmanProblem.Graph {
             state.Path.AddRange(Path);
             state.PathEdges.AddRange(PathEdges);
             state.Segments.AddRange(Segments);
-            state.SwapInfo = SwapInfo;
+            state.SwapInfo = SwapInfo?.DeepCopy();
             state.Finished = Finished;
             state.Distance = Distance;
             state.Temperature = Temperature;
             state.Iteration = Iteration;
-            state.Messages = Messages;
-            state.Equations = Equations;
+            state.Messages = new Dictionary<string, string>(Messages);
+            state.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
 
             return state;
         }
 
-        public void ComparePathEdges(GraphState state) {
-            //an edge was removed
-            SetEdgeColors(state.PathEdges, PathEdges, "red");
+        //public void ComparePathEdges(GraphState state) {
+        //    //an edge was removed
+        //    SetEdgeColors(state.PathEdges, PathEdges, "red");
 
-            //an edge was added
-            SetEdgeColors(PathEdges, state.PathEdges, "green");
-        }
+        //    //an edge was added
+        //    SetEdgeColors(PathEdges, state.PathEdges, "green");
+        //}
 
-        private static void SetEdgeColors(List<Edge> current, List<Edge> compareAgainst, string color) {
-            foreach (var edge in compareAgainst) {
-                var condition = current.Find(e => e.IsEqual(edge)) == null;
-                edge.Color = condition ? color : "black";
-            }
-        }
+        //private static void SetEdgeColors(List<Edge> current, List<Edge> compareAgainst, string color) {
+        //    foreach (var edge in compareAgainst) {
+        //        var condition = current.Find(e => e.IsEqual(edge)) == null;
+        //        edge.Color = condition ? color : "black";
+        //    }
+        //}
     }
 }

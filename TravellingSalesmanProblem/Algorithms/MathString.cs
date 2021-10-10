@@ -6,7 +6,7 @@ using TravellingSalesmanProblem.Graph;
 
 namespace TravellingSalesmanProblem.Algorithms {
     public class MathString {
-        public Dictionary<string, object> Variables { get; set; } = new();
+        public Dictionary<string, double> Variables { get; set; } = new();
         public string Latex { get; set; }
         public string Description { get; set; }
         public string Dummy { get; set; }
@@ -17,9 +17,14 @@ namespace TravellingSalesmanProblem.Algorithms {
             Result = result;
         }
 
-        public void SetVar(string variable, object data) {
-            Variables[variable] = data;
+        public MathString DeepCopy() {
+            return new MathString(Latex, Dummy, Result) {
+                Variables = new Dictionary<string, double>(Variables),
+                Description = Description
+            };
         }
+
+        public void SetVar(string variable, double data) => Variables[variable] = data;
 
         public string Generate() {
             var edited = Dummy;
@@ -66,7 +71,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             mathString.SetVar("r", edge.Node1.Index);
             mathString.SetVar("s", edge.Node2.Index);
             mathString.SetVar("tau", edge.Pheromone);
-            mathString.SetVar("eta", edge.Visibility);
+            mathString.SetVar("eta", 1 / edge.Distance); //visibility
             mathString.SetVar("beta", beta);            
 
             return mathString;
@@ -81,7 +86,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             mathString.SetVar("r", edge.Node1.Index);
             mathString.SetVar("s", edge.Node2.Index);
             mathString.SetVar("tau", edge.Pheromone);
-            mathString.SetVar("eta", edge.Visibility);
+            mathString.SetVar("eta", 1 / edge.Distance);
             mathString.SetVar("beta", beta);
 
             return mathString;

@@ -13,11 +13,29 @@ namespace TravellingSalesmanProblem.Graph {
         public double Value { get; set; }
         public string Color { get; set; }
         public double Pheromone { get; set; } = 0;
-        public double Visibility => 1 / Distance;
-        public double Distance => Vector2.Distance(Node1.Position, Node2.Position);
+        public double Distance => CalcDistance();
 
         internal int Node1Id;
         internal int Node2Id;
+
+        public Edge Copy() {
+            return new Edge {
+                Value = Value,
+                Color = Color,
+                Pheromone = Pheromone,
+                Node1Id = Node1Id,
+                Node2Id = Node2Id
+            };
+        }
+
+        public double CalcDistance() {
+            if (Node1 == null)
+                Console.WriteLine($"Node1 not found ID: {Node1Id}");
+            if (Node1 == null)
+                Console.WriteLine($"Node2 not found ID: {Node2Id}");
+
+            return Vector2.Distance(Node1.Position, Node2.Position);
+        }
 
         public bool IsBetween(Node node1, Node node2) {
             if (Node1 == node1 && Node2 == node2)

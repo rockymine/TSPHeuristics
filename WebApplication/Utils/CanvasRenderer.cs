@@ -48,6 +48,10 @@ namespace WebApplication.Utils {
             await DrawNodes(context, nodes, settings);
         }
 
+        public static async Task DrawPathCompared(Context2D context, GraphState state, GraphState compare, CanvasSettings settings) {
+
+        }
+
         private static async Task DrawNodes(Context2D context, List<Node> nodes, CanvasSettings settings) {
             var brush = NodeBrush.Copy();
 
@@ -83,6 +87,10 @@ namespace WebApplication.Utils {
 
             if (settings.Annotate)
                 await DrawEdgeTextBox(context, edges, brush, settings);
+        }
+
+        private static async Task DrawEdgesCompared(Context2D context, List<Edge> edges, List<Edge> compare, CanvasSettings settings) {
+
         }
 
         public static async Task DrawEdgeTextBox(Context2D context, List<Edge> edges, Brush brush, CanvasSettings settings) {

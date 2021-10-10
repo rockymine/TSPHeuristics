@@ -20,8 +20,9 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         private static readonly Random Random = new();
 
-        public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
+        public override LinkedList<GraphState> FindPath(GraphProblem graph) {
             graph.Reset();
+            var history = new LinkedList<GraphState>();
             X = GraphProblem.OrderedGraphProblem(graph);
 
             var state = new GraphState {
@@ -32,47 +33,39 @@ namespace TravellingSalesmanProblem.Algorithms {
 
             XBest = X;
             UpdateStateMessages(state);
-            yield return state;
-            
-            while (state.Temperature >= MinTemp) {
+            history.AddLast(state);
+            var iteration = 0;
+            var temperature = state.Temperature;
+
+            while (temperature >= MinTemp) {
                 for (int i = 0; i < PhaseLength; i++) {
-                    GenerateRandomNeighbour(state);
+                    Y = NeighbourState.Create(X, NeighbourEnum);
 
                     if (Y.Costs <= X.Costs) {
                         X = Y;
 
                         if (X.Costs < XBest.Costs) {
                             XBest = X;
-                            yield return UpdateState(state);
+                            history.AddLast(AdvanceState(history.Last.Value, iteration, temperature));
+                            //yield return UpdateState(state);
                         }
-                    } else if (MetropolisRule(state)) {
+                    } else if (MetropolisRule(history.Last.Value)) {
                         X = Y;
                     }
                 }
 
-                Equations["Temperature Update"] = MathString.UpdateTemperature(state, Alpha);
-                state.Iteration++;
-                state.Temperature *= Alpha;
+                Equations["Temperature Update"] = MathString.UpdateTemperature(history.Last.Value, Alpha);
+                iteration++;
+                temperature *= Alpha;
             }
 
-            state.Finished = true;
-            yield return UpdateState(state);
-        }
-
-        private void GenerateRandomNeighbour(GraphState state) {
-            Y = NeighbourState.Create(X, NeighbourEnum);
-            state.SwapInfo = Y.SwapInfo;
-            state.Segments = Y.Segments;
+            return history;
         }
 
         private static double CalculateInitialTemperature(GraphProblem graph) {            
             var nearestNeighbor = new NearestNeighbour { Start = graph.Nodes[Random.Next(0, graph.Nodes.Count)] };
-
-            /* Calculate Best Nearest Neighbor Solution */
             var best = nearestNeighbor.MultiStart(graph).Last().Distance;
-
-            /* Calculate Worst Nearest Neighbor Solution */
-            var worst = nearestNeighbor.MultiStartLongest(graph).Last().Distance;
+            var worst = nearestNeighbor.MultiStart(graph, false).Last().Distance;
 
             return worst - best;
         }
@@ -85,18 +78,22 @@ namespace TravellingSalesmanProblem.Algorithms {
             return condition;
         }
 
-        public override IEnumerable<GraphState> MultiStart(GraphProblem graph) {
-            throw new NotImplementedException();
-        }
+        private GraphState AdvanceState(GraphState state, int iteration, double temperature) {
+            var newState = state.DeepCopy();
 
-        private GraphState UpdateState(GraphState state) {
-            state.Distance = XBest.Costs;
-            state.Path = XBest.Nodes;
-            state.PathEdges = XBest.Edges;
-            state.Equations = Equations;
+            newState.Distance = XBest.Costs;
+            newState.Path.Clear();
+            newState.Path.AddRange(XBest.Nodes);
+            newState.PathEdges.Clear();
+            newState.PathEdges.AddRange(XBest.Edges);
+            newState.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
+            newState.Temperature = temperature;
+            newState.Iteration = iteration;
+            newState.SwapInfo = Y.SwapInfo?.DeepCopy();
+            //newState.Segments = Y.Segments;
 
-            UpdateStateMessages(state);
-            return state;
+            UpdateStateMessages(newState);
+            return newState;
         }
 
         public override void UpdateStateMessages(GraphState state) {

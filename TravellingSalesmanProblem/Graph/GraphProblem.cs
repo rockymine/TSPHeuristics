@@ -7,6 +7,7 @@ using System.Numerics;
 using System.Globalization;
 using System.IO;
 using TravellingSalesmanProblem.Algorithms;
+using Newtonsoft.Json;
 
 namespace TravellingSalesmanProblem.Graph {
     public class GraphProblem {
@@ -23,9 +24,16 @@ namespace TravellingSalesmanProblem.Graph {
 
         public GraphProblem DeepCopy() {
             var graph = new GraphProblem();
-            graph.Nodes.AddRange(Nodes);
-            graph.Edges.AddRange(Edges);
-            graph.Segments.AddRange(Segments);
+            //graph.Nodes.AddRange(Nodes);
+            //graph.Edges.AddRange(Edges);
+            //graph.Segments.AddRange(Segments);
+            graph.SwapInfo = SwapInfo?.DeepCopy();
+            graph.Nodes = Nodes.Select(n => n.Copy()).ToList();
+            
+            graph.Edges = Edges.Select(e => e.Copy()).ToList();
+            Console.WriteLine(JsonConvert.SerializeObject(graph).ToString());
+            PostProcess(graph);
+            
             return graph;
         }
 
@@ -81,7 +89,7 @@ namespace TravellingSalesmanProblem.Graph {
                         continue;
 
                     var edge = Edge.Between(n1, n2);
-                    n1.NeighbourCache.Add(n2, edge);
+                    //n1.NeighbourCache.Add(n2, edge);
                     Edges.Add(edge);
                 }
             }
@@ -137,11 +145,15 @@ namespace TravellingSalesmanProblem.Graph {
 
         private static void PostProcess(GraphProblem graph) {
             foreach (var edge in graph.Edges) {
-                edge.Node1 = graph.Nodes.Find(n => n.Index == edge.Node1Id);
-                edge.Node2 = graph.Nodes.Find(n => n.Index == edge.Node2Id);
+                if (edge != null) {
+                    edge.Node1 = graph.Nodes.Find(n => n.Index == edge.Node1Id);
+                    edge.Node2 = graph.Nodes.Find(n => n.Index == edge.Node2Id);
 
-                edge.Node1.Edges.Add(edge);
-                edge.Node2.Edges.Add(edge);
+                    if (edge.Node1 != null)
+                        edge.Node1.Edges.Add(edge);
+                    if (edge.Node2 != null)
+                        edge.Node2.Edges.Add(edge);
+                }
             }
         }
 

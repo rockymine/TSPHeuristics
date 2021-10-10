@@ -9,7 +9,7 @@ namespace TravellingSalesmanProblem.Algorithms {
     public class HillClimbing : Algorithm {
         public NeighbourType NeighbourType { get; set; }
         private GraphProblem CurrentBest = new();
-        public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
+        public override LinkedList<GraphState> FindPath(GraphProblem graph) {
             var x = GraphProblem.OrderedGraphProblem(graph.DeepCopy());
             var y = new GraphProblem();
             var state = new GraphState {
@@ -18,7 +18,7 @@ namespace TravellingSalesmanProblem.Algorithms {
                 Distance = double.MaxValue
             };
 
-            yield return state;
+            //yield return state;
 
             while (true) {
                 switch (NeighbourType) {
@@ -40,16 +40,16 @@ namespace TravellingSalesmanProblem.Algorithms {
                 if (y.Costs >= state.Distance) {
                     state.Finished = true;
                     UpdateStateMessages(state);
-                    yield break;
+                    //yield break;
                 } 
 
                 x = y;
                 CurrentBest = y;
-                yield return UpdateState(state);
-            }            
+                return null;
+            }
         }
 
-        public override IEnumerable<GraphState> MultiStart(GraphProblem graph) {
+        public IEnumerable<GraphState> MultiStart(GraphProblem graph) {
             var best = new GraphState { Nodes = graph.Nodes };
             var costs = double.MaxValue;
 

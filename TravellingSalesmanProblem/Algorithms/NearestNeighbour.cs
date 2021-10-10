@@ -10,97 +10,82 @@ namespace TravellingSalesmanProblem.Algorithms {
         public Node Start { get; set; }
         private Node Current = new();
         private Edge Edge = new();
-        public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
+        public override LinkedList<GraphState> FindPath(GraphProblem graph) {
             graph.Reset(); //mark nodes as unvisited
+            var history = new LinkedList<GraphState>();
             var state = new GraphState { Nodes = graph.Nodes };
-            yield return UpdateState(state);
+
+            Current = Start;
+            Start.Visited = true;
+            state.Path.Add(Current);
+            history.AddLast(state);
 
             while (true) {
                 Edge = Edge.FindShortest(Current);
 
                 if (Edge == null) {
                     Edge = Current.Edges.Find(e => e.IsBetween(Current, Start));
-                    state = UpdateState(state, true);
-                    yield break;
+                    history.AddLast(AdvanceState(history.Last.Value));
+                    break;
                 }
 
-                yield return UpdateState(state);
-            }
-        }
-
-        private GraphState UpdateState(GraphState state, bool finished = false) {
-            if (!Start.Visited) { //add first node
-                Current = Start;
-                Start.Visited = true;
-                state.Path.Add(Current);
-            } else {
-                var opposite = Edge.Opposite(Current);
-
-                if (finished) { //algorithm is finished
-                    state.Finished = true;
-                } else {
-                    Current = opposite;
-                    Current.Visited = true;
-                }
-
-                //add nodes and edges
-                state.Path.Add(opposite);
-                state.PathEdges.Add(Edge);
-                state.Distance += Edge.Distance;
+                Equations["Hello World"] = new MathString("Hello", "World", Edge.Distance.ToString());
+                history.AddLast(AdvanceState(history.Last.Value));
             }
 
-            UpdateStateMessages(state);
-            return state;
+            return history;
         }
 
-        public IEnumerable<GraphState> FindLongestPath(GraphProblem graph) {
+        private GraphState AdvanceState(GraphState state) {
+            var newState = state.DeepCopy();
+            var opposite = Edge.Opposite(Current);
+
+            Current = opposite;
+            Current.Visited = true;
+
+            //add nodes and edges
+            newState.Path.Add(opposite);
+            newState.PathEdges.Add(Edge);
+            newState.Distance += Edge.Distance;
+            newState.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
+
+            UpdateStateMessages(newState);
+            return newState;
+        }
+
+        private LinkedList<GraphState> FindLongestPath(GraphProblem graph) {
+            graph.Reset(); //mark nodes as unvisited
+            var history = new LinkedList<GraphState>();
             var state = new GraphState { Nodes = graph.Nodes };
-            graph.Reset();
 
-            var current = Start;
+            Current = Start;
             Start.Visited = true;
-            state.Path.Add(current);
-
-            UpdateStateMessages(state);
-            yield return state;
+            state.Path.Add(Current);
+            history.AddLast(state);
 
             while (true) {
-                var edge = Edge.FindLongest(current);
+                Edge = Edge.FindLongest(Current);
 
-                if (edge == null) {
-                    var isClosed = true;
-                    edge = current.Edges.Find(e => e.IsBetween(current, Start));
-
-                    if (edge != null) {
-                        state.Path.Add(edge.Opposite(current));
-                        state.PathEdges.Add(edge);
-                        state.Distance += edge.Distance;
-                    }
-
-                    state.Finished = true;
-                    UpdateStateMessages(state);
-                    yield break;
+                if (Edge == null) {
+                    Edge = Current.Edges.Find(e => e.IsBetween(Current, Start));
+                    history.AddLast(AdvanceState(history.Last.Value));
+                    break;
                 }
 
-                state.Distance += edge.Distance;
-                current = edge.Opposite(current);
-                current.Visited = true;
-
-                state.Path.Add(current);
-                state.PathEdges.Add(edge);
-                UpdateStateMessages(state);
-                yield return state;
+                history.AddLast(AdvanceState(history.Last.Value));
             }
+
+            return history;
         }
 
-        public override IEnumerable<GraphState> MultiStart(GraphProblem graph) {
+        public IEnumerable<GraphState> MultiStart(GraphProblem graph, bool shortest = true) {
             graph.Reset();
             var best = new GraphState { Nodes = graph.Nodes };
             var costs = double.MaxValue;            
 
             foreach (var node in graph.Nodes) {
                 Start = node;
-                var current = FindPath(graph).Last();
+                var current = shortest ? FindPath(graph).Last() : FindLongestPath(graph).Last();
 
                 if (current.CalcCosts() < costs) {
                     costs = current.CalcCosts();
@@ -111,27 +96,6 @@ namespace TravellingSalesmanProblem.Algorithms {
                     UpdateStateMessages(best);
                     yield return best;
                 }                    
-            }
-        }
-
-        public IEnumerable<GraphState> MultiStartLongest(GraphProblem graph) {
-            var worst = new GraphState { Nodes = graph.Nodes };
-            var costs = double.MinValue;
-
-            graph.Reset();
-
-            foreach (var node in graph.Nodes) {
-                Start = node;
-                var current = FindLongestPath(graph).Last();
-
-                if (current.CalcCosts() > costs) {
-                    costs = current.CalcCosts();
-                    worst.Path = current.Path;
-                    worst.PathEdges = current.PathEdges;
-                    worst.Distance = current.Distance;
-                    
-                    yield return worst;
-                }
             }
         }
 
