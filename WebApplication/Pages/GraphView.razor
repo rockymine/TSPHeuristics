@@ -98,14 +98,17 @@
                     <div class="row g-3">
                         <div class="input-group">
                             <div class="col-auto">
-                                @if (!AutoAdvance) {
                                     <div class="form-group">
                                         <button type="button" disabled="@(GraphHistory.First == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump First" @onclick="e => JumpFirst()">«</button>
                                         <button type="button" disabled="@(GraphHistory.First == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse" @onclick="e => ReverseHistory()">‹</button>
+                                        @if (AutoAdvance) {
+                                            <button type="button" disabled="@(GraphHistory.Last == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Pause" @onclick="e => AutoAdvance = false">⏸</button>
+                                        } else {
+                                            <button type="button" disabled="@(GraphHistory.Last == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Play" @onclick="e => AutoAdvance = true">▶</button>
+                                        }
                                         <button type="button" disabled="@(GraphHistory.Last == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Advance" @onclick="e => AdvanceHistory()">›</button>
                                         <button type="button" disabled="@(GraphHistory.Last == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump Last" @onclick="e => JumpLast()">»</button>
                                     </div>
-                                }
                             </div>
                         </div>
                     </div>
@@ -625,9 +628,10 @@ n,12,11,11";
                 GraphHistory = AntAlgorithm.FindPath(Instance);
                 break;
             case AlgorithmEnum.HC:
-                HillClimbing.NeighbourType = NeighbourEnum;
-                StateEnumerator = MultiStart ? HillClimbing.MultiStart(Instance).GetEnumerator() :
-                    HillClimbing.FindPath(Instance).GetEnumerator();
+                HillClimbing.NeighbourEnum = NeighbourEnum;
+                GraphHistory = HillClimbing.FindPath(Instance);
+                @*StateEnumerator = MultiStart ? HillClimbing.MultiStart(Instance).GetEnumerator() :
+                    HillClimbing.FindPath(Instance).GetEnumerator();*@
                 break;
             default: break;
         }
@@ -638,11 +642,11 @@ n,12,11,11";
 
     private void UpdateVisualsFromGraphState() {
         if (AlgorithmEnum == AlgorithmEnum.NN) {
-            TableGenerator.UpdateFromGraphState(CurrentHistoryNode.Value, TableType.DistanceMatrix);
+            TableGenerator.UpdateFromGraphState(CurrentHistoryNode, TableType.DistanceMatrix);
         } else if ((AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) && NeighbourEnum is NeighbourType.TwoOpt) {
-            TableGenerator.UpdateFromGraphState(CurrentHistoryNode.Value, TableType.SwapSummary);
+            TableGenerator.UpdateFromGraphState(CurrentHistoryNode, TableType.SwapSummary);
         } else {
-            TableGenerator.UpdateFromGraphState(CurrentHistoryNode.Value, TableType.RouteSummary);
+            TableGenerator.UpdateFromGraphState(CurrentHistoryNode, TableType.RouteSummary);
         }
     }
 }

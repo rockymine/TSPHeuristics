@@ -27,25 +27,27 @@
 
 	public void Reset() => tableInfo = new TableInfo();
 
-	public void UpdateFromGraphState(GraphState state, TableType type) {
+	public void UpdateFromGraphState(LinkedListNode<GraphState> node, TableType type) {
 		tableInfo.Header.Clear();
 		
 		switch (type) {
 			case TableType.DistanceMatrix:
-				CreateDistanceMatrix(state);
+				CreateDistanceMatrix(node);
 				break;
 			case TableType.RouteSummary:
-				CreateIterationTable(state);
+				CreateIterationTable(node);
 				break;
 			case TableType.SwapSummary:
-				CreateSwapSummary(state);
+				CreateSwapSummary(node);
 				break;
 		}
 		
 		StateHasChanged();
 	}
 
-	private void CreateDistanceMatrix(GraphState state) {
+	private void CreateDistanceMatrix(LinkedListNode<GraphState> node) {
+		var state = node.Value;
+
 		tableInfo.Header.Add("");
 		var size = state.Nodes.Count + 1;
 		tableInfo.Cells = new TableCellInfo[size - 1, size];
@@ -76,7 +78,9 @@
 		}
 	}
 
-	private void CreateIterationTable(GraphState state) {
+	private void CreateIterationTable(LinkedListNode<GraphState> node) {
+		var state = node.Value;
+
 		tableInfo.Header = new List<string> { "Iteration", "Tour", "Distance" };
 
 		if (tableInfo.Cells is null)
@@ -94,7 +98,9 @@
 		}
 	}
 
-	private void CreateSwapSummary(GraphState state) {
+	private void CreateSwapSummary(LinkedListNode<GraphState> node) {
+		var state = node.Value;
+
 		tableInfo.Header = new List<string> { "Iteration", "$i$", "$j$", "$\\triangle=d_{i,j}+d_{i+1,j+1}-d_{i,i+1}-d_{j,j+1}$", "Tour" , "Distance"};
 
 		if (tableInfo.Cells is null)

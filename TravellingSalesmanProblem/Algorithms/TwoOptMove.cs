@@ -46,8 +46,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             Graph.ConnectPathNodes();
 
             if (colorize) {
-                Graph.Nodes[I].Color = "orange";
-                Graph.Nodes[I].Color = "pink";
+                NodeI.Color = "orange";
+                NodeJ.Color = "pink";
             }
 
             return Graph;

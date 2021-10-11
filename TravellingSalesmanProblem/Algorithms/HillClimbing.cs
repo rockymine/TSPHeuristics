@@ -7,46 +7,37 @@ using TravellingSalesmanProblem.Graph;
 
 namespace TravellingSalesmanProblem.Algorithms {
     public class HillClimbing : Algorithm {
-        public NeighbourType NeighbourType { get; set; }
-        private GraphProblem CurrentBest = new();
+        public NeighbourType NeighbourEnum { get; set; }
+        private GraphProblem X = new();
+        private GraphProblem XBest = new();
+        private GraphProblem Y = new();
         public override LinkedList<GraphState> FindPath(GraphProblem graph) {
-            var x = GraphProblem.OrderedGraphProblem(graph.DeepCopy());
-            var y = new GraphProblem();
+            graph.Reset();
+            var history = new LinkedList<GraphState>();
+            X = GraphProblem.OrderedGraphProblem(graph);
+
             var state = new GraphState {
-                Nodes = x.Nodes,
-                PathEdges = x.Edges,
+                Nodes = X.Nodes,
+                PathEdges = X.Edges,
                 Distance = double.MaxValue
             };
 
-            //yield return state;
-
+            XBest = X;
+            history.AddLast(state);
+            
             while (true) {
-                switch (NeighbourType) {
-                    case NeighbourType.Swap:
-                        y = NeighbourState.Swap(x);
-                        break;
-                    case NeighbourType.TwoOpt:
-                        y = NeighbourState.TwoOptFull(x);
-                        state.SwapInfo = y.SwapInfo;
-                        break;
-                    case NeighbourType.ThreeOpt:
-                        y = NeighbourState.ThreeOpt(x);
-                        break;
-                    case NeighbourType.FourOpt:
-                        y = NeighbourState.DoubleBridgeFourOpt(x);
-                        break;
-                }
+                Console.WriteLine("Next iteration of Hill Climbing.");
+                Y = NeighbourState.TwoOpt(X, DescentType.Steepest);
 
-                if (y.Costs >= state.Distance) {
-                    state.Finished = true;
-                    UpdateStateMessages(state);
-                    //yield break;
-                } 
+                if (Y.Costs >= X.Costs)
+                    break;
 
-                x = y;
-                CurrentBest = y;
-                return null;
+                X = Y;
+                XBest = X;
+                history.AddLast(AdvanceState(history.Last.Value));
             }
+
+            return history;
         }
 
         public IEnumerable<GraphState> MultiStart(GraphProblem graph) {
@@ -61,7 +52,7 @@ namespace TravellingSalesmanProblem.Algorithms {
                     best.Path = state.Path;
                     best.PathEdges = state.PathEdges;
                     best.Distance = state.Distance;
-                    yield return UpdateState(best);
+                    yield return AdvanceState(best);
                 }
             }
         }
@@ -72,14 +63,16 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Messages["Distance"] = state.Distance.ToString();
         }
 
-        private GraphState UpdateState(GraphState state) {
-            state.Iteration++;
-            state.Distance = CurrentBest.Costs;
-            state.Path = CurrentBest.Nodes;
-            state.PathEdges = CurrentBest.Edges;
+        private GraphState AdvanceState(GraphState state) {
+            var newState = state.DeepCopy();
 
-            UpdateStateMessages(state);
-            return state;
+            newState.Iteration++;
+            newState.Distance = XBest.Costs;
+            newState.Path = XBest.Nodes;
+            newState.PathEdges = XBest.Edges;
+
+            UpdateStateMessages(newState);
+            return newState;
         }
     }
 }
