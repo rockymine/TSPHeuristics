@@ -30,7 +30,7 @@
                             @bind-NeighbourEnum="@NeighbourEnum"></SimulatedAnnealingSettings>
                     }
                     @if (AlgorithmEnum == AlgorithmEnum.HC) {
-                        <NeighborFunctionSettings @bind-NeighbourEnum="@NeighbourEnum"></NeighborFunctionSettings>
+                        <HillClimbingSettings @bind-NeighbourEnum="@NeighbourEnum" @bind-DescentType="DescentType"></HillClimbingSettings>
                     }
                     @if (AlgorithmEnum == AlgorithmEnum.ACS) {
                         <AntColonySettings @bind-AlphaACS="AlphaACS" @bind-AntCount="@AntCount" @bind-Beta="@Beta"
@@ -196,6 +196,7 @@
 
     private AlgorithmEnum AlgorithmEnum;
     private NeighbourType NeighbourEnum;
+    private DescentType DescentType;
     private NearestNeighbour NearestNeighbor = new();
     private SimulatedAnnealing SimulatedAnnealing = new();
     private AntAlgorithm AntAlgorithm = new();
@@ -623,15 +624,12 @@ n,12,11,11";
                 AntAlgorithm.Rho = Rho;
                 AntAlgorithm.Beta = Beta;
                 AntAlgorithm.StateTransition = StateTransition;
-                //StateEnumerator = AntAlgorithm.FindPath(Instance).GetEnumerator();
-
                 GraphHistory = AntAlgorithm.FindPath(Instance);
                 break;
             case AlgorithmEnum.HC:
                 HillClimbing.NeighbourEnum = NeighbourEnum;
+                HillClimbing.DescentType = DescentType;
                 GraphHistory = HillClimbing.FindPath(Instance);
-                @*StateEnumerator = MultiStart ? HillClimbing.MultiStart(Instance).GetEnumerator() :
-                    HillClimbing.FindPath(Instance).GetEnumerator();*@
                 break;
             default: break;
         }

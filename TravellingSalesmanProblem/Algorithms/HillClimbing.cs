@@ -8,6 +8,7 @@ using TravellingSalesmanProblem.Graph;
 namespace TravellingSalesmanProblem.Algorithms {
     public class HillClimbing : Algorithm {
         public NeighbourType NeighbourEnum { get; set; }
+        public DescentType DescentType { get; set; }
         private GraphProblem X = new();
         private GraphProblem XBest = new();
         private GraphProblem Y = new();
@@ -26,8 +27,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             history.AddLast(state);
             
             while (true) {
-                Console.WriteLine("Next iteration of Hill Climbing.");
-                Y = NeighbourState.TwoOpt(X, DescentType.Steepest);
+                //Console.WriteLine("New Hill Climbing iteration.");
+                Y = NeighbourState.Create(X, NeighbourEnum, DescentType);
 
                 if (Y.Costs >= X.Costs)
                     break;

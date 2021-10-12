@@ -39,7 +39,7 @@ namespace TravellingSalesmanProblem.Algorithms {
 
             while (temperature >= MinTemp) {
                 for (int i = 0; i < PhaseLength; i++) {
-                    Y = NeighbourState.Create(X, NeighbourEnum);
+                    Y = NeighbourState.Create(X, NeighbourEnum, DescentType.Random);
 
                     if (Y.Costs <= X.Costs) {
                         X = Y;
@@ -47,7 +47,6 @@ namespace TravellingSalesmanProblem.Algorithms {
                         if (X.Costs < XBest.Costs) {
                             XBest = X;
                             history.AddLast(AdvanceState(history.Last.Value, iteration, temperature));
-                            //yield return UpdateState(state);
                         }
                     } else if (MetropolisRule(history.Last.Value)) {
                         X = Y;

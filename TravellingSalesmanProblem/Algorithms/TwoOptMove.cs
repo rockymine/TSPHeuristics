@@ -32,7 +32,10 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public GraphProblem SwapEdges(bool colorize = false) {
-            Graph = Graph.DeepCopy();
+            if (colorize) {
+                NodeI.Color = "orange";
+                NodeJ.Color = "pink";
+            }
 
             var i = I + 1;
             var j = J + 1;
@@ -42,43 +45,9 @@ namespace TravellingSalesmanProblem.Algorithms {
             var c = tour[j..^0];
             var nodes = a.Concat(b.Reverse()).Concat(c).ToList();
 
-            Graph.Nodes = nodes;
-            Graph.ConnectPathNodes();
-
-            if (colorize) {
-                NodeI.Color = "orange";
-                NodeJ.Color = "pink";
-            }
-
-            return Graph;
-
-            //if (colorize) {
-            //    NodeI.Color = "orange";
-            //    NodeJ.Color = "pink";
-            //}
-
-            //var i = I + 1;
-            //var j = J + 1;
-            //var tour = Graph.Nodes.ToArray();
-            //var a = tour[0..i];
-            //var b = tour[i..j];
-            //var c = tour[j..^0];
-            //var nodes = a.Concat(b.Reverse()).Concat(c).ToList();
-
-            //var best = new GraphProblem { Nodes = nodes };
-            //best.ConnectPathNodes();
-            //return best;
+            var best = new GraphProblem { Nodes = nodes };
+            best.ConnectPathNodes();
+            return best;
         }
-    }
-
-    public class SwapInfo {
-        public List<Node> Nodes { get; set; }
-        public string Calculation { get; set; }
-        public SwapInfo(List<Node> nodes, string calculation) {
-            Nodes = nodes;
-            Calculation = calculation;
-        }
-
-        public SwapInfo DeepCopy() => new(new List<Node>(Nodes), Calculation);
     }
 }

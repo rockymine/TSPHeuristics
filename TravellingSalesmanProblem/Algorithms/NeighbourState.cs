@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,15 +11,15 @@ namespace TravellingSalesmanProblem.Algorithms {
         private static readonly Random Random = new();
         public GraphProblem Graph { get; set; }
 
-        public static GraphProblem Create(GraphProblem graph, NeighbourType type) {
+        public static GraphProblem Create(GraphProblem graph, NeighbourType type, DescentType descent) {
             graph.Reset();
             var neighbor = new GraphProblem();
             switch (type) {
                 case NeighbourType.Swap:
-                    neighbor = Swap(graph);
+                    neighbor = Swap(graph, descent);
                     break;
                 case NeighbourType.TwoOpt:
-                    neighbor = TwoOpt(graph, DescentType.Random);
+                    neighbor = TwoOpt(graph, descent);
                     break;
                 case NeighbourType.ThreeOpt:
                     neighbor = ThreeOpt(graph);
@@ -29,25 +30,6 @@ namespace TravellingSalesmanProblem.Algorithms {
             }
 
             return neighbor;
-        }
-
-        public static GraphProblem TwoOpt(GraphProblem graph) {
-            var n = graph.Nodes.Count;
-            var i = Random.Next(1, n - 3);
-            var j = Random.Next(i + 1, n - 2);
-
-            Console.WriteLine($"Random Numbers: i: {i}, j: {j}");
-            Console.WriteLine("Path: " + string.Join('-', graph.Nodes.Select(n => n.Index)));
-            Console.WriteLine($"Two Opt: i: ({graph.Nodes[i].Index}),j: ({graph.Nodes[j].Index})");
-            Console.WriteLine($"Two Opt: i+1: ({graph.Nodes[i + 1].Index}),j: ({graph.Nodes[j + 1].Index})");
-
-            var move = new TwoOptMove(graph, i, j);
-
-            var swapped = move.SwapEdges(true);
-            swapped.SwapInfo = move.SwapInfo;
-            swapped.Segments = GraphSegment.Split(swapped.Edges, i, j + 1);
-
-            return swapped;
         }
 
         public static GraphProblem TwoOpt(GraphProblem graph, DescentType descent) {
@@ -64,8 +46,9 @@ namespace TravellingSalesmanProblem.Algorithms {
             if (move == null)
                 return graph;
 
-            var best = move.SwapEdges();
+            var best = move.SwapEdges(); //TODO: add coloring
             best.SwapInfo = move.SwapInfo;
+            //best.Segments = GraphSegment.Split(best.Edges, move.I, move.J + 1);
             return best;
         }
 
@@ -79,7 +62,6 @@ namespace TravellingSalesmanProblem.Algorithms {
                 for (int j = i + 1; j <= n - 2; j++) {
                     var temp = new TwoOptMove(graph, i, j);
                     if (temp.Costs < savings) {
-                        Console.WriteLine($"{i} and {j} is a better move with: {temp.Costs}");
                         savings = temp.Costs;
                         move = temp;
 
@@ -89,74 +71,50 @@ namespace TravellingSalesmanProblem.Algorithms {
                 }
             }
 
-            Console.WriteLine($"Returning move with costs: {move?.Costs}");
             return move;
         }
 
         public static GraphProblem Swap(GraphProblem graph, DescentType descent) {
-            graph = graph.DeepCopy();
+            SwapMove move;
+            if (descent == DescentType.Random) {
+                var n = graph.Nodes.Count;
+                var pos1 = Random.Next(1, n - 3);
+                var pos2 = Random.Next(pos1 + 1, n - 2);
+                move = new SwapMove(graph, pos1, pos2);
+            } else {
+                move = SwapLoop(graph, descent);
+            }
+
+            if (move == null)
+                return graph;
+
+            var best = move.SwapNodes(); //TODO: add coloring
+            best.SwapInfo = move.SwapInfo;
+            return best;
+        }
+
+        private static SwapMove SwapLoop(GraphProblem graph, DescentType descent) {
             var n = graph.Nodes.Count;
+            var savings = 0d;
+            SwapMove move = null;
 
-            var pos1 = Random.Next(1, n - 2);
-            var pos2 = Random.Next(pos1 + 1, n - 1);
-            var swap = new SwapMove(graph, pos1, pos2);
+            for (int i = 1; i <= n - 3; i++) {
+                for (int j = i + 1; j <= n - 2; j++) {
+                    var temp = new SwapMove(graph, i, j);
+                    //Console.WriteLine($"Checking swap: {i},{j}");
+                    if (temp.Costs < savings) {
+                        //Console.WriteLine($"Found a better swap: {temp.Costs}");
+                        savings = temp.Costs;
+                        move = temp;
 
-            if (descent != DescentType.Random) {
-                for (int i = 1; i < n - 2; i++) {
-                    for (int j = i + 1; j < n - 1; j++) {
-                        var temp = new SwapMove(graph, i, j);
-                        Console.WriteLine($"Checking indices {i} and {j}: {temp.CalcCosts()}");
-                        if (temp.CalcCosts() < 0) {
-                            swap = temp;
-                            Console.WriteLine("Value < 0");
-
-                            if (descent == DescentType.Next)
-                                break;
-                        }
+                        if (descent == DescentType.Next)
+                            return move;
                     }
                 }
             }
 
-            Console.WriteLine($"Found improvement: {swap.CalcCosts()}");
-            var best = swap.SwapNodes();
-            best.SwapInfo = best.SwapInfo;
-            return best;
-        }
-
-        public static GraphProblem Swap(GraphProblem graph) {
-            graph = graph.DeepCopy();
-            var n = graph.Nodes.Count;
-            var i = Random.Next(1, n - 2);
-            var j = Random.Next(i + 1, n - 1);
-
-            graph.Nodes[i].Color = "green";
-            graph.Nodes[j].Color = "red";
-
-            var nodes = graph.Nodes;
-            var node = nodes[i];
-            nodes[i] = nodes[j];
-            nodes[j] = node;
-
-            graph.Nodes = nodes;
-            graph.ConnectPathNodes();
-            return graph;
-
-            //var n = graph.Nodes.Count;
-
-            //var i = Random.Next(1, n - 2);
-            //var j = Random.Next(i + 1, n - 1);
-
-            //var temp = graph.DeepCopy().Nodes;
-            //var node = temp[i];
-            //temp[i] = temp[j];
-            //temp[j] = node;
-
-            //var final = new GraphProblem {
-            //    Nodes = temp
-            //};
-
-            //final.ConnectPathNodes();
-            //return final;
+            //Console.WriteLine($"Returning swap with costs: {move?.Costs}");
+            return move;
         }
 
         public static GraphProblem ThreeOpt(GraphProblem graph) {
