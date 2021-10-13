@@ -101,7 +101,7 @@
 	private void CreateSwapSummary(LinkedListNode<GraphState> node) {
 		var state = node.Value;
 
-		tableInfo.Header = new List<string> { "Iteration", "$i$", "$j$", "$\\triangle=d_{i,j}+d_{i+1,j+1}-d_{i,i+1}-d_{j,j+1}$", "Tour" , "Distance"};
+		tableInfo.Header = new List<string> { "Iteration", "$i$", "$j$", "$\\triangle=d_{i,j}+d_{i+1,j+1}-d_{i,i+1}-d_{j,j+1}$", "Before", "Tour" , "Distance"};
 
 		if (tableInfo.Cells is null)
 			tableInfo.Cells = new TableCellInfo[0, tableInfo.Header.Count];
@@ -110,12 +110,16 @@
 			var temp = TableInfo.AddRow(tableInfo.Cells);
 			var lastRow = temp.GetLength(0) - 1;
 
+			var i = state.SwapInfo.Nodes[0];
+			var j = state.SwapInfo.Nodes[1];
+
 			temp[lastRow, 0] = new TableCellInfo($"${state.Iteration}$", null);
 			temp[lastRow, 1] = new TableCellInfo($"${state.SwapInfo.Nodes[0].Index}$", null);
 			temp[lastRow, 2] = new TableCellInfo($"${state.SwapInfo.Nodes[1].Index}$", null);
 			temp[lastRow, 3] = new TableCellInfo(state.SwapInfo.Calculation, null);
-			temp[lastRow, 4] = new TableCellInfo("(" + $"${string.Join(',', state.Path.Select(n => n.Color != null ? "\\underset{i=" + state.Path.IndexOf(n) + "}{\\text{" + n.Index + "}}" : n.Index.ToString()))}$" + ")", null);
-			temp[lastRow, 5] = new TableCellInfo(Math.Round(state.Distance, 1).ToString(), null);
+			temp[lastRow, 4] = new TableCellInfo("$(" + $"{string.Join(',', node.Previous?.Value.Path.Select(n => n == i || n == j ? "\\underset{i=" + state.Path.IndexOf(n) + "}{\\text{" + n.Index + "}}" : n.Index.ToString()))}" + ")$", null);
+			temp[lastRow, 5] = new TableCellInfo("$(" + $"{string.Join(',', state.Path.Select(n => n == i || n == j ? "\\underset{i=" + state.Path.IndexOf(n) + "}{\\text{" + n.Index + "}}" : n.Index.ToString()))}" + ")$", null);
+			temp[lastRow, 6] = new TableCellInfo(Math.Round(state.Distance, 1).ToString(), null);
 
 			tableInfo.Cells = temp;
 		}

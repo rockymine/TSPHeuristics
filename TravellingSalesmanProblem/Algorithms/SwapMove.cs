@@ -58,7 +58,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public GraphProblem SwapNodes() {
-            //Graph = Graph.DeepCopy();
+            Graph = Graph.DeepCopy();
             //Console.WriteLine($"Previous tour costs: {Graph.Costs}");
             //Console.WriteLine(string.Join('-', Graph.Nodes.Select(n => n.Index)));
             //Console.WriteLine($"Swapping nodes at {I} and {J}");
@@ -74,15 +74,15 @@ namespace TravellingSalesmanProblem.Algorithms {
             //Console.WriteLine($"Node at {I} after: {nodes[I].Index}");
             //Console.WriteLine($"Node at {J} after: {nodes[J].Index}");
 
-            //Graph.Nodes = nodes;
-            //Graph.ConnectPathNodes();
-            //return Graph;
+            Graph.Nodes = nodes;
+            Graph.ConnectPathNodes();
+            return Graph;
 
-            var best = new GraphProblem { Nodes = nodes };
-            best.ConnectPathNodes();
-            //Console.WriteLine($"Costs after swap: {best.Costs}");
-            //Console.WriteLine(string.Join('-', best.Nodes.Select(n => n.Index)));
-            return best;
+            //var best = new GraphProblem { Nodes = nodes };
+            //best.ConnectPathNodes();
+            ////Console.WriteLine($"Costs after swap: {best.Costs}");
+            ////Console.WriteLine(string.Join('-', best.Nodes.Select(n => n.Index)));
+            //return best;
         }
     }
 }

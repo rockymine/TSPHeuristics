@@ -24,8 +24,9 @@ namespace TravellingSalesmanProblem.Algorithms {
             };
 
             XBest = X;
-            history.AddLast(state);
-            
+            var iteration = 0;
+            history.AddLast(AdvanceState(state, iteration));
+
             while (true) {
                 //Console.WriteLine("New Hill Climbing iteration.");
                 Y = NeighbourState.Create(X, NeighbourEnum, DescentType);
@@ -35,28 +36,29 @@ namespace TravellingSalesmanProblem.Algorithms {
 
                 X = Y;
                 XBest = X;
-                history.AddLast(AdvanceState(history.Last.Value));
+                iteration++;
+                history.AddLast(AdvanceState(history.Last.Value, iteration));
             }
 
             return history;
         }
 
-        public IEnumerable<GraphState> MultiStart(GraphProblem graph) {
-            var best = new GraphState { Nodes = graph.Nodes };
-            var costs = double.MaxValue;
+        //public IEnumerable<GraphState> MultiStart(GraphProblem graph) {
+        //    var best = new GraphState { Nodes = graph.Nodes };
+        //    var costs = double.MaxValue;
 
-            for (int i = 0; i < graph.Nodes.Count; i++) {
-                var state = FindPath(graph).Last();
+        //    for (int i = 0; i < graph.Nodes.Count; i++) {
+        //        var state = FindPath(graph).Last();
 
-                if (state.CalcCosts() < costs) {
-                    costs = state.CalcCosts();
-                    best.Path = state.Path;
-                    best.PathEdges = state.PathEdges;
-                    best.Distance = state.Distance;
-                    yield return AdvanceState(best);
-                }
-            }
-        }
+        //        if (state.CalcCosts() < costs) {
+        //            costs = state.CalcCosts();
+        //            best.Path = state.Path;
+        //            best.PathEdges = state.PathEdges;
+        //            best.Distance = state.Distance;
+        //            yield return AdvanceState(best);
+        //        }
+        //    }
+        //}
 
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Iteration"] = state.Iteration.ToString();
@@ -64,13 +66,18 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Messages["Distance"] = state.Distance.ToString();
         }
 
-        private GraphState AdvanceState(GraphState state) {
+        private GraphState AdvanceState(GraphState state, int iteration) {
             var newState = state.DeepCopy();
 
-            newState.Iteration++;
+            //newState.Path.Clear();
+            //newState.Path.AddRange(XBest.Nodes);
+            //newState.PathEdges.Clear();
+            //newState.PathEdges.AddRange(XBest.Edges);
             newState.Distance = XBest.Costs;
             newState.Path = XBest.Nodes;
             newState.PathEdges = XBest.Edges;
+            newState.SwapInfo = XBest.SwapInfo;
+            newState.Iteration = iteration;
 
             UpdateStateMessages(newState);
             return newState;
