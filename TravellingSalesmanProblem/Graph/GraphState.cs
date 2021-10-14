@@ -44,20 +44,5 @@ namespace TravellingSalesmanProblem.Graph {
 
             return state;
         }
-
-        //public void ComparePathEdges(GraphState state) {
-        //    //an edge was removed
-        //    SetEdgeColors(state.PathEdges, PathEdges, "red");
-
-        //    //an edge was added
-        //    SetEdgeColors(PathEdges, state.PathEdges, "green");
-        //}
-
-        //private static void SetEdgeColors(List<Edge> current, List<Edge> compareAgainst, string color) {
-        //    foreach (var edge in compareAgainst) {
-        //        var condition = current.Find(e => e.IsEqual(edge)) == null;
-        //        edge.Color = condition ? color : "black";
-        //    }
-        //}
     }
 }

@@ -49,7 +49,29 @@ namespace WebApplication.Utils {
         }
 
         public static async Task DrawPathCompared(Context2D context, GraphState state, GraphState compare, CanvasSettings settings) {
+            //public void ComparePathEdges(GraphState state) {
+            //    //an edge was removed
+            //    SetEdgeColors(state.PathEdges, PathEdges, "red");
 
+            //    //an edge was added
+            //    SetEdgeColors(PathEdges, state.PathEdges, "green");
+            //}
+
+            //private static void SetEdgeColors(List<Edge> current, List<Edge> compareAgainst, string color) {
+            //    foreach (var edge in compareAgainst) {
+            //        var condition = current.Find(e => e.IsEqual(edge)) == null;
+            //        edge.Color = condition ? color : "black";
+            //    }
+            //}
+
+            foreach (var edge in state.PathEdges) {
+                var condition = compare.PathEdges.Find(e => e.IsEqual(edge)) == null;
+
+            }
+
+            foreach (var edge in compare.PathEdges) {
+
+            }
         }
 
         private static async Task DrawNodes(Context2D context, GraphState state, CanvasSettings settings) {
@@ -57,16 +79,15 @@ namespace WebApplication.Utils {
             var brush = NodeBrush.Copy();
 
             foreach (var node in nodes) {
-
-                if (state.SwapInfo != null) {
-                    if (node == state.SwapInfo.Nodes[0]) {
-                        brush.Color = "pink";
-                    } else if (node == state.SwapInfo.Nodes[1]) {
-                        brush.Color = "orange";
-                    } else {
-                        brush.Color = NodeBrush.Color;
-                    }
-                }
+                //if (state.SwapInfo != null) {
+                //    if (node == state.SwapInfo.Nodes[0]) {
+                //        brush.Color = "pink";
+                //    } else if (node == state.SwapInfo.Nodes[1]) {
+                //        brush.Color = "orange";
+                //    } else {
+                //        brush.Color = NodeBrush.Color;
+                //    }
+                //}
 
                 await context.DrawCircle(brush, settings.NodeRadius,
                     Manipulate(node.Position, settings));

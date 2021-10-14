@@ -84,7 +84,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             newState.Path = XBest.Nodes;
             newState.PathEdges = XBest.Edges;
             newState.Equations = Equations;
-            newState.SwapInfo = XBest.SwapInfo;
+            newState.SwapInfo = XBest.SwapInfo?.DeepCopy();
             //newState.Path.Clear();
             //newState.Path.AddRange(XBest.Nodes);
             //newState.PathEdges.Clear();
