@@ -41,22 +41,32 @@ namespace WebApplication.Utils {
             }
         }
 
-        public static async Task DrawPath(Context2D context, List<Node> nodes, List<Edge> edges, CanvasSettings settings, bool annotate, bool colorize) {
+        public static async Task DrawPath(Context2D context, GraphState state, CanvasSettings settings, bool annotate, bool colorize) {
             settings.Colorize = colorize;
             settings.Annotate = annotate;
-            await DrawEdges(context, edges, settings);
-            await DrawNodes(context, nodes, settings);
+            await DrawEdges(context, state, settings);
+            await DrawNodes(context, state, settings);
         }
 
         public static async Task DrawPathCompared(Context2D context, GraphState state, GraphState compare, CanvasSettings settings) {
 
         }
 
-        private static async Task DrawNodes(Context2D context, List<Node> nodes, CanvasSettings settings) {
+        private static async Task DrawNodes(Context2D context, GraphState state, CanvasSettings settings) {
+            var nodes = state.Nodes;
             var brush = NodeBrush.Copy();
 
             foreach (var node in nodes) {
-                brush.Color = node.Color != null ? node.Color : NodeBrush.Color;
+
+                if (state.SwapInfo != null) {
+                    if (node == state.SwapInfo.Nodes[0]) {
+                        brush.Color = "pink";
+                    } else if (node == state.SwapInfo.Nodes[1]) {
+                        brush.Color = "orange";
+                    } else {
+                        brush.Color = NodeBrush.Color;
+                    }
+                }
 
                 await context.DrawCircle(brush, settings.NodeRadius,
                     Manipulate(node.Position, settings));
@@ -68,7 +78,8 @@ namespace WebApplication.Utils {
             }
         }
 
-        private static async Task DrawEdges(Context2D context, List<Edge> edges, CanvasSettings settings) {
+        private static async Task DrawEdges(Context2D context, GraphState state, CanvasSettings settings) {
+            var edges = state.PathEdges;
             var brush = EdgeBrush.Copy();
 
             foreach (var edge in edges) {

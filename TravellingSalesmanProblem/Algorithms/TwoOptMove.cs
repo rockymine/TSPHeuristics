@@ -33,8 +33,8 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public GraphProblem SwapEdges(bool colorize = false) {
             //if (colorize) {
-            NodeI.Color = "orange";
-            NodeJ.Color = "pink";
+            //NodeI.Color = "orange";
+            //NodeJ.Color = "pink";
             //}
 
             var i = I + 1;

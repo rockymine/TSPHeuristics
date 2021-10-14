@@ -145,36 +145,8 @@
                             <MarkdownRenderer Value="@kvp.Value.Result"/>
                         }
                     </div>
-                </div> 
-            }
-            @*@if (AlgorithmEnum == AlgorithmEnum.SA && StateEnumerator != null && StateEnumerator.Current != null
-            && StateEnumerator.Current.Segments != null && StateEnumerator.Current.Segments.Count != 0 && !DrawComplete) {
-                <div class="row">
-                    @if (CanvasArray != null && CanvasArray.Length != 0) {
-                        <div class="col md-2">
-                            <h5 class="font-weight-bold">Details</h5>
-                            <div class="row">
-                                @for (int i = 0; i < StateEnumerator.Current.Segments.Count; i++) {
-                                    int j = i;
-                                    <div class="col">
-                                        <div class="card">
-                                            <Canvas @ref="@CanvasArray[j]" width="@AdditionalCanvasSettings.Width"
-                                                height="@AdditionalCanvasSettings.Height"></Canvas>
-                                            <div class="card-body">
-                                                <h5>@StateEnumerator.Current.Segments[j].Identifier</h5>
-                                                <h6 class="card-subtitle mb-2 text-muted">@StateEnumerator.Current.Segments[j].Type</h6>
-                                                @foreach (var info in StateEnumerator.Current.Segments[j].Info) {
-                                                    <span><b>@info.Key</b>: @info.Value</span><br/>
-                                                }
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    }
                 </div>
-            }*@
+            }
         </div>
     </div>
     <TableGenerator @ref="@TableGenerator"></TableGenerator>
@@ -186,13 +158,11 @@
     
     private Canvas CurrentCanvas;
     private Canvas PreviousCanvas;
-    private Canvas[] CanvasArray = new Canvas[5];
+    @*private Canvas[] CanvasArray = new Canvas[5];*@
 
     private TableGenerator TableGenerator;
 
 	private GraphProblem Instance;
-    private GraphState PreviousState;
-    private IEnumerator<GraphState> StateEnumerator;
 
     private AlgorithmEnum AlgorithmEnum;
     private NeighbourType NeighbourEnum;
@@ -420,7 +390,7 @@ n,12,11,11";
         set {
             if (value == _antCount)
                 return;
-            if (value < 1 || value > StateEnumerator.Current.Nodes.Count)
+            if (value < 1 || value > Instance.Nodes.Count)
                 return;
 
             _antCount = value;
@@ -532,62 +502,21 @@ n,12,11,11";
 
         await ResetCanvas(await CurrentCanvas.GetContext2DAsync(), MainCanvasSettings);
         await FillCanvas(CurrentCanvas, CurrentHistoryNode.Value);
-        
-        @*for (int i = 0; i < CanvasArray.Length; i++) {
-            if (CanvasArray[i] != null && !DrawComplete && CurrentHistoryNode.Value.Segments.Count > 0) {
-                await ResetCanvas(await CanvasArray[i].GetContext2DAsync(), AdditionalCanvasSettings);
-                await FillCanvas(CanvasArray[i]);
-            }
-        }*@
     }
 
     private async Task FillCanvas(Canvas canvas, GraphState state) {
-        await using (var context = await canvas.GetContext2DAsync()) {
-            @*if (canvas == PreviousCanvas) {
-                PreviousState.ComparePathEdges(StateEnumerator.Current);
-
-                await CanvasRenderer.DrawPath(context, PreviousState.Nodes, PreviousState.PathEdges,
-                    MainCanvasSettings, AnnotateEdges, ColorizeChanges);
-            }                
-
-            if (canvas == CurrentCanvas) {
-                await CanvasRenderer.DrawPath(context, StateEnumerator.Current.Nodes, StateEnumerator.Current.PathEdges,
-                    MainCanvasSettings, AnnotateEdges, ColorizeChanges);
-            }*@                
-            
-            await CanvasRenderer.DrawPath(context, state.Nodes, state.PathEdges,
-                    MainCanvasSettings, AnnotateEdges, ColorizeChanges);
-
-            @*for (int i = 0; i < StateEnumerator.Current.Segments.Count; i++) {
-                if (canvas == CanvasArray[i] && !StateEnumerator.Current.Finished) {
-                    var nodes = StateEnumerator.Current.Segments[i].Nodes;
-                    var edges = StateEnumerator.Current.Segments[i].Edges;
-
-                    await CanvasRenderer.DrawPath(context, nodes, edges, AdditionalCanvasSettings, false, false);
-                }
-            }*@
-    }
+        await using (var context = await canvas.GetContext2DAsync()) {            
+            await CanvasRenderer.DrawPath(context, state, MainCanvasSettings, AnnotateEdges, ColorizeChanges);
+        }
     }
 
     private async Task ResetCanvases() {
         if (PreviousCanvas != null && ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
-            PreviousState = null;
             await ResetCanvas(await PreviousCanvas.GetContext2DAsync(), MainCanvasSettings);
         }
 
         if (CurrentCanvas != null) {
             await ResetCanvas(await CurrentCanvas.GetContext2DAsync(), MainCanvasSettings);
-        }
-        
-        if (StateEnumerator != null && StateEnumerator.Current != null && StateEnumerator.Current.Segments.Count > 0) {
-            for (int i = 0; i < CanvasArray.Length; i++) {
-                if (CanvasArray[i] != null) {
-                    if (AlgorithmEnum == AlgorithmEnum.SA && NeighbourEnum == NeighbourType.TwoOpt) {
-                        if (CanvasArray[i].GetContext2DAsync() != null)
-                            await ResetCanvas(await CanvasArray[i].GetContext2DAsync(), AdditionalCanvasSettings);
-                    }
-                }
-            }
         }
     }
 
