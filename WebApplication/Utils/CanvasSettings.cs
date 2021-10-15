@@ -13,6 +13,8 @@ namespace WebApplication.Utils {
         public int Width => (int)(Scale * (Max.X + 1));
         public bool Colorize { get; set; }
         public bool Annotate { get; set; }
+        public bool ShowGrid { get; set; }
+        public string BackgroundColor { get; set; }
         public float NodeRadius { get; set; }
     }
 }

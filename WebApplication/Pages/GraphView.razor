@@ -12,9 +12,10 @@
     <div class="row">
         <div class="col-md-3 p-0"><!-- Settings -->
             <div class="bg-custom-light custom-input-group">
-                <AlgorithmSettings @bind-AlgorithmEnum="@AlgorithmEnum" @bind-MultiStart="@MultiStart"
-                    @bind-ShowPrevious="@ShowPrevious" @bind-AnnotateEdges="@AnnotateEdges"
-                    @bind-ColorizeChanges="@ColorizeChanges" @bind-AnimationDelay="@AnimationDelay"></AlgorithmSettings>
+                <AlgorithmSettings @bind-AlgorithmEnum="@AlgorithmEnum" @bind-MultiStart="@MultiStart"/>
+                <CanvasDisplaySettings @bind-Scale="@Scale" @bind-NodeRadius="@NodeRadius"
+                    @bind-ShowGrid="@ShowGrid" @bind-AnnotateEdges="@AnnotateEdges" @bind-ColorizeChanges="@ColorizeChanges"
+                    @bind-AnimationDelay="@AnimationDelay"/>
             </div>
         </div>
         <div class="col-md-9 p-0">
@@ -22,19 +23,19 @@
                 <h5>Heuristic Settings</h5>
                 @if (GraphHistory != null) {
                     @if (AlgorithmEnum == AlgorithmEnum.NN && !MultiStart) {
-                        <NearestNeighborSettings @bind-StartNode="@StartNode"></NearestNeighborSettings>
+                        <NearestNeighborSettings @bind-StartNode="@StartNode"/>
                     }
                     @if (AlgorithmEnum == AlgorithmEnum.SA) {
                         <SimulatedAnnealingSettings @bind-AlphaSA="@AlphaSA" @bind-MaxIter1="@PhaseLength" 
                             @bind-MaxIter2="@MaxPhases" @bind-MinTemp="@MinTemp" @bind-StartTemp="@StartTemp"
-                            @bind-NeighbourEnum="@NeighbourEnum"></SimulatedAnnealingSettings>
+                            @bind-NeighbourEnum="@NeighbourEnum"/>
                     }
                     @if (AlgorithmEnum == AlgorithmEnum.HC) {
-                        <HillClimbingSettings @bind-NeighbourEnum="@NeighbourEnum" @bind-DescentType="DescentType"></HillClimbingSettings>
+                        <HillClimbingSettings @bind-NeighbourEnum="@NeighbourEnum" @bind-DescentType="DescentType"/>
                     }
                     @if (AlgorithmEnum == AlgorithmEnum.ACS) {
                         <AntColonySettings @bind-AlphaACS="AlphaACS" @bind-AntCount="@AntCount" @bind-Beta="@Beta"
-                            @bind-Rho="@Rho" @bind-ExploitVsExplore="@StateTransition"></AntColonySettings>
+                            @bind-Rho="@Rho" @bind-ExploitVsExplore="@StateTransition"/>
                     }
                     <div class="form-group">
                         <button class="btn btn-danger" type="button" @onclick="e => UpdateEnumerator()">Reset</button>
@@ -64,7 +65,7 @@
                 </div>
                 <div class="col-md-6 p-0">
                     <div class="bg-custom-light custom-input-group">
-                        <RandomGraphSettings @bind-NodeCount="NodeCount" @bind-MaxX="MaxX" @bind-MaxY="MaxY"></RandomGraphSettings>
+                        <RandomGraphSettings @bind-NodeCount="NodeCount" @bind-MaxX="MaxX" @bind-MaxY="MaxY"/>
                         <div class="form-group">
                             <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(false)">Draw Random Graph</button>
                         </div>
@@ -80,12 +81,12 @@
                 <div class="row">
                     <div class="col">
                         <h5 class="font-weight-bold">Current</h5>
-                        <Canvas @ref="@CurrentCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"></Canvas>
+                        <Canvas @ref="@CurrentCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"/>
                     </div>
                     <div class="col">
-                        @if (ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
+                        @if (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
                             <h5 class="font-weight-bold">Previous</h5>
-                            <Canvas @ref="@PreviousCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"></Canvas>
+                            <Canvas @ref="@PreviousCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"/>
                         }
                     </div>
                 </div>
@@ -149,7 +150,7 @@
             }
         </div>
     </div>
-    <TableGenerator @ref="@TableGenerator"></TableGenerator>
+    <TableGenerator @ref="@TableGenerator"/>
 </div>
 
 @code {
@@ -188,15 +189,41 @@ n,12,11,11";
     private bool AutoAdvance;
     private bool AnnotateEdges;
     private bool ColorizeChanges = true;
-    private bool DrawComplete;
-    private bool ShowPrevious = true;
+    private string BackgroundColor = "#FFFFFF";
     private bool MultiStart;
+    private bool ShowGrid = true;
     private string SettingsCollapse = "";
     private CanvasSettings MainCanvasSettings = new();
     private CanvasSettings AdditionalCanvasSettings = new();
 
     private Stopwatch Stopwatch = new();
     private TimeSpan TimeSpan = new();
+
+    private float _scale = 30;
+    private float Scale {
+        get => _scale;
+        set {
+            if (value == _scale)
+                return;
+            if (value < 10 || value > 40)
+                return;
+
+            _scale = value;
+        }
+    }
+
+    private float _nodeRadius = 8;
+    private float NodeRadius {
+        get => _nodeRadius;
+        set {
+            if (value == _nodeRadius)
+                return;
+            if (value < 1 || value > 10)
+                return;
+
+            _nodeRadius = value;
+        }
+    }
 
     private int _animationDelay = 1;
     private int AnimationDelay {
@@ -417,15 +444,16 @@ n,12,11,11";
             : GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
 
         MainCanvasSettings.Max = Instance.FindMax();
-        MainCanvasSettings.Scale = 30;
-        MainCanvasSettings.NodeRadius = 8;
+        MainCanvasSettings.Scale = Scale;
+        MainCanvasSettings.NodeRadius = NodeRadius;
+        MainCanvasSettings.ShowGrid = ShowGrid;
+        MainCanvasSettings.BackgroundColor = BackgroundColor;
 
-        AdditionalCanvasSettings.Max = Instance.FindMax();
+        @*AdditionalCanvasSettings.Max = Instance.FindMax();
         AdditionalCanvasSettings.Scale = 15;
-        AdditionalCanvasSettings.NodeRadius = 6;
+        AdditionalCanvasSettings.NodeRadius = 6;*@
 
-        //await NextState(true);
-        await UpdateEnumerator();
+    await UpdateEnumerator();
     }
 
     private async Task JumpFirst() {
@@ -495,7 +523,7 @@ n,12,11,11";
     }
 
     private async Task FillCanvases() {
-        if (CurrentHistoryNode.Previous != null && ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
+        if (CurrentHistoryNode.Previous != null && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
             await ResetCanvas(await PreviousCanvas.GetContext2DAsync(), MainCanvasSettings);
             await FillCanvas(PreviousCanvas, CurrentHistoryNode.Previous.Value);
         }
@@ -511,7 +539,7 @@ n,12,11,11";
     }
 
     private async Task ResetCanvases() {
-        if (PreviousCanvas != null && ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
+        if (PreviousCanvas != null && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
             await ResetCanvas(await PreviousCanvas.GetContext2DAsync(), MainCanvasSettings);
         }
 
@@ -522,12 +550,15 @@ n,12,11,11";
 
     private async Task ResetCanvas(Context2D context, CanvasSettings settings) {
         await context.ClearRectAsync(0, 0, settings.Width, settings.Height);
-        await CanvasRenderer.DrawGrid(context, settings);
+        await context.FillStyleAsync(settings.BackgroundColor);
+        await context.FillRectAsync(0, 0, settings.Width, settings.Height);
+
+        if (settings.ShowGrid)
+            await CanvasRenderer.DrawGrid(context, settings);
     }
 
     private async Task UpdateEnumerator() {
         Instance.Reset();
-        DrawComplete = false;
         Stopwatch.Restart();
         TableGenerator.Reset();
 

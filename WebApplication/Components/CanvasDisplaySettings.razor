@@ -1,0 +1,119 @@
+﻿<h5>Canvas Display Settings</h5>
+<div class="col">
+    <div class="form-group">
+        <label for="scale">Canvas Scale</label>
+        <input type="number" id="scale" class="form-control" @bind="Scale">
+    </div>
+    <div class="form-group">
+        <label for="nodeSize">Node Size</label>
+        <input type="number" id="nodeSize" class="form-control" @bind="NodeRadius">
+    </div>
+    <div class="form-group">
+        <label for="animationDelay">Animation Delay (ms)</label>
+        <input type="number" step="10" id="animationDelay" class="form-control" @bind="@AnimationDelay">
+    </div>
+    <div class="form-check">
+        <input type="checkbox" class="form-check-input" id="showGrid" @bind="ShowGrid">
+        <label class="form-check-label" for="showGrid">Show Grid</label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="switchColor" @bind="@ColorizeChanges">
+        <label class="form-check-label" for="switchColor">Colorize Changes</label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="switchAnnotate" @bind="@AnnotateEdges">
+        <label class="form-check-label" for="switchAnnotate">Annotate Edges</label>
+    </div>
+</div>
+
+@code {
+	private float _scale;
+    [Parameter]
+    public float Scale {
+        get => _scale;
+        set {
+            if (value == _scale)
+                return;
+
+            _scale = value;
+            ScaleChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<float> ScaleChanged { get; set; }
+
+    private float _nodeRadius;
+    [Parameter]
+    public float NodeRadius {
+        get => _nodeRadius;
+        set {
+            if (value == _nodeRadius)
+                return;
+
+            _nodeRadius = value;
+            NodeRadiusChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<float> NodeRadiusChanged { get; set; }
+
+    private bool _showGrid;
+    [Parameter]
+    public bool ShowGrid {
+        get => _showGrid;
+        set {
+            if (value == _showGrid)
+                return;
+
+            _showGrid = value;
+            ShowGridChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<bool> ShowGridChanged { get; set; }
+
+    private bool _annotateEdges;
+    [Parameter]
+    public bool AnnotateEdges {
+        get => _annotateEdges;
+        set {
+            if (value == _annotateEdges)
+                return;
+
+                _annotateEdges = value;
+                AnnotateEdgesChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<bool> AnnotateEdgesChanged { get; set; }
+
+    private bool _colorizeChanges;
+    [Parameter]
+    public bool ColorizeChanges {
+        get => _colorizeChanges;
+        set {
+            if (value == _colorizeChanges)
+                return;
+
+                _colorizeChanges = value;
+                ColorizeChangesChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<bool> ColorizeChangesChanged { get; set; }
+
+    private int _animationDelay;
+    [Parameter]
+    public int AnimationDelay {
+        get => _animationDelay;
+        set {
+            if (value == _animationDelay)
+                return;
+
+                _animationDelay = value;
+                AnimationDelayChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<int> AnimationDelayChanged { get; set; }
+}
