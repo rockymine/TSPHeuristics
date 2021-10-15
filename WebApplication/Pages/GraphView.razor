@@ -568,13 +568,6 @@ n,12,11,11";
     }
 
     private void UpdateVisualsFromGraphState() {
-        @*if (AlgorithmEnum == AlgorithmEnum.NN) {
-            TableGenerator.UpdateFromGraphState(CurrentHistoryNode, TableType.DistanceMatrix);
-        } else*@ 
-        if ((AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) && (NeighbourEnum is NeighbourType.TwoOpt or NeighbourType.Swap)) {
-            TableGenerator.UpdateFromGraphState(CurrentHistoryNode, TableType.SwapSummary, NeighbourEnum);
-        } else {
-            TableGenerator.UpdateFromGraphState(CurrentHistoryNode, TableType.RouteSummary, NeighbourEnum);
-        }
+        TableGenerator.UpdateFromGraphState(CurrentHistoryNode, AlgorithmEnum, NeighbourEnum);
     }
 }

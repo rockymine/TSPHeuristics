@@ -28,19 +28,15 @@
 
 	public void Reset() => tableInfo = new TableInfo();
 
-	public void UpdateFromGraphState(LinkedListNode<GraphState> node, TableType type, NeighbourType neighbourType) {
+	public void UpdateFromGraphState(LinkedListNode<GraphState> node, AlgorithmEnum algorithmEnum, NeighbourType neighbourType) {
 		tableInfo.Header.Clear();
 		
-		switch (type) {
-			case TableType.DistanceMatrix:
-				CreateDistanceMatrix(node);
-				break;
-			case TableType.RouteSummary:
-				CreateIterationTable(node);
-				break;
-			case TableType.SwapSummary:
-				CreateSwapSummary(node, neighbourType);
-				break;
+		if (algorithmEnum == AlgorithmEnum.NN) {
+			CreateDistanceMatrix(node);
+		} else if (algorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC && neighbourType is NeighbourType.Swap or NeighbourType.TwoOpt) {
+			CreateSwapSummary(node, neighbourType);
+		} else {
+			CreateIterationTable(node);
 		}
 		
 		StateHasChanged();
@@ -102,7 +98,6 @@
 	private void CreateSwapSummary(LinkedListNode<GraphState> node, NeighbourType neighbourType) {
 		var state = node.Value;
 		var formula = "$\\triangle=d_{i,j}+d_{i+1,j+1}-d_{i,i+1}-d_{j,j+1}$";
-
 
 		if (neighbourType == NeighbourType.Swap)
 			formula = "$\\triangle_{i,j}=\\begin{cases}d_{i,j-1}+d_{i,j+1}-d_{i,i-1}-d_{j,j+1},&i=j-1\\parallel j-1=i+1\\\\d_{j-1,i}+d_{j,i+1}-d_{j-1,j}-d_{i,i+1},&i=j+1 \\parallel j+1=i-1\\\\d_{i-1,j}+d_{j,i+1}+d_{j-1,i}+d_{i,j+1}-d_{i-1,i}-d_{i,i+1}-d_{j-1,j}-d_{j,j+1},&else\\end{cases}$";
