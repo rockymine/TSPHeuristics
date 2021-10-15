@@ -16,6 +16,7 @@
                 <CanvasDisplaySettings @bind-Scale="@Scale" @bind-NodeRadius="@NodeRadius"
                     @bind-ShowGrid="@ShowGrid" @bind-AnnotateEdges="@AnnotateEdges" @bind-ColorizeChanges="@ColorizeChanges"
                     @bind-AnimationDelay="@AnimationDelay"/>
+                <span><b>Execution Time</b>: @TimeSpan.Minutes m @TimeSpan.Seconds s @TimeSpan.Milliseconds ms</span><br/>
             </div>
         </div>
         <div class="col-md-9 p-0">
@@ -109,9 +110,9 @@
                                         <button type="button" disabled="@(GraphHistory.First == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump First" @onclick="e => JumpFirst()">«</button>
                                         <button type="button" disabled="@(GraphHistory.First == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse" @onclick="e => ReverseHistory()">‹</button>
                                         @if (AutoAdvance) {
-                                            <button type="button" disabled="@(GraphHistory.Last == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Pause" @onclick="e => AutoAdvance = false">⏸</button>
+                                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="AutoAdvance = false" @onclick="e => AutoAdvance = false">⏸</button>
                                         } else {
-                                            <button type="button" disabled="@(GraphHistory.Last == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Play" @onclick="e => AutoAdvance = true">▶</button>
+                                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="AutoAdvance = true" @onclick="e => AutoAdvance = true">▶</button>
                                         }
                                         <button type="button" disabled="@(GraphHistory.Last == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Advance" @onclick="e => AdvanceHistory()">›</button>
                                         <button type="button" disabled="@(GraphHistory.Last == CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump Last" @onclick="e => JumpLast()">»</button>
@@ -119,18 +120,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="input-group">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="switchAdvance" @bind="@AutoAdvance">
-                                <label class="form-check-label" for="switchAdvance">Auto Advance</label>
-                            </div>
-                        </div>
-                    </div>
                 }
                 @if (CurrentHistoryNode != null) {
-                    <span><b>Elapsed Time</b>: @TimeSpan.Minutes m @TimeSpan.Seconds s @TimeSpan.Milliseconds ms</span><br/>
-
                     @foreach (var kvp in CurrentHistoryNode.Value.Messages) {
                         <span><b>@kvp.Key</b>: @kvp.Value</span><br/>
                     }
@@ -567,11 +558,12 @@ n,12,11,11";
 
     private async Task UpdateEnumerator() {
         Instance.Reset();
-        Stopwatch.Restart();
         TableGenerator.Reset();
-
         await ResetCanvases();
-        //surround with Stopwatch 
+
+        
+        Stopwatch.Restart();
+
         switch (AlgorithmEnum) {
             case AlgorithmEnum.NN:
                 NearestNeighbor.Start = Instance.Nodes[StartNode];
@@ -601,6 +593,9 @@ n,12,11,11";
                 break;
             default: break;
         }
+
+        Stopwatch.Stop();
+        TimeSpan = Stopwatch.Elapsed;
 
         CurrentHistoryNode = GraphHistory.First;
         await Redraw();
