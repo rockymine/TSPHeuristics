@@ -45,27 +45,25 @@ namespace TravellingSalesmanProblem.Algorithms {
         public SwapInfo GenerateSwapInfo() {
             if (NodeI == JPrev || JPrev == INext) {
                 return new SwapInfo(new List<Node> { NodeI, NodeJ },
-                    $"${IPrev_J}+{I_JNext}-{IPrev_I}-{J_JNext}$");
+                    $"${IPrev_J}+{I_JNext}-{IPrev_I}-{J_JNext}={Costs}$");
             } else if (NodeI == JNext || JNext == IPrev) {
                 return new SwapInfo(new List<Node> { NodeI, NodeJ },
-                    $"${JPrev_I}+{J_INext}-{JPrev_J}-{I_INext}$");
+                    $"${JPrev_I}+{J_INext}-{JPrev_J}-{I_INext}={Costs}$");
             } else {
                 return new SwapInfo(new List<Node> { NodeI, NodeJ },
-                    $"${IPrev_J}+{J_INext}+{JPrev_I}+{I_JNext}-{IPrev_I}-{I_INext}-{JPrev_J}-{J_JNext}$");
+                    $"${IPrev_J}+{J_INext}+{JPrev_I}+{I_JNext}-{IPrev_I}-{I_INext}-{JPrev_J}-{J_JNext}={Costs}$");
             }
         }
 
         public GraphProblem SwapNodes() {
-            Graph = Graph.DeepCopy();
-
             var nodes = Graph.Nodes;
             var node = nodes[I];
             nodes[I] = nodes[J];
             nodes[J] = node;
 
-            Graph.Nodes = nodes;
-            Graph.ConnectPathNodes();
-            return Graph;
+            var best = new GraphProblem { Nodes = nodes };
+            best.ConnectPathNodes();
+            return best;
         }
     }
 }

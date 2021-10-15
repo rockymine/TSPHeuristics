@@ -1,4 +1,5 @@
-﻿@using TravellingSalesmanProblem.Graph
+﻿@using TravellingSalesmanProblem.Algorithms
+@using TravellingSalesmanProblem.Graph
 @using WebApplication.Utils
 @using StardustDL.RazorComponents.Markdown
 @if (tableInfo.HasData) {
@@ -27,7 +28,7 @@
 
 	public void Reset() => tableInfo = new TableInfo();
 
-	public void UpdateFromGraphState(LinkedListNode<GraphState> node, TableType type) {
+	public void UpdateFromGraphState(LinkedListNode<GraphState> node, TableType type, NeighbourType neighbourType) {
 		tableInfo.Header.Clear();
 		
 		switch (type) {
@@ -38,7 +39,7 @@
 				CreateIterationTable(node);
 				break;
 			case TableType.SwapSummary:
-				CreateSwapSummary(node);
+				CreateSwapSummary(node, neighbourType);
 				break;
 		}
 		
@@ -98,10 +99,15 @@
 		}
 	}
 
-	private void CreateSwapSummary(LinkedListNode<GraphState> node) {
+	private void CreateSwapSummary(LinkedListNode<GraphState> node, NeighbourType neighbourType) {
 		var state = node.Value;
+		var formula = "$\\triangle=d_{i,j}+d_{i+1,j+1}-d_{i,i+1}-d_{j,j+1}$";
 
-		tableInfo.Header = new List<string> { "Iteration", "$i$", "$j$", "$\\triangle=d_{i,j}+d_{i+1,j+1}-d_{i,i+1}-d_{j,j+1}$", "Before", "Tour" , "Distance"};
+
+		if (neighbourType == NeighbourType.Swap)
+			formula = "$\\triangle_{i,j}=\\begin{cases}d_{i,j-1}+d_{i,j+1}-d_{i,i-1}-d_{j,j+1},&i=j-1\\parallel j-1=i+1\\\\d_{j-1,i}+d_{j,i+1}-d_{j-1,j}-d_{i,i+1},&i=j+1 \\parallel j+1=i-1\\\\d_{i-1,j}+d_{j,i+1}+d_{j-1,i}+d_{i,j+1}-d_{i-1,i}-d_{i,i+1}-d_{j-1,j}-d_{j,j+1},&else\\end{cases}$";
+
+		tableInfo.Header = new List<string> { "Iteration", "$i$", "$j$", formula, "Before", "Tour" , "Distance"};
 
 		if (tableInfo.Cells is null)
 			tableInfo.Cells = new TableCellInfo[0, tableInfo.Header.Count];

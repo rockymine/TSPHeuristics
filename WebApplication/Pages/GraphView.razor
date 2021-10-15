@@ -572,9 +572,9 @@ n,12,11,11";
             TableGenerator.UpdateFromGraphState(CurrentHistoryNode, TableType.DistanceMatrix);
         } else*@ 
         if ((AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) && (NeighbourEnum is NeighbourType.TwoOpt or NeighbourType.Swap)) {
-            TableGenerator.UpdateFromGraphState(CurrentHistoryNode, TableType.SwapSummary);
+            TableGenerator.UpdateFromGraphState(CurrentHistoryNode, TableType.SwapSummary, NeighbourEnum);
         } else {
-            TableGenerator.UpdateFromGraphState(CurrentHistoryNode, TableType.RouteSummary);
+            TableGenerator.UpdateFromGraphState(CurrentHistoryNode, TableType.RouteSummary, NeighbourEnum);
         }
     }
 }
