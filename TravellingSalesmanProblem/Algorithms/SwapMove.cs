@@ -56,14 +56,16 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public GraphProblem SwapNodes() {
+            Graph = Graph.DeepCopy();
+
             var nodes = Graph.Nodes;
             var node = nodes[I];
             nodes[I] = nodes[J];
             nodes[J] = node;
 
-            var best = new GraphProblem { Nodes = nodes };
-            best.ConnectPathNodes();
-            return best;
+            Graph.Nodes = nodes;
+            Graph.ConnectPathNodes();
+            return Graph;
         }
     }
 }

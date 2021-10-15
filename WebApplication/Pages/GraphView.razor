@@ -80,15 +80,21 @@
                 <h5>Graph View</h5>
                 <div class="row">
                     <div class="col">
-                        <h5 class="font-weight-bold">Current</h5>
-                        <Canvas @ref="@CurrentCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"/>
-                    </div>
-                    <div class="col">
+                        <h5 class="font-weight-bold">Previous</h5>
                         @if (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
-                            <h5 class="font-weight-bold">Previous</h5>
                             <Canvas @ref="@PreviousCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"/>
                         }
                     </div>
+                    <div class="col">
+                        <h5 class="font-weight-bold">Current</h5>
+                        <Canvas @ref="@CurrentCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"/>
+                    </div>
+                    @*<div class="col">
+                        <h5 class="font-weight-bold">Next</h5>
+                        @if (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
+                            <Canvas @ref="@NextCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"/>
+                        }                        
+                    </div>*@
                 </div>
             </div>
         </div>
@@ -157,8 +163,9 @@
     private LinkedList<GraphState> GraphHistory;
     private LinkedListNode<GraphState> CurrentHistoryNode;
     
-    private Canvas CurrentCanvas;
     private Canvas PreviousCanvas;
+    private Canvas CurrentCanvas;
+    @*private Canvas NextCanvas;*@
     @*private Canvas[] CanvasArray = new Canvas[5];*@
 
     private TableGenerator TableGenerator;
@@ -449,11 +456,7 @@ n,12,11,11";
         MainCanvasSettings.ShowGrid = ShowGrid;
         MainCanvasSettings.BackgroundColor = BackgroundColor;
 
-        @*AdditionalCanvasSettings.Max = Instance.FindMax();
-        AdditionalCanvasSettings.Scale = 15;
-        AdditionalCanvasSettings.NodeRadius = 6;*@
-
-    await UpdateEnumerator();
+        await UpdateEnumerator();
     }
 
     private async Task JumpFirst() {
@@ -530,6 +533,11 @@ n,12,11,11";
 
         await ResetCanvas(await CurrentCanvas.GetContext2DAsync(), MainCanvasSettings);
         await FillCanvas(CurrentCanvas, CurrentHistoryNode.Value);
+
+        @*if (CurrentHistoryNode.Next != null && CurrentHistoryNode != GraphHistory.Last && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
+            await ResetCanvas(await NextCanvas.GetContext2DAsync(), MainCanvasSettings);
+            await FillCanvas(NextCanvas, CurrentHistoryNode.Next.Value);
+        }*@
     }
 
     private async Task FillCanvas(Canvas canvas, GraphState state) {
