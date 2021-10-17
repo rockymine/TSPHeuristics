@@ -13,8 +13,7 @@ namespace WebApplication.Utils {
             Color = "black",
             Width = 3,
             TextFont = "15px serif",
-            TextStyle = "black",
-            Dashed = false
+            TextStyle = "black"
         };
         private static readonly Brush NodeBrush = new() {
             Color = "#4e5072",
@@ -83,8 +82,6 @@ namespace WebApplication.Utils {
             var brush = EdgeBrush.Copy();
 
             foreach (var edge in edges) {
-                brush.Dashed = false;
-
                 if (state == stateNode.Value) { // current canvas (right side)
                     if (stateNode.Previous != null)
                         EdgeCompareUpdateBrush(stateNode.Previous.Value.PathEdges, edge, brush, "green");
