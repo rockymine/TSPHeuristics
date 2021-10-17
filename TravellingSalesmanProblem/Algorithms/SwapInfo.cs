@@ -15,5 +15,10 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public SwapInfo DeepCopy() => new(new List<Node>(Nodes), Calculation);
+
+        public override string ToString() {
+            var nodes = string.Join(',', Nodes.Select(n => n.Index));
+            return nodes + "; " + Calculation;
+        }
     }
 }

@@ -41,11 +41,11 @@ namespace WebApplication.Utils {
             }
         }
 
-        public static async Task DrawPath(Context2D context, GraphState state, CanvasSettings settings, bool annotate, bool colorize) {
+        public static async Task DrawPath(Context2D context, GraphState state, LinkedListNode<GraphState> stateNode, CanvasSettings settings, bool annotate, bool colorize) {
             settings.Colorize = colorize;
             settings.Annotate = annotate;
-            await DrawEdges(context, state, settings);
-            await DrawNodes(context, state, settings);
+            await DrawEdges(context, state, stateNode, settings);
+            await DrawNodes(context, state, stateNode, settings);
         }
 
         public static async Task DrawPathCompared(Context2D context, GraphState state, GraphState compare, CanvasSettings settings) {
@@ -74,20 +74,20 @@ namespace WebApplication.Utils {
             }
         }
 
-        private static async Task DrawNodes(Context2D context, GraphState state, CanvasSettings settings) {
+        private static async Task DrawNodes(Context2D context, GraphState state, LinkedListNode<GraphState> stateNode, CanvasSettings settings) {
             var nodes = state.Nodes;
             var brush = NodeBrush.Copy();
 
             foreach (var node in nodes) {
-                //if (state.SwapInfo != null) {
-                //    if (node == state.SwapInfo.Nodes[0]) {
-                //        brush.Color = "pink";
-                //    } else if (node == state.SwapInfo.Nodes[1]) {
-                //        brush.Color = "orange";
-                //    } else {
-                //        brush.Color = NodeBrush.Color;
-                //    }
-                //}
+                if (stateNode.Value.SwapInfo != null) {
+                    if (node.Index == stateNode.Value.SwapInfo.Nodes[0].Index) {
+                        brush.Color = "pink";
+                    } else if (node.Index == stateNode.Value.SwapInfo.Nodes[1].Index) {
+                        brush.Color = "orange";
+                    } else {
+                        brush.Color = NodeBrush.Color;
+                    }
+                } 
 
                 await context.DrawCircle(brush, settings.NodeRadius,
                     Manipulate(node.Position, settings));
@@ -99,7 +99,7 @@ namespace WebApplication.Utils {
             }
         }
 
-        private static async Task DrawEdges(Context2D context, GraphState state, CanvasSettings settings) {
+        private static async Task DrawEdges(Context2D context, GraphState state, LinkedListNode<GraphState> stateNode, CanvasSettings settings) {
             var edges = state.PathEdges;
             var brush = EdgeBrush.Copy();
 

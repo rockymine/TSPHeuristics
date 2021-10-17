@@ -28,7 +28,6 @@ namespace TravellingSalesmanProblem.Algorithms {
             history.AddLast(AdvanceState(state, iteration));
 
             while (true) {
-                //Console.WriteLine("New Hill Climbing iteration.");
                 Y = NeighbourState.Create(X, NeighbourEnum, DescentType);
 
                 if (Y.Costs >= X.Costs)
@@ -69,14 +68,10 @@ namespace TravellingSalesmanProblem.Algorithms {
         private GraphState AdvanceState(GraphState state, int iteration) {
             var newState = state.DeepCopy();
 
-            //newState.Path.Clear();
-            //newState.Path.AddRange(XBest.Nodes);
-            //newState.PathEdges.Clear();
-            //newState.PathEdges.AddRange(XBest.Edges);
             newState.Distance = XBest.Costs;
             newState.Path = XBest.Nodes;
             newState.PathEdges = XBest.Edges;
-            newState.SwapInfo = XBest.SwapInfo;
+            newState.SwapInfo = XBest.SwapInfo?.DeepCopy();
             newState.Iteration = iteration;
 
             UpdateStateMessages(newState);

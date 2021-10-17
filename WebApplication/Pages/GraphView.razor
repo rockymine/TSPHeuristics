@@ -532,8 +532,8 @@ n,12,11,11";
     }
 
     private async Task FillCanvas(Canvas canvas, GraphState state) {
-        await using (var context = await canvas.GetContext2DAsync()) {            
-            await CanvasRenderer.DrawPath(context, state, MainCanvasSettings, AnnotateEdges, ColorizeChanges);
+        await using (var context = await canvas.GetContext2DAsync()) {
+            await CanvasRenderer.DrawPath(context, state, CurrentHistoryNode, MainCanvasSettings, AnnotateEdges, ColorizeChanges);
         }
     }
 
