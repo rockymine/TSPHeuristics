@@ -9,14 +9,12 @@ using WebApplication.Extensions;
 
 namespace WebApplication.Utils {
     public class CanvasRenderer {
-        //private const float NodeSize = 8;
-        //private const float Scale = 20;
-
         private static readonly Brush EdgeBrush = new() {
             Color = "black",
             Width = 3,
             TextFont = "15px serif",
-            TextStyle = "black"
+            TextStyle = "black",
+            Dashed = false
         };
         private static readonly Brush NodeBrush = new() {
             Color = "#4e5072",
@@ -26,7 +24,6 @@ namespace WebApplication.Utils {
             TextStyle = "white"
         };
         private static readonly Brush GridBrush = new() { Color = "#999999", Width = 0.75 };
-        //private static readonly Vector2 Offset = new(Scale / 2, Scale / 2);
 
         public static async Task DrawGrid(Context2D context, CanvasSettings settings) {
             for (int i = 0; i <= settings.Max.Y; i++) {
@@ -86,6 +83,8 @@ namespace WebApplication.Utils {
             var brush = EdgeBrush.Copy();
 
             foreach (var edge in edges) {
+                brush.Dashed = false;
+
                 if (state == stateNode.Value) { // current canvas (right side)
                     if (stateNode.Previous != null)
                         EdgeCompareUpdateBrush(stateNode.Previous.Value.PathEdges, edge, brush, "green");
@@ -93,16 +92,15 @@ namespace WebApplication.Utils {
                     EdgeCompareUpdateBrush(stateNode.Value.PathEdges, edge, brush, "red");
                 }
 
+                if (edge.Pheromone != 0) {
+                    brush.Width = edge.Pheromone * 1000;
+                    settings.Annotate = false;
+                }
+
                 await context.DrawLine(brush,
                     Manipulate(edge.Node1.Position, settings),
                     Manipulate(edge.Node2.Position, settings));
             }
-
-            //foreach (var edge in edges) {
-            //    if (edge.Pheromone != 0) {
-            //        brush.Width = edge.Pheromone * 1000;
-            //        settings.Annotate = false;
-            //    }
 
             if (settings.Annotate)
                 await DrawEdgeTextBox(context, edges, brush, settings);
@@ -128,4 +126,5 @@ namespace WebApplication.Utils {
         private static Vector2 Manipulate(Vector2 vector, CanvasSettings settings) {
             return (vector * settings.Scale + settings.Offset).InverseY(settings.Height);
         }
-    }}
+    }
+}
