@@ -90,12 +90,6 @@
                         <h5 class="font-weight-bold">Current</h5>
                         <Canvas @ref="@CurrentCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"/>
                     </div>
-                    @*<div class="col">
-                        <h5 class="font-weight-bold">Next</h5>
-                        @if (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
-                            <Canvas @ref="@NextCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"/>
-                        }                        
-                    </div>*@
                 </div>
             </div>
         </div>
@@ -156,7 +150,6 @@
     
     private Canvas PreviousCanvas;
     private Canvas CurrentCanvas;
-    @*private Canvas NextCanvas;*@
     @*private Canvas[] CanvasArray = new Canvas[5];*@
 
     private TableGenerator TableGenerator;
@@ -511,6 +504,9 @@ n,12,11,11";
     }
 
     private async Task Redraw() {
+        MainCanvasSettings.Annotate = AnnotateEdges;
+        MainCanvasSettings.Colorize = ColorizeChanges;
+
         await FillCanvases();
         UpdateVisualsFromGraphState();
         StateHasChanged();
@@ -524,16 +520,12 @@ n,12,11,11";
 
         await ResetCanvas(await CurrentCanvas.GetContext2DAsync(), MainCanvasSettings);
         await FillCanvas(CurrentCanvas, CurrentHistoryNode.Value);
-
-        @*if (CurrentHistoryNode.Next != null && CurrentHistoryNode != GraphHistory.Last && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
-            await ResetCanvas(await NextCanvas.GetContext2DAsync(), MainCanvasSettings);
-            await FillCanvas(NextCanvas, CurrentHistoryNode.Next.Value);
-        }*@
     }
 
     private async Task FillCanvas(Canvas canvas, GraphState state) {
         await using (var context = await canvas.GetContext2DAsync()) {
-            await CanvasRenderer.DrawPath(context, state, CurrentHistoryNode, MainCanvasSettings, AnnotateEdges, ColorizeChanges);
+            await CanvasRenderer.DrawEdges(context, state, CurrentHistoryNode, MainCanvasSettings);
+            await CanvasRenderer.DrawNodes(context, state, CurrentHistoryNode, MainCanvasSettings);
         }
     }
 

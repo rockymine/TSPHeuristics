@@ -12,7 +12,7 @@ namespace WebApplication.Extensions {
     public static class Context2DExtensions {
         public static async Task DrawLine(this Context2D context, Brush brush, Vector2 pos1, Vector2 pos2) {
             if (brush.Color == "red") {
-                await context.SetLineDashAsync(new double[] { 10 });
+                await context.SetLineDashAsync(new double[] { 5 });
             } else {
                 await context.SetLineDashAsync(new double[] { });
             }                
