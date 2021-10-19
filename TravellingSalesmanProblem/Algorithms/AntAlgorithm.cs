@@ -19,17 +19,24 @@ namespace TravellingSalesmanProblem.Algorithms {
         private GraphProblem DistributedMemory = new();
         public override LinkedList<GraphState> FindPath(GraphProblem graph) {
             var history = new LinkedList<GraphState>();
-            var state = new GraphState { Nodes = graph.Nodes };
             InitializeDistributedAntMemory(graph);
-            history.AddLast(AdvanceState(state, true));
-            //yield return UpdateState(state);
+            var state = new GraphState { Nodes = graph.Nodes };
+
+            int iteration = 0;
+            history.AddLast(state);
 
             for (int i = 0; i < 100; i++) {
                 ScatterAnts(graph);
                 BuildAntPaths(graph);
+
+                GlobalBest = Colony
+                    .OrderBy(x => x.Path.Costs)
+                    .FirstOrDefault().Path;
+
                 GlobalUpdatingRule();
 
-                history.AddLast(AdvanceState(history.Last.Value, false));
+                iteration++;
+                history.AddLast(AdvanceState(history.Last.Value, iteration));
             }
 
             return history;
@@ -39,28 +46,21 @@ namespace TravellingSalesmanProblem.Algorithms {
             var nearestNeighbor = new NearestNeighbour { Start = graph.Nodes[Random.Next(0, graph.Nodes.Count)] };
             GlobalBest = nearestNeighbor.FindPath(graph).Last().ToGraphProblem();
 
-            Colony = Enumerable.Range(1, AntCount).Select(i => new Ant()).ToList();            
+            Colony = Enumerable.Range(1, AntCount).Select(i => new Ant()).ToList();     
             InitialPheromone = Math.Pow((GlobalBest.Nodes.Count) * GlobalBest.Costs, -1);
             DistributedMemory = GraphProblem.ConnectedGraphProblem(graph);
 
             DistributedMemory.Edges.ForEach(e => e.Pheromone = InitialPheromone);
         }
 
-        private GraphState AdvanceState(GraphState state, bool initialize = false) {
+        private GraphState AdvanceState(GraphState state, int iteration) {
             var newState = state.DeepCopy();
 
-            if (!initialize)
-                newState.Iteration++;
-
-            newState.Path.Clear();
-            newState.Path.AddRange(GlobalBest.Nodes);
-            newState.PathEdges.Clear();
-            newState.PathEdges.AddRange(DistributedMemory.Edges);
             newState.Distance = GlobalBest.Costs;
+            newState.Path = GlobalBest.Nodes;
+            newState.PathEdges = DistributedMemory.Edges;
             newState.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
-
-            if (Colony.TrueForAll(a => a.Path.Costs == GlobalBest.Costs))
-                newState.Finished = true;
+            newState.Iteration = iteration;
 
             UpdateStateMessages(newState);
             return newState;
@@ -81,10 +81,6 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Messages["Iteration"] = state.Iteration.ToString();
             state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
             state.Messages["Distance"] = Math.Round(state.Distance, 2).ToString();
-            state.Messages["Pheromones"] = DistributedMemory.Edges.Sum(e => e.Pheromone).ToString();
-            state.Messages["Highest Pheromone"] = DistributedMemory.Edges.Max(e => e.Pheromone).ToString();
-            state.Messages["Lowest Pheromone"] = DistributedMemory.Edges.Min(e => e.Pheromone).ToString();
-            state.Messages["Average Pheromone"] = DistributedMemory.Edges.Average(e => e.Pheromone).ToString();
         }
 
         private double RandomProportionalRule(Ant k, Node r, Node s) {
@@ -96,39 +92,26 @@ namespace TravellingSalesmanProblem.Algorithms {
             return pcp / sum;
         }
 
-        private double PheromoneClosenessProduct(Node from, Node to) {
-            var edge = DistributedMemory.Edges.Find(e => e.IsBetween(from, to));
+        private double PheromoneClosenessProduct(Node r, Node s) {
+            var edge = DistributedMemory.Edges.Find(e => e.IsBetween(r, s));
             var pcp = edge.Pheromone * Math.Pow(1 / edge.Distance, Beta);
 
             Equations["Pheromone Closeness Product"] = MathString.PheromoneClosenessProduct(edge, Beta, pcp);
             return pcp;
         }
 
-        private void GlobalUpdatingRule(bool acs = true) {
-            GlobalBest = Colony
-                .OrderBy(x => x.Path.Costs)
-                .FirstOrDefault().Path;
-
+        private void GlobalUpdatingRule() {
             foreach (var edge in DistributedMemory.Edges) {
                 edge.Pheromone = (1 - Alpha) * edge.Pheromone;
 
-                if (acs) {
-                    /* Only Reinforce Best Edges */
-                    if (edge.IsInside(GlobalBest.Edges)) {
-                        var lgbInversed = Math.Pow(GlobalBest.Costs, -1);
-                        Equations["Global Updating Rule"] = MathString.GlobalUpdatingRule(edge, Alpha, lgbInversed);
-                        edge.Pheromone += Alpha * lgbInversed;
-                    }
-                } else {
-                    edge.Pheromone += Colony
-                        .Where(k => edge.IsInside(k.Path.Edges))
-                        .Sum(k => 1 / k.Path.Nodes.Count);
+                if (edge.IsInside(GlobalBest.Edges)) {
+                    var lgbInversed = Math.Pow(GlobalBest.Costs, -1);
+                    Equations["Global Updating Rule"] = MathString.GlobalUpdatingRule(edge, Alpha, lgbInversed);
+                    edge.Pheromone += Alpha * lgbInversed;
                 }
             }
         }
 
-        //ants visit edges and change their pheromone level
-        //local updating will help to avoid ants converging to a common path
         private void LocalUpdatingRule(Ant k) {
             foreach (var edge in DistributedMemory.Edges) {
                 if (edge.IsInside(k.Path.Edges)) {
@@ -191,11 +174,20 @@ namespace TravellingSalesmanProblem.Algorithms {
     }
 
     public class Ant {
+        public Node Start { get; set; }
         public GraphProblem Path { get; set; } = new();
         public List<Node> Unvisited { get; set; } = new();
         public Node Current => Path.Nodes.Last();
         public Dictionary<Edge, double> MoveProbability { get; set; } = new();
-
+        
+        public void Initialize(GraphProblem graph) {
+            var nodes = graph.Nodes;
+            
+            Reset();
+            Path.Nodes = new List<Node> { Start };
+            Unvisited = nodes.Where(n => n != Start).ToList();
+        }
+        
         public void UpdatePath(Node from, Node to) {
             Path.Nodes.Add(to);
             Path.Edges.Add(Edge.Between(from, to));

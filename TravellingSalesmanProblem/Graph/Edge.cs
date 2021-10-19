@@ -2,16 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
-using static TravellingSalesmanProblem.Algorithms.AntAlgorithm;
 
 namespace TravellingSalesmanProblem.Graph {
     public class Edge {
         public Node Node1 { get; set; }
         public Node Node2 { get; set; }
         public double Value { get; set; }
-        public string Color { get; set; }
         public double Pheromone { get; set; } = 0;
         public double Distance => CalcDistance();
 
@@ -21,7 +17,6 @@ namespace TravellingSalesmanProblem.Graph {
         public Edge Copy() {
             return new Edge {
                 Value = Value,
-                Color = Color,
                 Pheromone = Pheromone,
                 Node1Id = Node1Id,
                 Node2Id = Node2Id
@@ -29,11 +24,6 @@ namespace TravellingSalesmanProblem.Graph {
         }
 
         public double CalcDistance() {
-            //if (Node1 == null || Node2 == null) {
-            //    Console.WriteLine("Node not found.");
-            //    return -1;
-            //}
-
             return Vector2.Distance(Node1.Position, Node2.Position);
         }
 
@@ -41,6 +31,15 @@ namespace TravellingSalesmanProblem.Graph {
             if (Node1 == node1 && Node2 == node2)
                 return true;
             if (Node2 == node1 && Node1 == node2)
+                return true;
+
+            return false;
+        }
+
+        public bool IsBetweenId(int node1id, int node2id) {
+            if (Node1Id == node1id && Node2Id == node2id)
+                return true;
+            if (Node2Id == node1id && Node1Id == node2id)
                 return true;
 
             return false;
@@ -69,10 +68,15 @@ namespace TravellingSalesmanProblem.Graph {
         }
 
         public static Edge Between(Node node1, Node node2) {
-            var edge = new Edge { Node1 = node1, Node2 = node2 };
+            var edge = new Edge { 
+                Node1 = node1, Node2 = node2 , 
+                Node1Id = node1.Index, Node2Id = node2.Index
+            };
 
-            node1.Edges.Add(edge);
-            node2.Edges.Add(edge);
+            if (!node1.Edges.Any(e => e.IsEqual(edge)))
+                node1.Edges.Add(edge);
+            if (!node2.Edges.Any(e => e.IsEqual(edge)))
+                node2.Edges.Add(edge);
 
             return edge;
         }

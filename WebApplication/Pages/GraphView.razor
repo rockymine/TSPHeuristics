@@ -10,7 +10,8 @@
 <div class="container-fluid">
     <h2 class="font-weight-bold">Interactive visualization of different TSP heuristics</h2>
     <div class="row">
-        <div class="col-md-3 p-0"><!-- Settings -->
+        <!-- Algorithm Settings -->
+        <div class="col-md-3 p-0">
             <div class="bg-custom-light custom-input-group">
                 <AlgorithmSettings @bind-AlgorithmEnum="@AlgorithmEnum" @bind-MultiStart="@MultiStart"/>
                 <CanvasDisplaySettings @bind-Scale="@Scale" @bind-NodeRadius="@NodeRadius"
@@ -19,6 +20,7 @@
                 <span><b>Execution Time</b>: @TimeSpan.Minutes m @TimeSpan.Seconds s @TimeSpan.Milliseconds ms</span><br/>
             </div>
         </div>
+        <!-- Heuristic Settings -->
         <div class="col-md-9 p-0">
             <div class="bg-custom-light custom-input-group">
                 <h5>Heuristic Settings</h5>
@@ -45,6 +47,7 @@
             </div>
         </div>
     </div>
+    <!-- Graph Settings -->
     <div class="row">
         <p>
             <button class="btn btn-primary" @onclick="@(e => SettingsCollapse = SettingsCollapse == "" ? "collapse" : "")">
@@ -53,6 +56,7 @@
         </p>
         <div class="@SettingsCollapse" id="collapseExample">
             <div class="row">
+                <!-- Text -->
                 <div class="col-md-6 p-0">
                     <div class="bg-custom-light custom-input-group">
                         <h5>Text-based graph</h5>
@@ -64,6 +68,7 @@
                         </div>
                     </div>
                 </div>
+                <!-- Random -->
                 <div class="col-md-6 p-0">
                     <div class="bg-custom-light custom-input-group">
                         <RandomGraphSettings @bind-NodeCount="NodeCount" @bind-MaxX="MaxX" @bind-MaxY="MaxY"/>
@@ -76,23 +81,25 @@
         </div>
     </div>
     <div class="row">
+        <!-- Graphs -->
         <div class="col-md-8 p-0">
             <div class="bg-custom-light custom-input-group">
                 <h5>Graph View</h5>
                 <div class="row">
                     <div class="col">
-                        <h5 class="font-weight-bold">Previous</h5>
+                        <h5 class="font-weight-bold">Previous (Iteration Start)</h5>
                         @if (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
                             <Canvas @ref="@PreviousCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"/>
                         }
                     </div>
                     <div class="col">
-                        <h5 class="font-weight-bold">Current</h5>
+                        <h5 class="font-weight-bold">Current (Iteration End)</h5>
                         <Canvas @ref="@CurrentCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"/>
                     </div>
                 </div>
             </div>
         </div>
+        <!-- State -->
         <div class="col-md-4 p-0">
             <div class="bg-custom-light custom-input-group">
                 <h5>State</h5>
@@ -124,24 +131,35 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-md-12">
-            <h5>Details</h5>
-            @if (GraphHistory != null && CurrentHistoryNode.Value != null && CurrentHistoryNode.Value.Equations.Count != 0) {
-                <div class="row">
-                <div class="col-md-6 col-sm-6">
-                    <h3 class="font-weight-bold">Formulas</h3>
-                        @foreach (var kvp in CurrentHistoryNode.Value.Equations) {
-                            <p><b>@kvp.Key</b></p>
-                            <MarkdownRenderer Value="@kvp.Value.Latex"/>
-                            <MarkdownRenderer Value="@kvp.Value.Generate()"/>
-                            <MarkdownRenderer Value="@kvp.Value.Result"/>
-                        }
+        <!-- Details -->
+        <div class="col-md-12 p-0">
+            <div class="bg-custom-light custom-input-group">
+                <h5>Details</h5>
+                @if (GraphHistory != null && CurrentHistoryNode.Value != null && CurrentHistoryNode.Value.Equations.Count != 0) {
+                    <div class="row">
+                    <div class="col-md-6 col-sm-6">
+                        <h3 class="font-weight-bold">Formulas</h3>
+                            @foreach (var kvp in CurrentHistoryNode.Value.Equations) {
+                                <p><b>@kvp.Key</b></p>
+                                <MarkdownRenderer Value="@kvp.Value.Latex"/>
+                                <MarkdownRenderer Value="@kvp.Value.Generate()"/>
+                                <MarkdownRenderer Value="@kvp.Value.Result"/>
+                            }
+                        </div>
                     </div>
-                </div>
-            }
+                }
+            </div>
         </div>
     </div>
-    <TableGenerator @ref="@TableGenerator"/>
+    <div class="row">
+        <!-- Tables -->
+        <div class="col-md-12 p-0">
+            <div class="bg-custom-light custom-input-group">
+                <h5>Table</h5>
+                <TableGenerator @ref="@TableGenerator"/>
+            </div>
+        </div>
+    </div>
 </div>
 
 @code {
@@ -162,6 +180,7 @@
     private NearestNeighbour NearestNeighbor = new();
     private SimulatedAnnealing SimulatedAnnealing = new();
     private AntAlgorithm AntAlgorithm = new();
+    private AntSystem AntSystem = new();
     private HillClimbing HillClimbing = new();
 	
 	private string DefaultGraph = @"n,1,11,5
@@ -571,12 +590,16 @@ n,12,11,11";
                 GraphHistory = SimulatedAnnealing.FindPath(Instance);
                 break;
             case AlgorithmEnum.ACS:
-                AntAlgorithm.AntCount = AntCount;
+                @*AntAlgorithm.AntCount = AntCount;
                 AntAlgorithm.Alpha = AlphaACS;
                 AntAlgorithm.Rho = Rho;
                 AntAlgorithm.Beta = Beta;
                 AntAlgorithm.StateTransition = StateTransition;
-                GraphHistory = AntAlgorithm.FindPath(Instance);
+                GraphHistory = AntAlgorithm.FindPath(Instance);*@
+
+                AntSystem.Alpha = AlphaACS;
+                AntSystem.Beta = Beta;
+                GraphHistory = AntSystem.FindPath(Instance);
                 break;
             case AlgorithmEnum.HC:
                 HillClimbing.NeighbourEnum = NeighbourEnum;

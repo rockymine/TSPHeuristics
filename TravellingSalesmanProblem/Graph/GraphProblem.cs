@@ -57,7 +57,6 @@ namespace TravellingSalesmanProblem.Graph {
         }
 
         public static GraphProblem OrderedGraphProblem(GraphProblem graph) {
-            /* TODO: Fix nodes appearing too many times in graph */
             var path = graph.Nodes;
             if (path[0] != path.Last())
                 path.Add(graph.Nodes[0]);
@@ -65,11 +64,6 @@ namespace TravellingSalesmanProblem.Graph {
             var ordered = new GraphProblem { Nodes = path };
             ordered.ConnectPathNodes();
             return ordered;
-        }
-
-        /* TODO: Implement, requires fixing of upper issue */
-        public static GraphProblem ShuffledGraphProblem(GraphProblem graph) {
-            throw new NotImplementedException();
         }
 
         private static Node RandomNode(int index, int maxX, int maxY) {
@@ -88,7 +82,6 @@ namespace TravellingSalesmanProblem.Graph {
                         continue;
 
                     var edge = Edge.Between(n1, n2);
-                    //n1.NeighbourCache.Add(n2, edge);
                     Edges.Add(edge);
                 }
             }
@@ -105,7 +98,6 @@ namespace TravellingSalesmanProblem.Graph {
         public void Reset() {
             Nodes.ForEach(n => n.Visited = false);
             Nodes.ForEach(n => n.Color = null);
-            Edges.ForEach(e => e.Color = null);
             Edges.ForEach(e => e.Pheromone = 0);
         }
 
@@ -149,10 +141,19 @@ namespace TravellingSalesmanProblem.Graph {
                     edge.Node1 = graph.Nodes.Find(n => n.Index == edge.Node1Id);
                     edge.Node2 = graph.Nodes.Find(n => n.Index == edge.Node2Id);
 
-                    if (edge.Node1 != null)
-                        edge.Node1.Edges.Add(edge);
-                    if (edge.Node2 != null)
-                        edge.Node2.Edges.Add(edge);
+                    if (edge.Node1 != null) {
+                        var node1edges = edge.Node1.Edges;
+                        if (!node1edges.Any(e => e.IsEqual(edge))) {
+                            node1edges.Add(edge);
+                        }
+                    }
+
+                    if (edge.Node2 != null) {
+                        var node2edges = edge.Node2.Edges;
+                        if (!node2edges.Any(e => e.IsEqual(edge))) {
+                            node2edges.Add(edge);
+                        }
+                    }
                 }
             }
         }
