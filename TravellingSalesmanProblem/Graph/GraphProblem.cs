@@ -23,15 +23,12 @@ namespace TravellingSalesmanProblem.Graph {
         }
 
         public GraphProblem DeepCopy() {
-            var graph = new GraphProblem();
-            //graph.Nodes.AddRange(Nodes);
-            //graph.Edges.AddRange(Edges);
-            //graph.Segments.AddRange(Segments);
-            graph.SwapInfo = SwapInfo?.DeepCopy();
-            graph.Nodes = Nodes.Select(n => n.Copy()).ToList();
-            graph.Edges = Edges.Select(e => e.Copy()).ToList();
+            var graph = new GraphProblem {
+                SwapInfo = SwapInfo?.DeepCopy(),
+                Nodes = Nodes.Select(n => n.Copy()).ToList(),
+                Edges = Edges.Select(e => e.Copy()).ToList()
+            };
 
-            //Console.WriteLine(JsonConvert.SerializeObject(graph, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }).ToString());
             PostProcess(graph);
             return graph;
         }
@@ -53,6 +50,7 @@ namespace TravellingSalesmanProblem.Graph {
 
         public static GraphProblem ConnectedGraphProblem(GraphProblem graph) {
             graph.ConnectAllNodes();
+            PostProcess(graph);
             return graph;
         }
 
@@ -97,7 +95,6 @@ namespace TravellingSalesmanProblem.Graph {
 
         public void Reset() {
             Nodes.ForEach(n => n.Visited = false);
-            Nodes.ForEach(n => n.Color = null);
             Edges.ForEach(e => e.Pheromone = 0);
         }
 
@@ -105,9 +102,9 @@ namespace TravellingSalesmanProblem.Graph {
             GraphProblem graph = new();
             foreach (var line in text.Split(Environment.NewLine))
                 ParseLine(graph, line);
-
-            PostProcess(graph);
+            
             graph.ConnectAllNodes();
+            PostProcess(graph);
             return graph;
         }
 
@@ -135,7 +132,7 @@ namespace TravellingSalesmanProblem.Graph {
                 graph.Edges.Add(ParseEdge(splitted));
         }
 
-        private static void PostProcess(GraphProblem graph) {
+        public static void PostProcess(GraphProblem graph) {
             foreach (var edge in graph.Edges) {
                 if (edge != null) {
                     edge.Node1 = graph.Nodes.Find(n => n.Index == edge.Node1Id);

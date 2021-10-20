@@ -8,7 +8,7 @@ namespace TravellingSalesmanProblem.Graph {
         public Node Node1 { get; set; }
         public Node Node2 { get; set; }
         public double Value { get; set; }
-        public double Pheromone { get; set; } = 0;
+        public double Pheromone { get; set; }
         public double Distance => CalcDistance();
 
         internal int Node1Id;
@@ -64,7 +64,7 @@ namespace TravellingSalesmanProblem.Graph {
             if (node == Node2)
                 return Node1;
 
-            throw new ArgumentException();
+            throw new ArgumentException("No opposite node.");
         }
 
         public static Edge Between(Node node1, Node node2) {
@@ -90,7 +90,6 @@ namespace TravellingSalesmanProblem.Graph {
             var closestDistance = double.MaxValue;
 
             foreach (var edge in node.Edges) {
-                //ignore already visited nodes
                 if (edge.Opposite(node).Visited)
                     continue;
 
@@ -115,7 +114,6 @@ namespace TravellingSalesmanProblem.Graph {
                     longestDistance = edge.Distance;
                     longest = edge;
                 }
-
             }
 
             return longest;

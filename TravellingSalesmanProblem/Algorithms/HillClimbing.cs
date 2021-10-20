@@ -13,7 +13,6 @@ namespace TravellingSalesmanProblem.Algorithms {
         private GraphProblem XBest = new();
         private GraphProblem Y = new();
         public override LinkedList<GraphState> FindPath(GraphProblem graph) {
-            graph.Reset();
             var history = new LinkedList<GraphState>();
             X = GraphProblem.OrderedGraphProblem(graph);
 

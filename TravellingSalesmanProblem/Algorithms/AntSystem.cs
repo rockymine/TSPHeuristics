@@ -14,29 +14,22 @@ namespace TravellingSalesmanProblem.Algorithms {
         private static readonly Random Random = new();
         private GraphProblem XBest = new();
         private GraphProblem X = new();
-        private GraphProblem Y = new();
         public override LinkedList<GraphState> FindPath(GraphProblem graph) {
             var history = new LinkedList<GraphState>();
             var nearestNeighbor = new NearestNeighbour { Start = graph.Nodes[Random.Next(0, graph.Nodes.Count)] };
+            var initialSolution = nearestNeighbor.FindPath(graph).Last();
             
-            XBest = nearestNeighbor.FindPath(graph).Last().ToGraphProblem();
+            InitialPheromone = Math.Pow((initialSolution.Nodes.Count) * initialSolution.Distance, -1);
+
             X = GraphProblem.ConnectedGraphProblem(graph);
-
-            InitialPheromone = Math.Pow((XBest.Nodes.Count) * XBest.Costs, -1);
-            X.Edges.ForEach(e => e.Pheromone = InitialPheromone);
-
-            
-
+            X.Edges.ForEach(e => e.Pheromone += InitialPheromone);
             
             /* Give each ant a starting node */
-            Colony = Enumerable.Range(1, graph.Nodes.Count).Select(i => new Ant()).ToList();
-
-            for (int i = 0; i < Colony.Count; i++) {
-                Colony[i].Start = graph.Nodes[i];
-            }
+            Colony = Enumerable.Range(1, graph.Nodes.Count)
+                .Select(i => new Ant { Start = graph.Nodes[i - 1] }).ToList();
 
             var state = new GraphState {
-                Nodes = XBest.Nodes,
+                Nodes = initialSolution.Nodes,
                 PathEdges = X.Edges
             };
 
@@ -44,7 +37,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             var iteration = 0;
 
             /* Loop */
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 2; i++) {
                 BuildAntPaths(graph);
 
                 XBest = Colony.OrderBy(a => a.Path.Costs).FirstOrDefault().Path;
@@ -77,11 +70,9 @@ namespace TravellingSalesmanProblem.Algorithms {
             foreach (var edge in edges) {
                 /* Nodes are not completely copied. Without this piece of code
                  * a NullReferenceError is thrown inside PheromoneVisibility. When using
-                 * the Id instead of the node the pheromone decreases instead of increasing.
-                 */
+                 * the Id instead of the node the pheromone decreases instead of increasing. */
                 edge.Node1 = graph.Nodes.Find(n => n.Index == edge.Node1Id);
                 edge.Node2 = graph.Nodes.Find(n => n.Index == edge.Node2Id);
-
                 edge.Pheromone = (1 - Alpha) * edge.Pheromone;
 
                 if (edge.IsInside(XBest.Edges)) {
