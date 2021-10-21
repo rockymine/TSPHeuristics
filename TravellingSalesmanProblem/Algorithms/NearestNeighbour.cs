@@ -14,7 +14,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         private GraphState X = new();
         private GraphState XBest = new();
         public override LinkedList<GraphState> FindPath(GraphProblem graph) {
-            graph.Reset(); //mark nodes as unvisited
+            graph.Reset();
             var history = new LinkedList<GraphState>();
             var state = new GraphState { Nodes = graph.Nodes };
 
@@ -45,7 +45,6 @@ namespace TravellingSalesmanProblem.Algorithms {
             Current = opposite;
             Current.Visited = true;
 
-            //add nodes and edges
             newState.Path.Add(opposite);
             newState.PathEdges.Add(Edge);
             newState.Distance += Edge.Distance;
@@ -55,7 +54,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         private LinkedList<GraphState> FindLongestPath(GraphProblem graph) {
-            graph.Reset(); //mark nodes as unvisited
+            graph.Reset();
             var history = new LinkedList<GraphState>();
             var state = new GraphState { Nodes = graph.Nodes };
 

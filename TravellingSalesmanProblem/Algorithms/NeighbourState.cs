@@ -45,9 +45,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             if (move == null)
                 return graph;
 
-            var best = move.SwapEdges(); //TODO: add coloring
+            var best = move.SwapEdges();
             best.SwapInfo = move.SwapInfo;
-            //best.Segments = GraphSegment.Split(best.Edges, move.I, move.J + 1);
             return best;
         }
 
@@ -87,7 +86,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             if (move == null)
                 return graph;
 
-            var best = move.SwapNodes(); //TODO: add coloring
+            var best = move.SwapNodes();
             best.SwapInfo = move.SwapInfo;
             return best;
         }
@@ -100,9 +99,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             for (int i = 1; i <= n - 3; i++) {
                 for (int j = i + 1; j <= n - 2; j++) {
                     var temp = new SwapMove(graph, i, j);
-                    //Console.WriteLine($"Checking swap: {i},{j}");
                     if (temp.Costs < savings) {
-                        //Console.WriteLine($"Found a better swap: {temp.Costs}");
                         savings = temp.Costs;
                         move = temp;
 
@@ -112,7 +109,6 @@ namespace TravellingSalesmanProblem.Algorithms {
                 }
             }
 
-            //Console.WriteLine($"Returning swap with costs: {move?.Costs}");
             return move;
         }
 
@@ -234,10 +230,10 @@ namespace TravellingSalesmanProblem.Algorithms {
     }
 
     public enum NeighbourType {
-        Swap = 0,
-        TwoOpt = 1,
-        ThreeOpt = 2,
-        FourOpt = 3
+        Swap,
+        TwoOpt,
+        ThreeOpt,
+        FourOpt
     }
 
     public enum DescentType {

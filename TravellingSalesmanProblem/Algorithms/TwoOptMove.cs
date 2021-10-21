@@ -31,18 +31,10 @@ namespace TravellingSalesmanProblem.Algorithms {
             return new SwapInfo(new List<Node> { NodeI, NodeJ }, $"${Di_j}+{Di1_j1}-{Di_i1}-{Dj_j1}={Costs}$");
         }
 
-        public GraphProblem SwapEdges(bool colorize = false) {
-            //if (colorize) {
-            //NodeI.Color = "orange";
-            //NodeJ.Color = "pink";
-            //}
-
+        public GraphProblem SwapEdges() {
+            var tour = Graph.Nodes.ToArray();
             var i = I + 1;
             var j = J + 1;
-            var tour = Graph.Nodes.ToArray();
-
-            //tour[i].Color = "orange";
-            //tour[j].Color = "orange";
 
             var a = tour[0..i];
             var b = tour[i..j];
