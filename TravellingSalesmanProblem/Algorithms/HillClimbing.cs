@@ -12,6 +12,9 @@ namespace TravellingSalesmanProblem.Algorithms {
         private GraphProblem X = new();
         private GraphProblem XBest = new();
         private GraphProblem Y = new();
+
+        private GraphState XState = new();
+        private GraphState XBestState = new();
         public override LinkedList<GraphState> FindPath(GraphProblem graph) {
             var history = new LinkedList<GraphState>();
             X = GraphProblem.OrderedGraphProblem(graph);
@@ -41,22 +44,25 @@ namespace TravellingSalesmanProblem.Algorithms {
             return history;
         }
 
-        //public IEnumerable<GraphState> MultiStart(GraphProblem graph) {
-        //    var best = new GraphState { Nodes = graph.Nodes };
-        //    var costs = double.MaxValue;
+        public LinkedList<GraphState> MultiStart(GraphProblem graph) {
+            var state = new GraphState { Nodes = graph.Nodes };
+            var history = new LinkedList<GraphState>();
+            var costs = double.MaxValue;
+            history.AddLast(state);
 
-        //    for (int i = 0; i < graph.Nodes.Count; i++) {
-        //        var state = FindPath(graph).Last();
+            for (int i = 0; i < graph.Nodes.Count; i++) {
+                XState = FindPath(graph).Last();
 
-        //        if (state.CalcCosts() < costs) {
-        //            costs = state.CalcCosts();
-        //            best.Path = state.Path;
-        //            best.PathEdges = state.PathEdges;
-        //            best.Distance = state.Distance;
-        //            yield return AdvanceState(best);
-        //        }
-        //    }
-        //}
+                if (XState.Distance < costs) {
+                    costs = XState.Distance;
+                    XBestState = XState;
+
+                    history.AddLast(AdvanceMultiStartState(history.Last.Value));
+                }
+            }
+
+            return history;
+        }
 
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Iteration"] = state.Iteration.ToString();
@@ -72,6 +78,17 @@ namespace TravellingSalesmanProblem.Algorithms {
             newState.PathEdges = XBest.Edges;
             newState.SwapInfo = XBest.SwapInfo?.DeepCopy();
             newState.Iteration = iteration;
+
+            UpdateStateMessages(newState);
+            return newState;
+        }
+
+        private GraphState AdvanceMultiStartState(GraphState state) {
+            var newState = state.DeepCopy();
+
+            newState.Distance = XBestState.Distance;
+            newState.Path = XBestState.Path;
+            newState.PathEdges = XBestState.PathEdges;
 
             UpdateStateMessages(newState);
             return newState;
