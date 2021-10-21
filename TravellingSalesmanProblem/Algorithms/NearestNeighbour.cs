@@ -11,6 +11,8 @@ namespace TravellingSalesmanProblem.Algorithms {
         public Node Start { get; set; }
         private Node Current = new();
         private Edge Edge = new();
+        private GraphState X = new();
+        private GraphState XBest = new();
         public override LinkedList<GraphState> FindPath(GraphProblem graph) {
             graph.Reset(); //mark nodes as unvisited
             var history = new LinkedList<GraphState>();
@@ -77,28 +79,42 @@ namespace TravellingSalesmanProblem.Algorithms {
             return history;
         }
 
-        public IEnumerable<GraphState> MultiStart(GraphProblem graph, bool shortest = true) {
+        public LinkedList<GraphState> MultiStart(GraphProblem graph, bool shortest = true) {
             graph.Reset();
-            var best = new GraphState { Nodes = graph.Nodes };
-            var costs = double.MaxValue;            
+            var history = new LinkedList<GraphState>();
+            var state = new GraphState { Nodes = graph.Nodes };
+            var costs = double.MaxValue;
+
+            history.AddLast(state);
 
             foreach (var node in graph.Nodes) {
                 Start = node;
-                var current = shortest ? FindPath(graph).Last() : FindLongestPath(graph).Last();
+                X = shortest ? FindPath(graph).Last() : FindLongestPath(graph).Last();
 
-                if (current.CalcCosts() < costs) {
-                    costs = current.CalcCosts();
-                    best.Path = current.Path;
-                    best.PathEdges = current.PathEdges;
-                    best.Distance = current.Distance;
+                if (X.CalcCosts() < costs) {
+                    costs = X.Distance;
+                    XBest = X;
 
-                    UpdateStateMessages(best);
-                    yield return best;
+                    history.AddLast(AdvanceMultiStartState(history.Last.Value));
                 }                    
             }
+
+            return history;
+        }
+
+        private GraphState AdvanceMultiStartState(GraphState state) {
+            var newState = state.DeepCopy();
+
+            newState.Distance = XBest.Distance;
+            newState.Path = XBest.Path;
+            newState.PathEdges = XBest.PathEdges;
+
+            UpdateStateMessages(newState);
+            return newState;
         }
 
         public override void UpdateStateMessages(GraphState state) {
+            state.Messages["Start Node"] = Start.Index.ToString();
             state.Messages["Route"] = string.Join('-', state.Path.Select(n => n.Index));
             state.Messages["Distance"] = Math.Round(state.Distance, 1).ToString();
         }
