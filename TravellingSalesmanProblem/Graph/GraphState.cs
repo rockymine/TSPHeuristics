@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ChartData;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,6 +17,7 @@ namespace TravellingSalesmanProblem.Graph {
         public int Iteration { get; set; }
         public Dictionary<string, string> Messages { get; set; } = new();
         public Dictionary<string, MathString> Equations { get; set; } = new();
+        public List<ChartInfo> ChartInfo { get; set; } = new();
 
         public GraphProblem ToGraphProblem() {
             return new GraphProblem {
@@ -37,6 +39,7 @@ namespace TravellingSalesmanProblem.Graph {
             state.Iteration = Iteration;
             state.Messages = new Dictionary<string, string>(Messages);
             state.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
+            state.ChartInfo = ChartInfo?.Select(c => c.DeepCopy()).ToList();
 
             return state;
         }

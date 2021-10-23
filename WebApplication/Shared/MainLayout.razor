@@ -1,13 +1,13 @@
 ﻿@inherits LayoutComponentBase
 
 <div class="page">
-    @*<div class="sidebar">
+    <div class="sidebar">
         <NavMenu />
-    </div>*@
+    </div>
 
     <div class="main">
         <div class="content px-4">
-            <WebApplication.Pages.GraphView></WebApplication.Pages.GraphView>
+            @Body
         </div>
     </div>
 </div>

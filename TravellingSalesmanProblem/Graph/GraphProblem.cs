@@ -13,7 +13,6 @@ namespace TravellingSalesmanProblem.Graph {
     public class GraphProblem {
         public List<Node> Nodes { get; set; } = new();
         public List<Edge> Edges { get; set; } = new();
-        public List<GraphSegment> Segments { get; set; } = new();
         public SwapInfo SwapInfo { get; set; }
         public double Costs => Edges.Sum(e => e.Distance);
         private static readonly Random Random = new();

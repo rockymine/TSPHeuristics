@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ChartData\ChartData.csproj" />
     <ProjectReference Include="..\TravellingSalesmanProblem\TravellingSalesmanProblem.csproj" />
   </ItemGroup>
 

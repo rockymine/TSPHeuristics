@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ChartData;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,10 +26,23 @@ namespace TravellingSalesmanProblem.Algorithms {
             var history = new LinkedList<GraphState>();
             X = GraphProblem.OrderedGraphProblem(graph);
 
+            var chartInfo = new ChartInfo {
+                Title = "Temperature Progress",
+                XAxis = new ChartSet { Title = "Iteration" },
+                YAxis = new List<ChartSet> {
+                    new ChartSet { Title = "Temperature" }
+                }
+            };
+
+            var chartInfo2 = chartInfo.DeepCopy();
+            chartInfo2.Title = "Distance Progress";
+            chartInfo.YAxis[0].Title = "Distance";
+
             var state = new GraphState {
                 Nodes = X.Nodes,
                 PathEdges = X.Edges,
-                Temperature = CalculateInitialTemperature(X)
+                Temperature = CalculateInitialTemperature(X),
+                ChartInfo = new List<ChartInfo>() { chartInfo, chartInfo2 }
             };
 
             XBest = X;
@@ -46,6 +60,7 @@ namespace TravellingSalesmanProblem.Algorithms {
 
                         if (X.Costs < XBest.Costs) {
                             XBest = X;
+                            //blue color
                             history.AddLast(AdvanceState(history.Last.Value, iteration, temperature));
                         }
                     } else if (MetropolisRule(history.Last.Value)) {
@@ -56,6 +71,12 @@ namespace TravellingSalesmanProblem.Algorithms {
                 Equations["Temperature Update"] = MathString.UpdateTemperature(history.Last.Value, Alpha);
                 iteration++;
                 temperature *= Alpha;
+
+                history.Last.Value.ChartInfo[0].XAxis.Add(iteration, "red");
+                history.Last.Value.ChartInfo[0].YAxis[0].Add(temperature, "red");
+
+                history.Last.Value.ChartInfo[1].XAxis.Add(iteration, "red");
+                history.Last.Value.ChartInfo[1].YAxis[0].Add(X.Costs, "red");
             }
 
             return history;
@@ -88,6 +109,10 @@ namespace TravellingSalesmanProblem.Algorithms {
             newState.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
             newState.Temperature = temperature;
             newState.Iteration = iteration;
+
+            for (int i = 0; i < newState.ChartInfo[0].YAxis[0].Values.Count; i++) {
+                newState.ChartInfo[0].YAxis[0].Colors[i] = (i == iteration - 1) ? "blue" : "red";
+            }
 
             UpdateStateMessages(newState);
             return newState;

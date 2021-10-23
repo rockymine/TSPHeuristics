@@ -37,7 +37,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             var iteration = 0;
 
             /* Loop */
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < 50; i++) {
                 BuildAntPaths(graph);
 
                 XBest = Colony.OrderBy(a => a.Path.Costs).FirstOrDefault().Path;

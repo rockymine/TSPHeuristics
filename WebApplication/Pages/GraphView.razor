@@ -121,6 +121,16 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row">
+                        @if (AlgorithmEnum is AlgorithmEnum.SA) {
+                            if (CurrentHistoryNode.Value.ChartInfo.Count >= 1) {
+                                <ChartJS @ref="@ChartJS[0]" Chart="@CurrentHistoryNode.Value.ChartInfo[0]" ChartID="sa_temperature"></ChartJS>
+                            }
+                            if (CurrentHistoryNode.Value.ChartInfo.Count >= 2) {
+                                <ChartJS @ref="@ChartJS[1]" Chart="@CurrentHistoryNode.Value.ChartInfo[1]" ChartID="sa_distance"></ChartJS>
+                            }
+                        }
+                    </div>
                 }
                 @if (CurrentHistoryNode != null) {
                     @foreach (var kvp in CurrentHistoryNode.Value.Messages) {
@@ -171,6 +181,7 @@
     @*private Canvas[] CanvasArray = new Canvas[5];*@
 
     private TableGenerator TableGenerator;
+    private ChartJS[] ChartJS = new ChartJS[5];
 
 	private GraphProblem Instance;
 
@@ -527,7 +538,7 @@ n,12,11,11";
         MainCanvasSettings.Colorize = ColorizeChanges;
 
         await FillCanvases();
-        UpdateVisualsFromGraphState();
+        await UpdateVisualsFromGraphState();
         StateHasChanged();
     }
 
@@ -597,7 +608,7 @@ n,12,11,11";
                 AntAlgorithm.StateTransition = StateTransition;
                 GraphHistory = AntAlgorithm.FindPath(Instance);*@
 
-                AntSystem.Alpha = AlphaACS;
+    AntSystem.Alpha = AlphaACS;
                 AntSystem.Beta = Beta;
                 GraphHistory = AntSystem.FindPath(Instance);
                 break;
@@ -616,7 +627,11 @@ n,12,11,11";
         await Redraw();
     }
 
-    private void UpdateVisualsFromGraphState() {
+    private async Task UpdateVisualsFromGraphState() {
         TableGenerator.UpdateFromGraphState(CurrentHistoryNode, AlgorithmEnum, NeighbourEnum);
+        foreach (var chart in ChartJS) {
+            if (chart != null)
+                await chart.UpdateFromGraphState();
+        }
     }
 }
