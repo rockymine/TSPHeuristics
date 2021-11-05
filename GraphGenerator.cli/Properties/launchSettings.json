@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "GraphGenerator.cli": {
+      "commandName": "Project",
+      "commandLineArgs": "-x 100 -y 100 -n 90 -p 90Nodes"
+    }
+  }
+}
