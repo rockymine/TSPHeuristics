@@ -602,12 +602,12 @@ n,12,11,11";
                 break;
             case AlgorithmEnum.ACS:
                 @*AntAlgorithm.AntCount = AntCount;
-                AntAlgorithm.Alpha = AlphaACS;
-                AntAlgorithm.Rho = Rho;
-                AntAlgorithm.Beta = Beta;
-                AntAlgorithm.StateTransition = StateTransition;
-                GraphHistory = AntAlgorithm.FindPath(Instance);*@
-
+                    AntAlgorithm.Alpha = AlphaACS;
+                    AntAlgorithm.Rho = Rho;
+                    AntAlgorithm.Beta = Beta;
+                    AntAlgorithm.StateTransition = StateTransition;
+                    GraphHistory = AntAlgorithm.FindPath(Instance);*@
+                AntSystem.AntCount = AntCount;
                 AntSystem.Alpha = AlphaACS;
                 AntSystem.Beta = Beta;
                 GraphHistory = AntSystem.FindPath(Instance);

@@ -15,8 +15,12 @@ namespace PerformanceAnalysis.cli {
         public double StartTemp { get; set; }
         public double MinTemp { get; set; }
         public double Alpha { get; set; }
+        public double Beta { get; set; }
+        public int AntCount { get; set; }
         public NeighbourType NeighbourEnum { get; set; }
         public string RunTime { get; set; }
         public double TourLength { get; set; }
+        public double Iterations { get; set; }
+        public double FinalTemp { get; set; }
     }
 }

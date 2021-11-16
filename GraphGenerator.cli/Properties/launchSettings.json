@@ -2,7 +2,7 @@
   "profiles": {
     "GraphGenerator.cli": {
       "commandName": "Project",
-      "commandLineArgs": "-x 100 -y 100 -n 90 -p 90Nodes"
+      "commandLineArgs": "-x 30 -y 30 -n 40 -p 40Nodes"
     }
   }
 }

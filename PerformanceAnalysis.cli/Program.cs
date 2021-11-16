@@ -15,6 +15,10 @@ namespace PerformanceAnalysis.cli {
         private static int GraphSizeY { get; set; }
         [Argument('c', "graphNodeCount")]
         private static int GraphNodeCount { get; set; }
+        [Argument('k', "antCount")]
+        private static int AntCount { get; set; }
+        [Argument('b', "beta")]
+        private static double Beta { get; set; }
         [Argument('h', "heuristic")]
         private static string Heuristic { get; set; }
         [Argument('g', "graph")]
@@ -27,7 +31,6 @@ namespace PerformanceAnalysis.cli {
         private static double MinTemp { get; set; }
         [Argument('a', "alpha")]
         private static double Alpha { get; set; }
-        //worst case string tryparse
         [Argument('n', "neighbor")]
         private static NeighbourType NeighbourEnum { get; set; }
         [Argument('p', "path")]
@@ -35,40 +38,57 @@ namespace PerformanceAnalysis.cli {
         private static LinkedList<GraphState> History { get; set; }
         private static void Main(string[] args) {
             Arguments.Populate();
-
-            var instance = GraphProblem.RandomGraphProblem(GraphSizeX, GraphSizeY, GraphNodeCount);
+            Graph = File.ReadAllText("C:/Users/Michael/source/repos/TSPHeuristics/GraphGenerator.cli/bin/Debug/net5.0/40Nodes");
+            var graph = GraphProblem.FromText(Graph);
+            
+            //var graph = GraphProblem.RandomGraphProblem(GraphSizeX, GraphSizeY, GraphNodeCount);
             Stopwatch sw = new();
-            sw.Restart();
-            switch (Heuristic.ToLower()) {
-                case "sa":
-                case "annealing":
-                    SimulatedAnnealing sa = new();
-                    sa.Alpha = Alpha;
-                    sa.MinTemp = MinTemp;
-                    sa.PhaseLength = PhaseLength;
-                    sa.StartTemp = StartTemp;
-                    sa.NeighbourEnum = NeighbourEnum;
-                    History = sa.FindPath(instance);
-                    break;
+
+            for (int i = 0; i < 10; i++) {
+                sw.Restart();
+                switch (Heuristic.ToLower()) {
+                    case "sa":
+                    case "annealing":
+                        SimulatedAnnealing sa = new();
+                        sa.Alpha = Alpha;
+                        sa.MinTemp = MinTemp;
+                        sa.PhaseLength = PhaseLength;
+                        sa.StartTemp = StartTemp;
+                        sa.NeighbourEnum = NeighbourEnum;
+                        History = sa.FindPath(graph);
+                        break;
+                    case "aco":
+                        AntSystem ant = new();
+                        ant.AntCount = AntCount;
+                        ant.Alpha = Alpha;
+                        ant.Beta = Beta;
+                        History = ant.FindPath(graph);
+                        break;
+                }
+
+                sw.Stop();
+                var last = History.Last.Value;
+
+                var result = new SimulationResult {
+                    GraphSizeX = GraphSizeX,
+                    GraphSizeY = GraphSizeY,
+                    GraphNodeCount = GraphNodeCount,
+                    Heuristic = Heuristic,
+                    PhaseLength = PhaseLength,
+                    StartTemp = StartTemp,
+                    MinTemp = MinTemp,
+                    Alpha = Alpha,
+                    Beta = Beta,
+                    AntCount = AntCount,
+                    NeighbourEnum = NeighbourEnum,
+                    RunTime = sw.Elapsed.ToString(),
+                    TourLength = last.Distance,
+                    Iterations = last.Iteration,
+                    FinalTemp = last.Temperature
+                };
+
+                File.WriteAllText(Path + i + ".json", JsonConvert.SerializeObject(result));
             }
-
-            sw.Stop();
-
-            var result = new SimulationResult {
-                GraphSizeX = GraphSizeX,
-                GraphSizeY = GraphSizeY,
-                GraphNodeCount = GraphNodeCount,
-                Heuristic = Heuristic,
-                PhaseLength = PhaseLength,
-                StartTemp = StartTemp,
-                MinTemp = MinTemp,
-                Alpha = Alpha,
-                NeighbourEnum = NeighbourEnum,
-                RunTime = sw.Elapsed.ToString(),
-                TourLength = History.Last.Value.Distance
-            };
-
-            File.WriteAllText(Path, JsonConvert.SerializeObject(result));
         }
     }
 }

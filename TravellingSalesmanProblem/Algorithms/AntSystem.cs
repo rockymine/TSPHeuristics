@@ -8,6 +8,7 @@ using TravellingSalesmanProblem.Graph;
 namespace TravellingSalesmanProblem.Algorithms {
     public class AntSystem : Algorithm {
         public List<Ant> Colony { get; set; }
+        public int AntCount { get; set; }
         public double Beta { get; set; }
         public double Alpha { get; set; }
         public double InitialPheromone { get; set; }
@@ -25,7 +26,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             X.Edges.ForEach(e => e.Pheromone += InitialPheromone);
             
             /* Give each ant a starting node */
-            Colony = Enumerable.Range(1, graph.Nodes.Count)
+            Colony = Enumerable.Range(1, AntCount)
                 .Select(i => new Ant { Start = graph.Nodes[i - 1] }).ToList();
 
             var state = new GraphState {
