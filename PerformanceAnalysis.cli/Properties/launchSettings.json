@@ -2,7 +2,7 @@
   "profiles": {
     "PerformanceAnalysis.cli": {
       "commandName": "Project",
-      "commandLineArgs": "--heuristic aco -k 5 -a 0.1 -b 2 -p AS40Nodes5Ants"
+      "commandLineArgs": "-x 20 -y 20 -c 20 --heuristic annealing --neighbor TwoOpt --phase 10 --start 100 --min 0.000000001 --alpha 0.98 -p SimulationResult"
     }
   }
 }

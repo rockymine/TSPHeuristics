@@ -21,7 +21,7 @@ namespace PerformanceAnalysis.cli {
         private static double Beta { get; set; }
         [Argument('h', "heuristic")]
         private static string Heuristic { get; set; }
-        [Argument('g', "graph")]
+        [Argument('z', "graph")]
         private static string Graph { get; set; }
         [Argument('i', "phase")]
         private static int PhaseLength { get; set; }
@@ -35,60 +35,62 @@ namespace PerformanceAnalysis.cli {
         private static NeighbourType NeighbourEnum { get; set; }
         [Argument('p', "path")]
         private static string Path { get; set; }
+        [Argument('g', "graph_path")]
+        private static string GraphPath { get; set; }
+
         private static LinkedList<GraphState> History { get; set; }
+
         private static void Main(string[] args) {
             Arguments.Populate();
-            Graph = File.ReadAllText("C:/Users/Michael/source/repos/TSPHeuristics/GraphGenerator.cli/bin/Debug/net5.0/40Nodes");
+            Graph = File.ReadAllText(GraphPath);
             var graph = GraphProblem.FromText(Graph);
             
             //var graph = GraphProblem.RandomGraphProblem(GraphSizeX, GraphSizeY, GraphNodeCount);
             Stopwatch sw = new();
 
-            for (int i = 0; i < 10; i++) {
-                sw.Restart();
-                switch (Heuristic.ToLower()) {
-                    case "sa":
-                    case "annealing":
-                        SimulatedAnnealing sa = new();
-                        sa.Alpha = Alpha;
-                        sa.MinTemp = MinTemp;
-                        sa.PhaseLength = PhaseLength;
-                        sa.StartTemp = StartTemp;
-                        sa.NeighbourEnum = NeighbourEnum;
-                        History = sa.FindPath(graph);
-                        break;
-                    case "aco":
-                        AntSystem ant = new();
-                        ant.AntCount = AntCount;
-                        ant.Alpha = Alpha;
-                        ant.Beta = Beta;
-                        History = ant.FindPath(graph);
-                        break;
-                }
-
-                sw.Stop();
-                var last = History.Last.Value;
-
-                var result = new SimulationResult {
-                    GraphSizeX = GraphSizeX,
-                    GraphSizeY = GraphSizeY,
-                    GraphNodeCount = GraphNodeCount,
-                    Heuristic = Heuristic,
-                    PhaseLength = PhaseLength,
-                    StartTemp = StartTemp,
-                    MinTemp = MinTemp,
-                    Alpha = Alpha,
-                    Beta = Beta,
-                    AntCount = AntCount,
-                    NeighbourEnum = NeighbourEnum,
-                    RunTime = sw.Elapsed.ToString(),
-                    TourLength = last.Distance,
-                    Iterations = last.Iteration,
-                    FinalTemp = last.Temperature
-                };
-
-                File.WriteAllText(Path + i + ".json", JsonConvert.SerializeObject(result));
+            sw.Restart();
+            switch (Heuristic.ToLower()) {
+                case "sa":
+                case "annealing":
+                    SimulatedAnnealing sa = new();
+                    sa.Alpha = Alpha;
+                    sa.MinTemp = MinTemp;
+                    sa.PhaseLength = PhaseLength;
+                    sa.StartTemp = StartTemp;
+                    sa.NeighbourEnum = NeighbourEnum;
+                    History = sa.FindPath(graph);
+                    break;
+                case "aco":
+                    AntSystem ant = new();
+                    ant.AntCount = AntCount;
+                    ant.Alpha = Alpha;
+                    ant.Beta = Beta;
+                    History = ant.FindPath(graph);
+                    break;
             }
+
+            sw.Stop();
+            var last = History.Last.Value;
+
+            var result = new SimulationResult {
+                GraphSizeX = GraphSizeX,
+                GraphSizeY = GraphSizeY,
+                GraphNodeCount = GraphNodeCount,
+                Heuristic = Heuristic,
+                PhaseLength = PhaseLength,
+                StartTemp = StartTemp,
+                MinTemp = MinTemp,
+                Alpha = Alpha,
+                Beta = Beta,
+                AntCount = AntCount,
+                NeighbourEnum = NeighbourEnum,
+                RunTime = sw.Elapsed.ToString(),
+                TourLength = last.Distance,
+                Iterations = last.Iteration,
+                FinalTemp = last.Temperature
+            };
+
+            File.WriteAllText(Path + ".json", JsonConvert.SerializeObject(result));
         }
     }
 }

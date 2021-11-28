@@ -197,3 +197,9 @@ namespace TravellingSalesmanProblem.Graph {
         public bool EqualPosition(Node node) => Nodes.Find(n => n.Position == node.Position) != null;
     }
 }
+
+public enum GraphSource {
+    Text,
+    Random,
+    File
+}

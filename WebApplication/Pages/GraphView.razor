@@ -57,25 +57,32 @@
         <div class="@SettingsCollapse" id="collapseExample">
             <div class="row">
                 <!-- Text -->
-                <div class="col-md-6 p-0">
+                <div class="col-md-4 p-0">
                     <div class="bg-custom-light custom-input-group">
                         <h5>Text-based graph</h5>
                         <div class="form-group">
                             <textarea class="form-control" @bind="DefaultGraph" style="height: 200px;"></textarea>
                         </div>
                         <div class="form-group">
-                            <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(true)">Draw From Text</button>
+                            <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(GraphSource.Text)">Draw From Text</button>
                         </div>
                     </div>
                 </div>
                 <!-- Random -->
-                <div class="col-md-6 p-0">
+                <div class="col-md-4 p-0">
                     <div class="bg-custom-light custom-input-group">
                         <RandomGraphSettings @bind-NodeCount="NodeCount" @bind-MaxX="MaxX" @bind-MaxY="MaxY"/>
                         <div class="form-group">
-                            <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(false)">Draw Random Graph</button>
+                            <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(GraphSource.Random)">Draw Random Graph</button>
                         </div>
                     </div>
+                </div>
+                <div class="col-md-4 p-0">
+                    <FileInput @ref="@FileInput"/>
+                    <div class="form-group">
+                        <button disabled="@(FileInput == null || string.IsNullOrEmpty(FileInput.LoadedFile))" class="btn btn-primary" type="button" @onclick="e => InitiateGraph(GraphSource.File)">Draw From File</button>
+                    </div>
+                    <p>@Error</p>
                 </div>
             </div>
         </div>
@@ -184,6 +191,7 @@
     private ChartJS[] ChartJS = new ChartJS[5];
 
 	private GraphProblem Instance;
+    private string Error;
 
     private AlgorithmEnum AlgorithmEnum;
     private NeighbourType NeighbourEnum;
@@ -193,7 +201,8 @@
     private AntAlgorithm AntAlgorithm = new();
     private AntSystem AntSystem = new();
     private HillClimbing HillClimbing = new();
-	
+
+    private FileInput FileInput;
 	private string DefaultGraph = @"n,1,11,5
 n,2,6,4
 n,3,4,10
@@ -455,14 +464,37 @@ n,12,11,11";
                         await AdvanceHistory();
                 }
             });
+
+            FileInput.LoadedFileChanged += StateHasChanged;
         }
 
         return base.OnAfterRenderAsync(firstRender);
     }
 
-    private async Task InitiateGraph(bool textbased) {
-        Instance = textbased ? GraphProblem.FromText(DefaultGraph)
-            : GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
+    private async Task InitiateGraph(GraphSource graphSource) {
+        //Instance = textbased ? GraphProblem.FromText(DefaultGraph)
+        //    : GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
+        switch (graphSource) {
+            case GraphSource.Text:
+                try {
+                    Instance = GraphProblem.FromText(DefaultGraph);
+                } catch {
+                    Error = "The specified file does not contain a valid graph definition.";
+                    return;
+                }
+                break;
+            case GraphSource.Random:
+                Instance = GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
+                break;
+            case GraphSource.File:
+                try {
+                    Instance = GraphProblem.FromText(FileInput.LoadedFile);
+                } catch {
+                    Error = "The specified file does not contain a valid graph definition.";
+                    return;
+                }
+                break;
+        }
 
         MainCanvasSettings.Max = Instance.FindMax();
         MainCanvasSettings.Scale = Scale;
@@ -583,7 +615,6 @@ n,12,11,11";
         TableGenerator.Reset();
         await ResetCanvases();
 
-        
         Stopwatch.Restart();
 
         switch (AlgorithmEnum) {

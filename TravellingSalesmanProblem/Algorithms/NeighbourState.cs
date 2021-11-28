@@ -9,7 +9,6 @@ using TravellingSalesmanProblem.Graph;
 namespace TravellingSalesmanProblem.Algorithms {
     public class NeighbourState {
         private static readonly Random Random = new();
-
         public static GraphProblem Create(GraphProblem graph, NeighbourType type, DescentType descent) {
             graph.Reset();
             var neighbor = new GraphProblem();
