@@ -32,11 +32,13 @@ namespace PerformanceAnalysis.cli {
         [Argument('a', "alpha")]
         private static double Alpha { get; set; }
         [Argument('n', "neighbor")]
-        private static NeighbourType NeighbourEnum { get; set; }
+        private static NeighbourType NeighbourType { get; set; }
         [Argument('p', "path")]
         private static string Path { get; set; }
         [Argument('g', "graph_path")]
         private static string GraphPath { get; set; }
+        [Argument('d', "descent")]
+        private static DescentType DescentType { get; set; }
 
         private static LinkedList<GraphState> History { get; set; }
 
@@ -57,15 +59,23 @@ namespace PerformanceAnalysis.cli {
                     sa.MinTemp = MinTemp;
                     sa.PhaseLength = PhaseLength;
                     sa.StartTemp = StartTemp;
-                    sa.NeighbourEnum = NeighbourEnum;
+                    sa.NeighbourEnum = NeighbourType;
                     History = sa.FindPath(graph);
                     break;
                 case "aco":
+                case "antsystem":
                     AntSystem ant = new();
                     ant.AntCount = AntCount;
                     ant.Alpha = Alpha;
                     ant.Beta = Beta;
                     History = ant.FindPath(graph);
+                    break;
+                case "hc":
+                case "hillclimbing":
+                    HillClimbing hill = new();
+                    hill.NeighbourEnum = NeighbourType;
+                    hill.DescentType = DescentType;
+                    History = hill.FindPath(graph);
                     break;
             }
 
@@ -83,7 +93,8 @@ namespace PerformanceAnalysis.cli {
                 Alpha = Alpha,
                 Beta = Beta,
                 AntCount = AntCount,
-                NeighbourEnum = NeighbourEnum,
+                NeighbourType = NeighbourType,
+                DescentType = DescentType,
                 RunTime = sw.Elapsed.ToString(),
                 TourLength = last.Distance,
                 Iterations = last.Iteration,
