@@ -9,20 +9,12 @@ using Utility.CommandLine;
 
 namespace PerformanceAnalysis.cli {
     internal class Program {
-        [Argument('x', "graphSizeX")]
-        private static int GraphSizeX { get; set; }
-        [Argument('y', "graphSizeY")]
-        private static int GraphSizeY { get; set; }
-        [Argument('c', "graphNodeCount")]
-        private static int GraphNodeCount { get; set; }
         [Argument('k', "antCount")]
         private static int AntCount { get; set; }
         [Argument('b', "beta")]
         private static double Beta { get; set; }
         [Argument('h', "heuristic")]
         private static string Heuristic { get; set; }
-        [Argument('z', "graph")]
-        private static string Graph { get; set; }
         [Argument('i', "phase")]
         private static int PhaseLength { get; set; }
         [Argument('s', "start")]
@@ -35,8 +27,8 @@ namespace PerformanceAnalysis.cli {
         private static NeighbourType NeighbourType { get; set; }
         [Argument('p', "path")]
         private static string Path { get; set; }
-        [Argument('g', "graph_path")]
-        private static string GraphPath { get; set; }
+        [Argument('g', "graph")]
+        private static string Graph { get; set; }
         [Argument('d', "descent")]
         private static DescentType DescentType { get; set; }
 
@@ -44,8 +36,7 @@ namespace PerformanceAnalysis.cli {
 
         private static void Main(string[] args) {
             Arguments.Populate();
-            Graph = File.ReadAllText(GraphPath);
-            var graph = GraphProblem.FromText(Graph);
+            var graph = GraphProblem.FromText(File.ReadAllText(Graph));
             
             //var graph = GraphProblem.RandomGraphProblem(GraphSizeX, GraphSizeY, GraphNodeCount);
             Stopwatch sw = new();
@@ -83,9 +74,9 @@ namespace PerformanceAnalysis.cli {
             var last = History.Last.Value;
 
             var result = new SimulationResult {
-                GraphSizeX = GraphSizeX,
-                GraphSizeY = GraphSizeY,
-                GraphNodeCount = GraphNodeCount,
+                GraphSizeX = 0,
+                GraphSizeY = 0,
+                GraphNodeCount = 0,
                 Heuristic = Heuristic,
                 PhaseLength = PhaseLength,
                 StartTemp = StartTemp,
