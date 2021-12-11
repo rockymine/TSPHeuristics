@@ -74,18 +74,29 @@ namespace TravellingSalesmanProblem.Algorithms {
                  * the Id instead of the node the pheromone decreases instead of increasing. */
                 edge.Node1 = graph.Nodes.Find(n => n.Index == edge.Node1Id);
                 edge.Node2 = graph.Nodes.Find(n => n.Index == edge.Node2Id);
-                edge.Pheromone = (1 - Alpha) * edge.Pheromone;
 
-                if (edge.IsInside(XBest.Edges)) {
-                    var lgbInversed = Math.Pow(XBest.Costs, -1);
-                    edge.Pheromone += Alpha * lgbInversed;
-                }
+                //Ant System Global Updating Rule
+                edge.Pheromone = (1 - Alpha) * edge.Pheromone + Colony.Sum(n => DeltaAntij(n, edge));
+
+                //Ant Colony System Global Updating Rule
+                //edge.Pheromone *= (1 - Alpha);
+                //if (edge.IsInside(XBest.Edges)) {
+                //    var lgbInversed = Math.Pow(XBest.Costs, -1);
+                //    edge.Pheromone += Alpha * lgbInversed;
+                //}
             }
 
             return new GraphProblem {
                 Nodes = graph.Nodes,
                 Edges = edges
             };
+        }
+
+        private static double DeltaAntij(Ant ant, Edge edge) {
+            if (edge.IsInside(ant.Path.Edges))
+                return 1 / ant.Path.Costs;
+
+            return 0;
         }
 
         private void BuildAntPaths(GraphProblem graph) {
@@ -111,13 +122,14 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         private double PheromoneVisibility(Node i, Node j) {
             var edge = X.Edges.Find(e => e.IsBetween(i, j));
-            return Math.Pow(edge.Pheromone, Alpha) * Math.Pow(1 / edge.Distance, Beta);
+            return edge.Pheromone * Math.Pow(1 / edge.Distance, Beta);
         }
 
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Iteration"] = state.Iteration.ToString();
             state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
             state.Messages["Distance"] = Math.Round(state.Distance, 2).ToString();
+            state.Messages["Ant Distances"] = string.Join(';', Colony.Select(a => Math.Round(a.Path.Costs, 2)));
         }
     }
 }

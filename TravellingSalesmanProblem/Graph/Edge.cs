@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GeoCoordinatePortable;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -25,6 +26,12 @@ namespace TravellingSalesmanProblem.Graph {
 
         public double CalcDistance() {
             return Vector2.Distance(Node1.Position, Node2.Position);
+        }
+
+        public double CalcGeoDistance() {
+            var point1 = new GeoCoordinate(Node1.Position.X, Node1.Position.Y);
+            var point2 = new GeoCoordinate(Node2.Position.X, Node2.Position.Y);
+            return point1.GetDistanceTo(point2);
         }
 
         public bool IsBetween(Node node1, Node node2) {

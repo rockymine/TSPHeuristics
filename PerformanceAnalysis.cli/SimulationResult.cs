@@ -7,9 +7,8 @@ using TravellingSalesmanProblem.Algorithms;
 
 namespace PerformanceAnalysis.cli {
     public class SimulationResult {
-        public int GraphSizeX { get; set; }
-        public int GraphSizeY { get; set; }
-        public int GraphNodeCount { get; set; }
+        public string Instance { get; set; }
+        public int NodeCount { get; set; }
         public string Heuristic { get; set; }
         public int PhaseLength { get; set; }
         public double StartTemp { get; set; }
@@ -17,11 +16,12 @@ namespace PerformanceAnalysis.cli {
         public double Alpha { get; set; }
         public double Beta { get; set; }
         public int AntCount { get; set; }
-        public NeighbourType NeighbourType { get; set; }
-        public DescentType DescentType { get; set; }
-        public string RunTime { get; set; }
+        public string NeighbourType { get; set; }
+        public string DescentType { get; set; }
+        public double RunTime { get; set; }
         public double TourLength { get; set; }
-        public double Iterations { get; set; }
+        public int Iterations { get; set; }
         public double FinalTemp { get; set; }
+        public string Tour { get; set; }
     }
 }

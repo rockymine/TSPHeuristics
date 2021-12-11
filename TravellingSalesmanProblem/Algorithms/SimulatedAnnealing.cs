@@ -27,29 +27,30 @@ namespace TravellingSalesmanProblem.Algorithms {
             X = GraphProblem.OrderedGraphProblem(graph);
 
             var chartInfo = new ChartInfo {
-                Title = "Temperature Progress",
+                Title = "Distance Progress",
                 XAxis = new ChartSet { Title = "Iteration" },
                 YAxis = new List<ChartSet> {
-                    new ChartSet { Title = "Temperature" }
+                    new ChartSet { Title = "Distance" }
                 }
             };
 
             var chartInfo2 = chartInfo.DeepCopy();
-            chartInfo2.Title = "Distance Progress";
-            chartInfo.YAxis[0].Title = "Distance";
+            chartInfo2.Title = "Temperature Progress";
+            chartInfo.YAxis[0].Title = "Temperature";
+
+            //StartTemp = CalculateInitialTemperature(X);
 
             var state = new GraphState {
                 Nodes = X.Nodes,
                 PathEdges = X.Edges,
-                Temperature = CalculateInitialTemperature(X),
+                Temperature = StartTemp,
                 ChartInfo = new List<ChartInfo>() { chartInfo, chartInfo2 }
             };
 
             XBest = X;
-            UpdateStateMessages(state);
-            history.AddLast(state);
             var iteration = 0;
             var temperature = state.Temperature;
+            history.AddLast(AdvanceState(state, iteration, temperature));
 
             while (temperature >= MinTemp) {
                 for (int i = 0; i < PhaseLength; i++) {
@@ -60,7 +61,12 @@ namespace TravellingSalesmanProblem.Algorithms {
 
                         if (X.Costs < XBest.Costs) {
                             XBest = X;
-                            //blue color
+                            /*If no better solution is found this will never be executed
+                             Therefore the updated iteration and temperature are never shown
+                            Oh the other hand, if it doesn't find an improvement, it doesn't find one
+                            But at least the temperature and iteration should go down!!!
+                            maybe also look into fixing the random descent type (Niels fragen ob random
+                            wirklich random sein soll oder mehrfach gewürfelt werden soll)*/
                             history.AddLast(AdvanceState(history.Last.Value, iteration, temperature));
                         }
                     } else if (MetropolisRule(history.Last.Value)) {
@@ -69,6 +75,7 @@ namespace TravellingSalesmanProblem.Algorithms {
                 }
 
                 Equations["Temperature Update"] = MathString.UpdateTemperature(history.Last.Value, Alpha);
+                //
                 iteration++;
                 temperature *= Alpha;
 
@@ -79,6 +86,8 @@ namespace TravellingSalesmanProblem.Algorithms {
                 history.Last.Value.ChartInfo[1].YAxis[0].Add(X.Costs, "red");
             }
 
+            //history.Last.Value.Iteration = iteration;
+            //history.Last.Value.Temperature = temperature;
             return history;
         }
 
@@ -92,7 +101,7 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         private bool MetropolisRule(GraphState state) {
             var r = Random.NextDouble();
-            bool condition = Math.Exp(X.Costs - Y.Costs / state.Temperature) > r;
+            bool condition = r < Math.Exp(-(Y.Costs - X.Costs) / state.Temperature);
 
             Equations["Metropolis Rule"] = MathString.MetropolisRule(X, Y, state, r, condition);
             return condition;

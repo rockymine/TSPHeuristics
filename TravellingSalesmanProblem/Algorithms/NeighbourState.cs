@@ -34,8 +34,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             TwoOptMove move;
             if (descent == DescentType.Random) {
                 var n = graph.Nodes.Count;
-                var pos1 = Random.Next(1, n - 3);
-                var pos2 = Random.Next(pos1 + 1, n - 2);
+                var pos1 = Random.Next(0, n - 2);
+                var pos2 = Random.Next(pos1 + 1, n - 1);
                 move = new TwoOptMove(graph, pos1, pos2);
             } else {
                 move = TwoOptLoop(graph, descent);
@@ -75,8 +75,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             SwapMove move;
             if (descent == DescentType.Random) {
                 var n = graph.Nodes.Count;
-                var pos1 = Random.Next(1, n - 3);
-                var pos2 = Random.Next(pos1 + 1, n - 2);
+                var pos1 = Random.Next(1, n - 2);
+                var pos2 = Random.Next(pos1 + 1, n - 1);
                 move = new SwapMove(graph, pos1, pos2);
             } else {
                 move = SwapLoop(graph, descent);
