@@ -28,10 +28,34 @@ namespace TravellingSalesmanProblem.Graph {
             return Vector2.Distance(Node1.Position, Node2.Position);
         }
 
+        public double CalcDistance2D() {
+            var xd = Node1.Position.X - Node2.Position.X;
+            var yd = Node1.Position.Y - Node2.Position.Y;
+            var dij = Math.Sqrt(xd * xd + yd * yd);
+            
+            return (int)(dij + 0.5);
+        }
+
         public double CalcGeoDistance() {
-            var point1 = new GeoCoordinate(Node1.Position.X, Node1.Position.Y);
-            var point2 = new GeoCoordinate(Node2.Position.X, Node2.Position.Y);
-            return point1.GetDistanceTo(point2);
+            var rrr = 6378.388;
+
+            var latitudePoint1 = CalcLatitudeOrLongitude(Node1.Position.X);
+            var longitudePoint1 = CalcLatitudeOrLongitude(Node1.Position.Y);
+            var latitudePoint2 = CalcLatitudeOrLongitude(Node2.Position.X);
+            var longitudePoint2 = CalcLatitudeOrLongitude(Node2.Position.Y);
+
+            var q1 = Math.Cos(longitudePoint1 - longitudePoint2);
+            var q2 = Math.Cos(latitudePoint1 - latitudePoint2);
+            var q3 = Math.Cos(latitudePoint1 + latitudePoint2);
+
+            return (int)(rrr * Math.Acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0);
+        }
+
+        private static double CalcLatitudeOrLongitude(double coordinate) {
+            var deg = (int)coordinate;
+            var min = coordinate - deg;
+
+            return Math.PI * (deg + 5.0 * min / 3.0) / 180.0;
         }
 
         public bool IsBetween(Node node1, Node node2) {

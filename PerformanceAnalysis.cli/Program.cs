@@ -35,6 +35,8 @@ namespace PerformanceAnalysis.cli {
         private static DescentType DescentType { get; set; }
         [Argument('z', "number")]
         private static int Number { get; set; }
+        [Argument('o', "iterations")]
+        private static int Iterations { get; set; }
 
         private static LinkedList<GraphState> History { get; set; }
         private static GraphProblem Instance;
@@ -68,10 +70,12 @@ namespace PerformanceAnalysis.cli {
                     break;
                 case "aco":
                 case "antsystem":
-                    sb.Append("_AS_AntCount_" + AntCount + "_");
+                    sb.Append("_AS_Ants_" + AntCount)
+                        .Append("_Iterations_" + Iterations + "_");
 
                     AntSystem ant = new();
                     ant.AntCount = AntCount;
+                    ant.Iterations = Iterations;
                     ant.Alpha = Alpha;
                     ant.Beta = Beta;
                     History = ant.FindPath(Instance);
@@ -95,7 +99,7 @@ namespace PerformanceAnalysis.cli {
 
             var result = new SimulationResult {
                 Instance = instance,
-                NodeCount = last.Nodes.Count - 1,
+                NodeCount = last.Path.Count - 1,
                 Heuristic = Heuristic,
                 RunTime =  seconds,
                 Iterations = last.Iteration,

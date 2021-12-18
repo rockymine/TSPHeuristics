@@ -11,6 +11,8 @@ namespace TravellingSalesmanProblem.Algorithms {
         public int AntCount { get; set; }
         public double Beta { get; set; }
         public double Alpha { get; set; }
+        public int Iterations { get; set; }
+        public bool BreakWhenPathsAreEqual { get; set; }
         public double InitialPheromone { get; set; }
         private static readonly Random Random = new();
         private GraphProblem XBest = new();
@@ -37,8 +39,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             history.AddLast(state);
             var iteration = 0;
 
-            /* Loop */
-            for (int i = 0; i < 50; i++) {
+            for (int i = 0; i < Iterations; i++) {
                 BuildAntPaths(graph);
 
                 XBest = Colony.OrderBy(a => a.Path.Costs).FirstOrDefault().Path;
@@ -47,6 +48,9 @@ namespace TravellingSalesmanProblem.Algorithms {
 
                 iteration++;
                 history.AddLast(AdvanceState(history.Last.Value, iteration));
+
+                if (BreakWhenPathsAreEqual && Colony.TrueForAll(a => a.Path.Costs == XBest.Costs))
+                    break;
             }
 
             return history;
@@ -76,14 +80,14 @@ namespace TravellingSalesmanProblem.Algorithms {
                 edge.Node2 = graph.Nodes.Find(n => n.Index == edge.Node2Id);
 
                 //Ant System Global Updating Rule
-                edge.Pheromone = (1 - Alpha) * edge.Pheromone + Colony.Sum(n => DeltaAntij(n, edge));
+                //edge.Pheromone = (1 - Alpha) * edge.Pheromone + Colony.Sum(n => DeltaAntij(n, edge));
 
                 //Ant Colony System Global Updating Rule
-                //edge.Pheromone *= (1 - Alpha);
-                //if (edge.IsInside(XBest.Edges)) {
-                //    var lgbInversed = Math.Pow(XBest.Costs, -1);
-                //    edge.Pheromone += Alpha * lgbInversed;
-                //}
+                edge.Pheromone = (1 - Alpha) * edge.Pheromone;
+                if (edge.IsInside(XBest.Edges)) {
+                    var lgbInversed = Math.Pow(XBest.Costs, -1);
+                    edge.Pheromone += Alpha * lgbInversed;
+                }
             }
 
             return new GraphProblem {

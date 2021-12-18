@@ -75,7 +75,7 @@ namespace WebApplication.Utils {
                 }
 
                 if (edge.Pheromone != 0) {
-                    brush.Width = edge.Pheromone * 50;
+                    brush.Width = edge.Pheromone * 500;
                     settings.Annotate = false;
                 }
 

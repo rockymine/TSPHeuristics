@@ -37,8 +37,8 @@
                         <HillClimbingSettings @bind-NeighbourEnum="@NeighbourEnum" @bind-DescentType="DescentType"/>
                     }
                     @if (AlgorithmEnum == AlgorithmEnum.ACS) {
-                        <AntColonySettings @bind-AlphaACS="AlphaACS" @bind-AntCount="@AntCount" @bind-Beta="@Beta"
-                            @bind-Rho="@Rho" @bind-ExploitVsExplore="@StateTransition"/>
+                        <AntColonySettings @bind-Iterations="Iterations" @bind-AlphaACS="AlphaACS" @bind-AntCount="@AntCount" @bind-Beta="@Beta"
+                            @bind-Rho="@Rho" @bind-ExploitVsExplore="@StateTransition" @bind-BreakWhenPathsAreEqual="BreakWhenPathsAreEqual"/>
                     }
                     <div class="form-group">
                         <button class="btn btn-danger" type="button" @onclick="e => UpdateEnumerator()">Reset</button>
@@ -389,6 +389,19 @@ n,12,11,11";
     }
 
     /* Ant Algorithm */
+    private int _iterations = 10;
+    private int Iterations {
+        get => _iterations;
+        set {
+            if (value == _iterations)
+                return;
+            if (value <= 0 || value >= 50)
+                return;
+
+            _iterations = value;
+        }
+    }
+
     private double _alphaACS = 0.1;
     private double AlphaACS {
         get => _alphaACS;
@@ -453,6 +466,8 @@ n,12,11,11";
             _antCount = value;
         }
     }
+
+    private bool BreakWhenPathsAreEqual = true;
 
     protected override Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
@@ -638,9 +653,11 @@ n,12,11,11";
                     AntAlgorithm.Beta = Beta;
                     AntAlgorithm.StateTransition = StateTransition;
                     GraphHistory = AntAlgorithm.FindPath(Instance);*@
+                AntSystem.Iterations = Iterations;
                 AntSystem.AntCount = AntCount;
                 AntSystem.Alpha = AlphaACS;
                 AntSystem.Beta = Beta;
+                AntSystem.BreakWhenPathsAreEqual = BreakWhenPathsAreEqual;
                 GraphHistory = AntSystem.FindPath(Instance);
                 break;
             case AlgorithmEnum.HC:
