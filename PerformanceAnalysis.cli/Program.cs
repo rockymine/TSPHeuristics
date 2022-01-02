@@ -51,8 +51,7 @@ namespace PerformanceAnalysis.cli {
             StringBuilder sb = new();
             sb.Append(instance);
 
-            Stopwatch sw = new();
-            sw.Restart();
+            var sw = Stopwatch.StartNew();
 
             switch (Heuristic.ToLower()) {
                 case "sa":

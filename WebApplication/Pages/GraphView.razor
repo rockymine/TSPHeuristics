@@ -13,11 +13,12 @@
         <!-- Algorithm Settings -->
         <div class="col-md-3 p-0">
             <div class="bg-custom-light custom-input-group">
-                <AlgorithmSettings @bind-AlgorithmEnum="@AlgorithmEnum" @bind-MultiStart="@MultiStart"/>
+                <AlgorithmSettings @bind-AlgorithmEnum="@AlgorithmEnum" @bind-MultiStart="@MultiStart"/>              
+            </div>
+            <div class="bg-custom-light custom-input-group">
                 <CanvasDisplaySettings @bind-Scale="@Scale" @bind-NodeRadius="@NodeRadius"
                     @bind-ShowGrid="@ShowGrid" @bind-AnnotateEdges="@AnnotateEdges" @bind-ColorizeChanges="@ColorizeChanges"
-                    @bind-AnimationDelay="@AnimationDelay"/>
-                <span><b>Execution Time</b>: @TimeSpan.Minutes m @TimeSpan.Seconds s @TimeSpan.Milliseconds ms</span><br/>
+                    @bind-AnimationDelay="@AnimationDelay"/>                
             </div>
         </div>
         <!-- Heuristic Settings -->
@@ -49,41 +50,28 @@
     </div>
     <!-- Graph Settings -->
     <div class="row">
-        <p>
-            <button class="btn btn-primary" @onclick="@(e => SettingsCollapse = SettingsCollapse == "" ? "collapse" : "")">
-                Graph settings ˅
-            </button>
-        </p>
-        <div class="@SettingsCollapse" id="collapseExample">
-            <div class="row">
-                <!-- Text -->
-                <div class="col-md-4 p-0">
-                    <div class="bg-custom-light custom-input-group">
-                        <h5>Text-based graph</h5>
-                        <div class="form-group">
-                            <textarea class="form-control" @bind="DefaultGraph" style="height: 200px;"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(GraphSource.Text)">Draw From Text</button>
-                        </div>
-                    </div>
+        <div class="col-md-3 p-0">
+            <div class="bg-custom-light custom-input-group">
+                <div class="form-group">
+                    <select class="form-control" name="graphSource" id="selectGraphSource" @bind="GraphSource">
+                        <option value="Text" @onselect="e => GraphSource = GraphSource.Text">Text</option>
+                        <option value="File" @onselect="e => GraphSource = GraphSource.File">File</option>
+                        <option value="Random" @onselect="e => GraphSource = GraphSource.Random">Random</option>
+                    </select>
                 </div>
-                <!-- Random -->
-                <div class="col-md-4 p-0">
-                    <div class="bg-custom-light custom-input-group">
-                        <RandomGraphSettings @bind-NodeCount="NodeCount" @bind-MaxX="MaxX" @bind-MaxY="MaxY"/>
-                        <div class="form-group">
-                            <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(GraphSource.Random)">Draw Random Graph</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 p-0">
-                    <FileInput @ref="@FileInput"/>
+                @if (GraphSource == GraphSource.Text) {
                     <div class="form-group">
-                        <button disabled="@(FileInput == null || string.IsNullOrEmpty(FileInput.LoadedFile))" class="btn btn-primary" type="button" @onclick="e => InitiateGraph(GraphSource.File)">Draw From File</button>
+                        <textarea class="form-control" @bind="DefaultGraph" style="height: 200px;"></textarea>
                     </div>
-                    <p>@Error</p>
+                } else if (GraphSource == GraphSource.Random) {
+                    <RandomGraphSettings @bind-NodeCount="NodeCount" @bind-MaxX="MaxX" @bind-MaxY="MaxY"/>
+                } else if (GraphSource == GraphSource.File) {
+                    <FileInput @ref="@FileInput"/>
+                }
+                <div class="form-group">
+                    <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(GraphSource)">Execute Algorithm</button>
                 </div>
+                <p>@Error</p>
             </div>
         </div>
     </div>
@@ -110,6 +98,7 @@
         <div class="col-md-4 p-0">
             <div class="bg-custom-light custom-input-group">
                 <h5>State</h5>
+                <span><b>Execution Time</b>: @TimeSpan.Minutes m @TimeSpan.Seconds s @TimeSpan.Milliseconds ms (@Math.Round((double)Stopwatch.ElapsedMilliseconds / 1000, 3) s)</span><br/>
                 @if (GraphHistory != null) {
                     <div class="row g-3">
                         <div class="input-group">
@@ -185,7 +174,6 @@
     
     private Canvas PreviousCanvas;
     private Canvas CurrentCanvas;
-    @*private Canvas[] CanvasArray = new Canvas[5];*@
 
     private TableGenerator TableGenerator;
     private ChartJS[] ChartJS = new ChartJS[5];
@@ -195,6 +183,7 @@
 
     private AlgorithmEnum AlgorithmEnum;
     private NeighbourType NeighbourEnum;
+    private GraphSource GraphSource;
     private DescentType DescentType;
     private NearestNeighbour NearestNeighbor = new();
     private SimulatedAnnealing SimulatedAnnealing = new();
@@ -202,7 +191,7 @@
     private AntSystem AntSystem = new();
     private HillClimbing HillClimbing = new();
 
-    private FileInput FileInput;
+    private FileInput FileInput = new();
 	private string DefaultGraph = @"n,1,11,5
 n,2,6,4
 n,3,4,10
@@ -328,7 +317,7 @@ n,12,11,11";
         set {
             if (value == _phaseLength)
                 return;
-            if (value < 1 || value > 20)
+            if (value < 1 || value > 80)
                 return;
 
             _phaseLength = value;
@@ -395,7 +384,7 @@ n,12,11,11";
         set {
             if (value == _iterations)
                 return;
-            if (value <= 0 || value >= 50)
+            if (value <= 0 || value > 50)
                 return;
 
             _iterations = value;
@@ -486,15 +475,13 @@ n,12,11,11";
         return base.OnAfterRenderAsync(firstRender);
     }
 
-    private async Task InitiateGraph(GraphSource graphSource) {
-        //Instance = textbased ? GraphProblem.FromText(DefaultGraph)
-        //    : GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
+    public async Task InitiateGraph(GraphSource graphSource) {
         switch (graphSource) {
             case GraphSource.Text:
                 try {
                     Instance = GraphProblem.FromText(DefaultGraph);
                 } catch {
-                    Error = "The specified file does not contain a valid graph definition.";
+                    Error = "The specified text does not contain a valid graph definition.";
                     return;
                 }
                 break;
@@ -647,12 +634,6 @@ n,12,11,11";
                 GraphHistory = SimulatedAnnealing.FindPath(Instance);
                 break;
             case AlgorithmEnum.ACS:
-                @*AntAlgorithm.AntCount = AntCount;
-                    AntAlgorithm.Alpha = AlphaACS;
-                    AntAlgorithm.Rho = Rho;
-                    AntAlgorithm.Beta = Beta;
-                    AntAlgorithm.StateTransition = StateTransition;
-                    GraphHistory = AntAlgorithm.FindPath(Instance);*@
                 AntSystem.Iterations = Iterations;
                 AntSystem.AntCount = AntCount;
                 AntSystem.Alpha = AlphaACS;
