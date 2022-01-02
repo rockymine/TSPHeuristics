@@ -188,6 +188,12 @@ namespace TravellingSalesmanProblem.Graph {
             };
         }
 
+        public Vector2 FindMin() {
+            var x = Nodes.Min(n => n.Position.X);
+            var y = Nodes.Min(n => n.Position.Y);
+            return new Vector2(x, y);
+        }
+
         public Vector2 FindMax() {
             var x = Nodes.Max(n => n.Position.X);
             var y = Nodes.Max(n => n.Position.Y);

@@ -498,7 +498,8 @@ n,12,11,11";
                 break;
         }
 
-        MainCanvasSettings.Max = Instance.FindMax();
+        MainCanvasSettings.MinPos = Instance.FindMin();
+        MainCanvasSettings.MaxPos = Instance.FindMax();
         MainCanvasSettings.Scale = Scale;
         MainCanvasSettings.NodeRadius = NodeRadius;
         MainCanvasSettings.ShowGrid = ShowGrid;
@@ -604,9 +605,9 @@ n,12,11,11";
     }
 
     private async Task ResetCanvas(Context2D context, CanvasSettings settings) {
-        await context.ClearRectAsync(0, 0, settings.Width, settings.Height);
+        await context.ClearRectAsync((int)settings.MinPos.X, (int)settings.MinPos.Y, settings.Width, settings.Height);
         await context.FillStyleAsync(settings.BackgroundColor);
-        await context.FillRectAsync(0, 0, settings.Width, settings.Height);
+        await context.FillRectAsync((int)settings.MinPos.X, (int)settings.MinPos.Y, settings.Width, settings.Height);
 
         if (settings.ShowGrid)
             await CanvasRenderer.DrawGrid(context, settings);

@@ -23,15 +23,15 @@ namespace WebApplication.Utils {
         };
 
         public static async Task DrawGrid(Context2D context, CanvasSettings settings) {
-            for (int i = 0; i <= settings.Max.Y; i++) {
+            for (int i = (int)settings.MinPos.Y; i <= settings.MaxPos.Y; i++) {
                 await context.DrawLine(GridBrush,
-                    Manipulate(new Vector2(0, i), settings),
-                    Manipulate(new Vector2(settings.Max.X, i), settings));
+                    Manipulate(new Vector2((int)settings.MinPos.X, i), settings),
+                    Manipulate(new Vector2(settings.MaxPos.X, i), settings));
             }
-            for (int i = 0; i <= settings.Max.X; i++) {
+            for (int i = (int)settings.MinPos.X; i <= settings.MaxPos.X; i++) {
                 await context.DrawLine(GridBrush,
-                    Manipulate(new Vector2(i, 0), settings),
-                    Manipulate(new Vector2(i, settings.Max.Y), settings));
+                    Manipulate(new Vector2(i, (int)settings.MinPos.Y), settings),
+                    Manipulate(new Vector2(i, settings.MaxPos.Y), settings));
             }
         }
 
