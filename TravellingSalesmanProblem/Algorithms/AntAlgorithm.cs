@@ -80,7 +80,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Iteration"] = state.Iteration.ToString();
             state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
-            state.Messages["Distance"] = Math.Round(state.Distance, 2).ToString();
+            state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
         }
 
         private double RandomProportionalRule(Ant k, Node r, Node s) {

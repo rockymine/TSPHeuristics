@@ -132,8 +132,8 @@ namespace TravellingSalesmanProblem.Algorithms {
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Iteration"] = state.Iteration.ToString();
             state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
-            state.Messages["Distance"] = Math.Round(state.Distance, 2).ToString();
-            state.Messages["Ant Distances"] = string.Join(';', Colony.Select(a => Math.Round(a.Path.Costs, 2)));
+            state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
+            state.Messages["Ant Distances"] = string.Join(';', Colony.Select(a => Math.Round(a.Path.Costs, 3)));
         }
     }
 }

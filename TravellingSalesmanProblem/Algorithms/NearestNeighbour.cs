@@ -115,7 +115,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Start Node"] = Start.Index.ToString();
             state.Messages["Route"] = string.Join('-', state.Path.Select(n => n.Index));
-            state.Messages["Distance"] = Math.Round(state.Distance, 1).ToString();
+            state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
         }
     }
 }

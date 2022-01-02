@@ -1,25 +1,6 @@
 ﻿@page "/"
-@using WebApplication.Components;
-@using ChartData
-<h1>WebApplication!</h1>
-Explore the Travelling Salesman Problem using different heuristics.
-<ChartJS Chart="@ChartInfo" ChartID="Hello"></ChartJS>
+<h1>MHVis</h1>
+Explore the Traveling Salesman Problem using different heuristics.
 
 @code {
-	private static List<double> Data = new List<double>() { 1, 2, 3, 4, 5, 6, 7 , 8 };
-	private static ChartSet XAxis = new ChartSet() {
-		Title = "Hello World",
-		Values = Data
-	};
-
-	private static ChartSet YAxis = new ChartSet() {
-		Title = "Hello World",
-		Values = Data
-	};
-
-	private ChartInfo ChartInfo = new ChartInfo() {
-		Title = "Hellow World",
-		XAxis = XAxis,
-		YAxis = new List<ChartSet> { YAxis }
-	};
 }
