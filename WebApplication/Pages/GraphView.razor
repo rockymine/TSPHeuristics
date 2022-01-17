@@ -1,5 +1,4 @@
-﻿@page "/graph"
-@using Excubo.Blazor.Canvas
+﻿@using Excubo.Blazor.Canvas
 @using Excubo.Blazor.Canvas.Contexts
 @using System.Diagnostics
 @using TravellingSalesmanProblem.Algorithms
@@ -10,22 +9,18 @@
 <div class="container-fluid">
     <h2 class="font-weight-bold">Interactive visualization of different TSP heuristics</h2>
     <div class="row">
-        <!-- Algorithm Settings -->
-        <div class="col-md-3 p-0">
+        <div class="col-md-2 p-0">
+            <!-- Algorithm Settings -->
             <div class="bg-custom-light custom-input-group">
-                <AlgorithmSettings @bind-AlgorithmEnum="@AppState.AlgorithmEnum" @bind-MultiStart="@AppState.MultiStart"/>              
+                <h5>Algorithm Settings</h5>
+                <AlgorithmSettings @bind-AlgorithmEnum="@AppState.AlgorithmEnum"
+                    @bind-MultiStart="@AppState.MultiStart"/>
             </div>
-            <div class="bg-custom-light custom-input-group">
-                <CanvasDisplaySettings @bind-Scale="@AppState.Scale" @bind-NodeRadius="@AppState.NodeRadius"
-                    @bind-ShowGrid="@AppState.ShowGrid" @bind-AnnotateEdges="@AppState.AnnotateEdges" @bind-ColorizeChanges="@AppState.ColorizeChanges"
-                    @bind-AnimationDelay="@AppState.AnimationDelay"/>                
-            </div>
-        </div>
-        <!-- Heuristic Settings -->
-        <div class="col-md-6 p-0">
+            <!-- Heuristic Settings -->
             <div class="bg-custom-light custom-input-group">
                 <h5>Heuristic Settings</h5>
-                @if (AppState.GraphHistory != null) {
+                <form>
+                    @if (AppState.GraphHistory != null) {
                     @if (AppState.AlgorithmEnum == AlgorithmEnum.NN && !AppState.MultiStart) {
                         <NearestNeighborSettings @bind-StartNode="@AppState.StartNode"/>
                     }
@@ -42,16 +37,17 @@
                             @bind-AntCount="@AppState.AntCount" @bind-Beta="@AppState.Beta"
                             @bind-BreakWhenPathsAreEqual="AppState.BreakWhenPathsAreEqual"/>
                     }
-                    <div class="form-group">
-                        <button class="btn btn-danger" type="button" @onclick="e => UpdateEnumerator()">Reset</button>
-                    </div>
-                }
+                    <button class="btn btn-danger" type="submit" @onclick="e => UpdateEnumerator()">Reset</button>
+                } 
+                </form>
             </div>
-        </div>
-    </div>
-    <!-- Graph Settings -->
-    <div class="row">
-        <div class="col-md-3 p-0">
+            <!-- Canvas Settings -->
+            <div class="bg-custom-light custom-input-group">
+                <CanvasDisplaySettings @bind-Scale="@AppState.Scale" @bind-NodeRadius="@AppState.NodeRadius"
+                    @bind-ShowGrid="@AppState.ShowGrid" @bind-AnnotateEdges="@AppState.AnnotateEdges" @bind-ColorizeChanges="@AppState.ColorizeChanges"
+                    @bind-AnimationDelay="@AppState.AnimationDelay"/>                
+            </div>
+            <!-- Graph Settings -->
             <div class="bg-custom-light custom-input-group">
                 <h5>Graph Settings</h5>
                 <div class="form-group">
@@ -77,28 +73,8 @@
                 <p>@AppState.Error</p>
             </div>
         </div>
-    </div>
-    <div class="row">
-        <!-- Graphs -->
-        <div class="col-md-8 p-0">
-            <div class="bg-custom-light custom-input-group">
-                <h5>Graph View</h5>
-                <div class="row">
-                    @if (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
-                    <div class="col">
-                        <h5 class="font-weight-bold">Previous (Iteration Start)</h5>
-                        <Canvas @ref="@AppState.PreviousCanvas" width="@AppState.CanvasSettings.Width" height="@AppState.CanvasSettings.Height"/>
-                    </div>
-                    }
-                    <div class="col">
-                        <h5 class="font-weight-bold">Current (Iteration End)</h5>
-                        <Canvas @ref="@AppState.CurrentCanvas" width="@AppState.CanvasSettings.Width" height="@AppState.CanvasSettings.Height"/>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- State -->
         <div class="col-md-4 p-0">
+            <!-- State -->
             <div class="bg-custom-light custom-input-group">
                 <h5>State</h5>
                 <span><b>Execution Time</b>: @AppState.TimeSpan.Minutes m @AppState.TimeSpan.Seconds s @AppState.TimeSpan.Milliseconds ms (@Math.Round((double)AppState.Stopwatch.ElapsedMilliseconds / 1000, 3) s)</span><br/>
@@ -120,7 +96,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row">
+                    @*<div class="row">
                         @if (AppState.AlgorithmEnum is AlgorithmEnum.SA) {
                             if (AppState.CurrentHistoryNode.Value.ChartInfo.Count >= 1) {
                                 <ChartJS @ref="@AppState.ChartJS[0]" Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[0]" ChartID="sa_temperature"></ChartJS>
@@ -129,7 +105,7 @@
                                 <ChartJS @ref="@AppState.ChartJS[1]" Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[1]" ChartID="sa_distance"></ChartJS>
                             }
                         }
-                    </div>
+                    </div>*@
                 }
                 @if (AppState.CurrentHistoryNode != null) {
                     @foreach (var kvp in AppState.CurrentHistoryNode.Value.Messages) {
@@ -137,31 +113,56 @@
                     }
                 }
             </div>
-        </div>
-    </div>
-    <div class="row">
-        <!-- Details -->
-        <div class="col-md-12 p-0">
+            <!-- Graph View -->
+            <div class="bg-custom-light custom-input-group">
+                <h5>Graph View</h5>
+                @if (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
+                    <h5 class="font-weight-bold">Previous (Iteration Start)</h5>
+                    <Canvas @ref="@AppState.PreviousCanvas" width="@AppState.CanvasSettings.Width" height="@AppState.CanvasSettings.Height"/>
+                }
+                    <h5 class="font-weight-bold">Current (Iteration End)</h5>
+                    <Canvas @ref="@AppState.CurrentCanvas" width="@AppState.CanvasSettings.Width" height="@AppState.CanvasSettings.Height"/>
+            </div>
+            <!-- Calculations -->
             <div class="bg-custom-light custom-input-group">
                 <h5>Calculations</h5>
-                @if (AppState.GraphHistory != null && AppState.CurrentHistoryNode.Value != null && AppState.CurrentHistoryNode.Value.Equations.Count != 0) {
-                    <div class="row">
-                        <div class="col-md-6 col-sm-6">
-                            @foreach (var kvp in AppState.CurrentHistoryNode.Value.Equations) {
-                                <h5>@kvp.Key</h5>
-                                <MarkdownRenderer Value="@kvp.Value.Latex"/>
-                                <MarkdownRenderer Value="@kvp.Value.Generate()"/>
-                                <MarkdownRenderer Value="@kvp.Value.Result"/>
-                            }
-                        </div>
-                    </div>
+                @if (AppState.GraphHistory != null &&
+                    AppState.CurrentHistoryNode.Value != null &&
+                    AppState.CurrentHistoryNode.Value.Equations.Count != 0) {
+                    @foreach (var kvp in AppState.CurrentHistoryNode.Value.Equations) {
+                        <h5>@kvp.Key</h5>
+                        <MarkdownRenderer Value="@kvp.Value.Latex"/>
+                        <MarkdownRenderer Value="@kvp.Value.Generate()"/>
+                        <MarkdownRenderer Value="@kvp.Value.Result"/>
+                    }
                 }
             </div>
         </div>
-    </div>
-    <div class="row">
-        <!-- Tables -->
-        <div class="col-md-12 p-0">
+        <div class="col-md-6 p-0">
+            <!-- Charts -->
+            <div class="bg-custom-light custom-input-group">
+                <div class="row">
+                    @if (AppState.GraphHistory != null && AppState.AlgorithmEnum is AlgorithmEnum.SA) {
+                        if (AppState.CurrentHistoryNode.Value.ChartInfo.Count >= 1) {
+                            <div class="col-md-6">
+                                <ChartJS @ref="@AppState.ChartJS[0]"
+                                    Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[0]"
+                                    ChartID="sa_temperature">
+                                </ChartJS>
+                            </div>
+                        }
+                        if (AppState.CurrentHistoryNode.Value.ChartInfo.Count >= 2) {
+                            <div class="col-md-6">
+                                <ChartJS @ref="@AppState.ChartJS[1]"
+                                    Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[1]"
+                                    ChartID="sa_distance">
+                                </ChartJS>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+            <!-- Tables -->
             <div class="bg-custom-light custom-input-group">
                 <h5>Table</h5>
                 <TableGenerator @ref="@AppState.TableGenerator"/>

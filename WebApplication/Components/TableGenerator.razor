@@ -3,24 +3,26 @@
 @using WebApplication.Utils
 @using StardustDL.RazorComponents.Markdown
 @if (tableInfo.HasData) {
-	<table class="table table-responsive" style="text-align: center">
-		<thead>
-			<tr>
-				@foreach (var head in tableInfo.Header) {
-					<th><MarkdownRenderer Value=@head/></th>
-				}
-			</tr>	  
-		</thead>
-		<tbody>
-			@for (int i = 0; i < tableInfo.Cells.GetLength(0); i++) {
+	<div class="table-responsive">
+		<table class="table" style="text-align: center">
+			<thead>
 				<tr>
-					@for (int j = 0; j < tableInfo.Cells.GetLength(1); j++) {
-						<td class="@tableInfo.Cells[i,j].Class"><MarkdownRenderer Value="@tableInfo.Cells[i,j].Value"/></td>
+					@foreach (var head in tableInfo.Header) {
+						<th><MarkdownRenderer Value=@head/></th>
 					}
-				</tr>
-			}
-		</tbody>
-	</table>
+				</tr>	  
+			</thead>
+			<tbody>
+				@for (int i = 0; i < tableInfo.Cells.GetLength(0); i++) {
+					<tr>
+						@for (int j = 0; j < tableInfo.Cells.GetLength(1); j++) {
+							<td class="@tableInfo.Cells[i,j].Class"><MarkdownRenderer Value="@tableInfo.Cells[i,j].Value"/></td>
+						}
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
 }
 
 @code {
