@@ -116,19 +116,6 @@ namespace WebApplication.Utils {
             }
         }
 
-        private int _maxPhases = 100;
-        public int MaxPhases {
-            get => _maxPhases;
-            set {
-                if (value == _maxPhases)
-                    return;
-                if (value < 100 || value > 1000)
-                    return;
-
-                _maxPhases = value;
-            }
-        }
-
         private double _startTemp = 100;
         public double StartTemp {
             get => _startTemp;

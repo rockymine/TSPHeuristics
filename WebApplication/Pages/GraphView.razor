@@ -30,15 +30,15 @@
                         <NearestNeighborSettings @bind-StartNode="@AppState.StartNode"/>
                     }
                     @if (AppState.AlgorithmEnum == AlgorithmEnum.SA) {
-                        <SimulatedAnnealingSettings @bind-AlphaSA="@AppState.AlphaSA" @bind-MaxIter1="@AppState.PhaseLength" 
-                            @bind-MaxIter2="@AppState.MaxPhases" @bind-MinTemp="@AppState.MinTemp" @bind-StartTemp="@AppState.StartTemp"
+                        <SimulatedAnnealingSettings @bind-AlphaSA="@AppState.AlphaSA" @bind-PhaseLength="@AppState.PhaseLength" 
+                            @bind-MinTemp="@AppState.MinTemp" @bind-StartTemp="@AppState.StartTemp"
                             @bind-NeighbourEnum="@AppState.NeighbourEnum"/>
                     }
                     @if (AppState.AlgorithmEnum == AlgorithmEnum.HC) {
                         <HillClimbingSettings @bind-NeighbourEnum="@AppState.NeighbourEnum" @bind-DescentType="AppState.DescentType"/>
                     }
-                    @if (AppState.AlgorithmEnum == AlgorithmEnum.ACS) {
-                        <AntColonySettings @bind-Iterations="AppState.Iterations" @bind-AlphaACS="AppState.AlphaACS"
+                    @if (AppState.AlgorithmEnum == AlgorithmEnum.AS) {
+                        <AntSystemSettings @bind-Iterations="AppState.Iterations" @bind-AlphaACS="AppState.AlphaACS"
                             @bind-AntCount="@AppState.AntCount" @bind-Beta="@AppState.Beta"
                             @bind-BreakWhenPathsAreEqual="AppState.BreakWhenPathsAreEqual"/>
                     }
@@ -84,12 +84,12 @@
             <div class="bg-custom-light custom-input-group">
                 <h5>Graph View</h5>
                 <div class="row">
+                    @if (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
                     <div class="col">
                         <h5 class="font-weight-bold">Previous (Iteration Start)</h5>
-                        @if (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
-                            <Canvas @ref="@AppState.PreviousCanvas" width="@AppState.CanvasSettings.Width" height="@AppState.CanvasSettings.Height"/>
-                        }
+                        <Canvas @ref="@AppState.PreviousCanvas" width="@AppState.CanvasSettings.Width" height="@AppState.CanvasSettings.Height"/>
                     </div>
+                    }
                     <div class="col">
                         <h5 class="font-weight-bold">Current (Iteration End)</h5>
                         <Canvas @ref="@AppState.CurrentCanvas" width="@AppState.CanvasSettings.Width" height="@AppState.CanvasSettings.Height"/>
@@ -343,13 +343,13 @@
             case AlgorithmEnum.SA:
                 AppState.SimulatedAnnealing.Alpha = AppState.AlphaSA;
                 AppState.SimulatedAnnealing.PhaseLength = AppState.PhaseLength;
-                AppState.SimulatedAnnealing.MaxPhases = AppState.MaxPhases;
+                //AppState.SimulatedAnnealing.MaxPhases = AppState.MaxPhases;
                 AppState.SimulatedAnnealing.StartTemp = AppState.StartTemp;
                 AppState.SimulatedAnnealing.MinTemp = AppState.MinTemp;
                 AppState.SimulatedAnnealing.NeighbourEnum = AppState.NeighbourEnum;
                 AppState.GraphHistory = AppState.SimulatedAnnealing.FindPath(AppState.Instance);
                 break;
-            case AlgorithmEnum.ACS:
+            case AlgorithmEnum.AS:
                 AppState.AntSystem.Iterations = AppState.Iterations;
                 AppState.AntSystem.AntCount = AppState.AntCount;
                 AppState.AntSystem.Alpha = AppState.AlphaACS;

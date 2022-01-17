@@ -3,15 +3,9 @@
     <div class="col">
         <div class="form-group">
             <label for="iter1">Phase Length</label>
-            <input type="number" id="iter1" class="form-control" @bind="MaxIter1">
+            <input type="number" id="iter1" class="form-control" @bind="PhaseLength">
         </div>
     </div>
-    @*<div class="col">
-        <div class="form-group">
-            <label for="iter2">MaxIter2</label>
-            <input type="number" id="iter2" class="form-control" @bind="MaxIter2">
-        </div>
-    </div>*@
     <div class="col">
         <div class="form-group">
             <label for="temp1">StartTemp</label>
@@ -51,35 +45,20 @@
     [Parameter]
     public EventCallback<NeighbourType> NeighbourEnumChanged { get; set; }
 
-    private int maxIter1;
+    private int phaseLength;
     [Parameter]
-    public int MaxIter1 {
-        get => maxIter1;
+    public int PhaseLength {
+        get => phaseLength;
         set {
-            if (value == maxIter1)
+            if (value == phaseLength)
                 return;
 
-            maxIter1 = value;
-            MaxIter1Changed.InvokeAsync(value);
+            phaseLength = value;
+            PhaseLengthChanged.InvokeAsync(value);
         }
     }
     [Parameter]
-    public EventCallback<int> MaxIter1Changed { get; set; }
-
-    private int maxIter2;
-    [Parameter]
-    public int MaxIter2 {
-        get => maxIter2;
-        set {
-            if (value == maxIter2)
-                return;
-
-            maxIter2 = value;
-            MaxIter2Changed.InvokeAsync(value);
-        }
-    }
-    [Parameter]
-    public EventCallback<int> MaxIter2Changed { get; set; }
+    public EventCallback<int> PhaseLengthChanged { get; set; }
 
     private double startTemp;
     [Parameter]
