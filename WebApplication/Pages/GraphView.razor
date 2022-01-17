@@ -22,7 +22,7 @@
             </div>
         </div>
         <!-- Heuristic Settings -->
-        <div class="col-md-9 p-0">
+        <div class="col-md-6 p-0">
             <div class="bg-custom-light custom-input-group">
                 <h5>Heuristic Settings</h5>
                 @if (AppState.GraphHistory != null) {
@@ -53,7 +53,9 @@
     <div class="row">
         <div class="col-md-3 p-0">
             <div class="bg-custom-light custom-input-group">
+                <h5>Graph Settings</h5>
                 <div class="form-group">
+                    <label for="selectGraphSource">Graph Source</label>
                     <select class="form-control" name="graphSource" id="selectGraphSource" @bind="AppState.GraphSource">
                         <option value="Text" @onselect="e => AppState.GraphSource = GraphSource.Text">Text</option>
                         <option value="File" @onselect="e => AppState.GraphSource = GraphSource.File">File</option>
@@ -141,13 +143,12 @@
         <!-- Details -->
         <div class="col-md-12 p-0">
             <div class="bg-custom-light custom-input-group">
-                <h5>Details</h5>
+                <h5>Calculations</h5>
                 @if (AppState.GraphHistory != null && AppState.CurrentHistoryNode.Value != null && AppState.CurrentHistoryNode.Value.Equations.Count != 0) {
                     <div class="row">
-                    <div class="col-md-6 col-sm-6">
-                        <h3 class="font-weight-bold">Formulas</h3>
+                        <div class="col-md-6 col-sm-6">
                             @foreach (var kvp in AppState.CurrentHistoryNode.Value.Equations) {
-                                <p><b>@kvp.Key</b></p>
+                                <h5>@kvp.Key</h5>
                                 <MarkdownRenderer Value="@kvp.Value.Latex"/>
                                 <MarkdownRenderer Value="@kvp.Value.Generate()"/>
                                 <MarkdownRenderer Value="@kvp.Value.Result"/>
@@ -361,7 +362,6 @@
                 AppState.HillClimbing.DescentType = AppState.DescentType;
                 AppState.GraphHistory = AppState.HillClimbing.FindPath(AppState.Instance);
                 break;
-            default: break;
         }
 
         AppState.Stopwatch.Stop();

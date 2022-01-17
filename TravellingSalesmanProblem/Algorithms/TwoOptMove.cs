@@ -28,7 +28,9 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public SwapInfo GenerateSwapInfo() {
-            return new SwapInfo(new List<Node> { NodeI, NodeJ }, $"${Di_j}+{Di1_j1}-{Di_i1}-{Dj_j1}={Costs}$");
+            var nodes = new List<Node> { NodeI, NodeJ };
+            string calculation = $"${Di_j}+{Di1_j1}-{Di_i1}-{Dj_j1}={Costs}$";
+            return new(nodes, calculation);
         }
 
         public GraphProblem SwapEdges() {

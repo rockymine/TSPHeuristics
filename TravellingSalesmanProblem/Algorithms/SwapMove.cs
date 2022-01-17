@@ -43,16 +43,18 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public SwapInfo GenerateSwapInfo() {
+            var nodes = new List<Node> { NodeI, NodeJ };
+            string calculation;
+            
             if (NodeI == JPrev || JPrev == INext) {
-                return new SwapInfo(new List<Node> { NodeI, NodeJ },
-                    $"${IPrev_J}+{I_JNext}-{IPrev_I}-{J_JNext}={Costs}$");
+                calculation = $"${IPrev_J}+{I_JNext}-{IPrev_I}-{J_JNext}={Costs}$";
             } else if (NodeI == JNext || JNext == IPrev) {
-                return new SwapInfo(new List<Node> { NodeI, NodeJ },
-                    $"${JPrev_I}+{J_INext}-{JPrev_J}-{I_INext}={Costs}$");
+                calculation = $"${JPrev_I}+{J_INext}-{JPrev_J}-{I_INext}={Costs}$";
             } else {
-                return new SwapInfo(new List<Node> { NodeI, NodeJ },
-                    $"${IPrev_J}+{J_INext}+{JPrev_I}+{I_JNext}-{IPrev_I}-{I_INext}-{JPrev_J}-{J_JNext}={Costs}$");
+                calculation = $"${IPrev_J}+{J_INext}+{JPrev_I}+{I_JNext}-{IPrev_I}-{I_INext}-{JPrev_J}-{J_JNext}={Costs}$";
             }
+
+            return new SwapInfo(nodes, calculation);
         }
 
         public GraphProblem SwapNodes() {

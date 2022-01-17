@@ -30,7 +30,9 @@
             <input type="number" step="0.05" id="alphaSA" class="form-control" @bind="AlphaSA">
         </div>
     </div>
-    <NeighborFunctionSettings @bind-NeighbourEnum="@NeighbourEnum"></NeighborFunctionSettings>
+    <div class="col">
+        <NeighborFunctionSettings @bind-NeighbourEnum="@NeighbourEnum"></NeighborFunctionSettings>
+    </div>
 </div>
 
 @code {

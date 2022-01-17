@@ -1,6 +1,7 @@
 ﻿@using TravellingSalesmanProblem.Algorithms
 <h5>Algorithm Settings</h5>
 <div class="form-group">
+    <label for="selectHeuristics">Heuristic</label>
     <select class="form-control" name="heuristics" id="selectHeuristics" @bind="AlgorithmEnum">
         <option value="NN" @onselect="e => AlgorithmEnum = AlgorithmEnum.NN">Nearest Neighbor</option>
         <option value="SA" @onselect="e => AlgorithmEnum = AlgorithmEnum.SA">Simulated Annealing</option>
