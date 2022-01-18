@@ -1,11 +1,10 @@
 ﻿@using TravellingSalesmanProblem.Algorithms
-<h5>Settings</h5>
-<h6>Algorithm Settings</h6>
 <div class="form-group">
+    <label for="selectHeuristics">Heuristic</label>
     <select class="form-control" name="heuristics" id="selectHeuristics" @bind="AlgorithmEnum">
         <option value="NN" @onselect="e => AlgorithmEnum = AlgorithmEnum.NN">Nearest Neighbor</option>
         <option value="SA" @onselect="e => AlgorithmEnum = AlgorithmEnum.SA">Simulated Annealing</option>
-        <option value="ACS" @onselect="e => AlgorithmEnum = AlgorithmEnum.ACS">Ant Colony System</option>
+        <option value="AS" @onselect="e => AlgorithmEnum = AlgorithmEnum.AS">Ant System</option>
         <option value="HC" @onselect="e => AlgorithmEnum = AlgorithmEnum.HC">Hill Climbing</option>
     </select>
 </div>
@@ -15,27 +14,6 @@
         <label class="form-check-label" for="multi">Multi Start</label>
     </div>
 }
-<h6>Visualization Settings</h6>
-@if (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
-    <div class="form-group">
-        <div class="custom-control custom-switch">
-            <input class="custom-control-input" type="checkbox" id="switchPrev" @bind="ShowPrevious">
-            <label class="custom-control-label" for="switchPrev">Toggle comparison mode</label>
-        </div>
-    </div>
-}
-<div class="form-check">
-    <input class="form-check-input" type="checkbox" id="switchAnnotate" @bind="@AnnotateEdges">
-    <label class="form-check-label" for="switchAnnotate">Annotate Edges</label>
-</div>
-<div class="form-check">
-    <input class="form-check-input" type="checkbox" id="switchColor" @bind="@ColorizeChanges">
-    <label class="form-check-label" for="switchColor">Colorize Changes</label>
-</div>
-<div class="form-group">
-    <label for="animationDelay">Animation Delay (milliseconds)</label>
-    <input type="number" step="10" id="animationDelay" class="form-control" @bind="@AnimationDelay">
-</div>
 
 @code {
     private AlgorithmEnum algorithmEnum;
@@ -53,21 +31,6 @@
     [Parameter]
     public EventCallback<AlgorithmEnum> AlgorithmEnumChanged { get; set; }
 
-    private bool _showPrevious;
-    [Parameter]
-    public bool ShowPrevious {
-        get => _showPrevious;
-        set {
-            if (value == _showPrevious)
-                return;
-
-            _showPrevious = value;
-            ShowPreviousChanged.InvokeAsync(value);
-        }
-    }
-    [Parameter]
-    public EventCallback<bool> ShowPreviousChanged { get; set; }
-
     private bool _multiStart;
     [Parameter]
     public bool MultiStart {
@@ -82,49 +45,4 @@
     }
     [Parameter]
     public EventCallback<bool> MultiStartChanged { get; set; }
-
-    private bool _annotateEdges;
-    [Parameter]
-    public bool AnnotateEdges {
-        get => _annotateEdges;
-        set {
-            if (value == _annotateEdges)
-                return;
-
-                _annotateEdges = value;
-                AnnotateEdgesChanged.InvokeAsync(value);
-        }
-    }
-    [Parameter]
-    public EventCallback<bool> AnnotateEdgesChanged { get; set; }
-
-    private bool _colorizeChanges;
-    [Parameter]
-    public bool ColorizeChanges {
-        get => _colorizeChanges;
-        set {
-            if (value == _colorizeChanges)
-                return;
-
-                _colorizeChanges = value;
-                ColorizeChangesChanged.InvokeAsync(value);
-        }
-    }
-    [Parameter]
-    public EventCallback<bool> ColorizeChangesChanged { get; set; }
-
-    private int _animationDelay;
-    [Parameter]
-    public int AnimationDelay {
-        get => _animationDelay;
-        set {
-            if (value == _animationDelay)
-                return;
-
-                _animationDelay = value;
-                AnimationDelayChanged.InvokeAsync(value);
-        }
-    }
-    [Parameter]
-    public EventCallback<int> AnimationDelayChanged { get; set; }
 }

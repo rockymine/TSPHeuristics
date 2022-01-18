@@ -1,0 +1,142 @@
+﻿@using TravellingSalesmanProblem.Algorithms
+@using TravellingSalesmanProblem.Graph
+@using WebApplication.Utils
+@using StardustDL.RazorComponents.Markdown
+@if (tableInfo.HasData) {
+	<div class="table-responsive">
+		<table class="table" style="text-align: center">
+			<thead>
+				<tr>
+					@foreach (var head in tableInfo.Header) {
+						<th><MarkdownRenderer Value=@head/></th>
+					}
+				</tr>	  
+			</thead>
+			<tbody>
+				@for (int i = 0; i < tableInfo.Cells.GetLength(0); i++) {
+					<tr>
+						@for (int j = 0; j < tableInfo.Cells.GetLength(1); j++) {
+							<td class="@tableInfo.Cells[i,j].Class"><MarkdownRenderer Value="@tableInfo.Cells[i,j].Value"/></td>
+						}
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+@code {
+	private TableInfo tableInfo = new();
+
+	public void Reset() => tableInfo = new TableInfo();
+
+	public void UpdateFromGraphState(LinkedListNode<GraphState> node, AlgorithmEnum algorithmEnum, NeighbourType neighbourType) {
+		tableInfo.Header.Clear();
+		
+		if (algorithmEnum == AlgorithmEnum.NN) {
+			CreateDistanceMatrix(node);
+		} else if (algorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC && neighbourType is NeighbourType.Swap or NeighbourType.TwoOpt) {
+			CreateSwapSummary(node, neighbourType);
+		} else {
+			CreateIterationTable(node);
+		}
+		
+		StateHasChanged();
+	}
+
+	private void CreateDistanceMatrix(LinkedListNode<GraphState> node) {
+		var state = node.Value;
+
+		tableInfo.Header.Add("");
+		var size = state.Nodes.Count + 1;
+		tableInfo.Cells = new TableCellInfo[size - 1, size];
+
+		for (int i = 0; i < size - 1; i++) {
+			for (int j = 0; j < size; j++) {
+				var node1 = state.Nodes[i];
+
+				if (j == 0) {
+					tableInfo.Cells[i, j] = new TableCellInfo(node1.Index.ToString(), "font-weight-bold");
+					continue;
+				}
+
+				var node2 = state.Nodes[j - 1];
+
+				if (i == 0)
+					tableInfo.Header.Add(node2.Index.ToString());
+				if (j - i - 1 < 0) {
+					tableInfo.Cells[i, j] = new TableCellInfo("-", null);
+					continue;
+				}
+
+				var distance = Math.Round(Edge.GetDistanceRounded(node1, node2), 1);
+
+				tableInfo.Cells[i, j] = new TableCellInfo(distance.ToString(),
+					InPath(state.Path, node1, node2) ? "table-danger" : null);
+			}
+		}
+	}
+
+	private void CreateIterationTable(LinkedListNode<GraphState> node) {
+		var state = node.Value;
+
+		tableInfo.Header = new List<string> { "Iteration", "Tour", "Distance" };
+
+		if (tableInfo.Cells is null)
+			tableInfo.Cells = new TableCellInfo[0, tableInfo.Header.Count];
+
+		if (state.Path.Count > 0) {
+			var temp = TableInfo.AddRow(tableInfo.Cells);
+			var lastRow = temp.GetLength(0) - 1;
+
+			temp[lastRow, 0] = new TableCellInfo(state.Iteration.ToString(), null);
+			temp[lastRow, 1] = new TableCellInfo("(" + string.Join('-', state.Path.Select(n => n.Index)) + ")", null);
+			temp[lastRow, 2] = new TableCellInfo(state.Distance.ToString(), null);
+
+			tableInfo.Cells = temp;
+		}
+	}
+
+	private void CreateSwapSummary(LinkedListNode<GraphState> node, NeighbourType neighbourType) {
+		var state = node.Value;
+		var formula = "$\\triangle=d_{i,j}+d_{i+1,j+1}-d_{i,i+1}-d_{j,j+1}$";
+
+		if (neighbourType == NeighbourType.Swap)
+			formula = "$\\triangle_{i,j}=\\begin{cases}d_{i,j-1}+d_{i,j+1}-d_{i,i-1}-d_{j,j+1},&i=j-1\\parallel j-1=i+1\\\\d_{j-1,i}+d_{j,i+1}-d_{j-1,j}-d_{i,i+1},&i=j+1 \\parallel j+1=i-1\\\\d_{i-1,j}+d_{j,i+1}+d_{j-1,i}+d_{i,j+1}-d_{i-1,i}-d_{i,i+1}-d_{j-1,j}-d_{j,j+1},&else\\end{cases}$";
+
+		tableInfo.Header = new List<string> { "Iteration", "$i$", "$j$", formula, "Before", "Tour" , "Distance"};
+
+		if (tableInfo.Cells is null)
+			tableInfo.Cells = new TableCellInfo[0, tableInfo.Header.Count];
+
+		if (state.SwapInfo != null) {
+			var temp = TableInfo.AddRow(tableInfo.Cells);
+			var lastRow = temp.GetLength(0) - 1;
+
+			var i = state.SwapInfo.Nodes[0];
+			var j = state.SwapInfo.Nodes[1];
+
+			temp[lastRow, 0] = new TableCellInfo($"${state.Iteration}$", null);
+			temp[lastRow, 1] = new TableCellInfo($"${state.SwapInfo.Nodes[0].Index}$", null);
+			temp[lastRow, 2] = new TableCellInfo($"${state.SwapInfo.Nodes[1].Index}$", null);
+			temp[lastRow, 3] = new TableCellInfo(state.SwapInfo.Calculation, null);
+			temp[lastRow, 4] = new TableCellInfo("$(" + $"{string.Join(',', node.Previous?.Value.Path.Select(n => n == i || n == j ? "\\underset{i=" + state.Path.IndexOf(n) + "}{\\text{" + n.Index + "}}" : n.Index.ToString()))}" + ")$", null);
+			temp[lastRow, 5] = new TableCellInfo("$(" + $"{string.Join(',', state.Path.Select(n => n == i || n == j ? "\\underset{i=" + state.Path.IndexOf(n) + "}{\\text{" + n.Index + "}}" : n.Index.ToString()))}" + ")$", null);
+			temp[lastRow, 6] = new TableCellInfo(Math.Round(state.Distance, 1).ToString(), null);
+
+			tableInfo.Cells = temp;
+		}
+	}
+
+	private bool InPath(List<Node> path, Node node1, Node node2) {
+		var i1 = path.IndexOf(node1);
+		if (i1 < 0)
+			return false;
+
+		var i2 = path.IndexOf(node2);
+		if (i2 < 0)
+			return false;
+
+		return Math.Abs(i1 - i2) == 1;
+	}
+}

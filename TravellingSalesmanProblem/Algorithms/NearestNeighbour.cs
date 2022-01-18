@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,146 +9,113 @@ using TravellingSalesmanProblem.Graph;
 namespace TravellingSalesmanProblem.Algorithms {
     public class NearestNeighbour : Algorithm {
         public Node Start { get; set; }
-        public bool Closed { get; set; } = true;
-        public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
-            var state = new GraphState { Nodes = graph.Nodes };
+        private Node Current = new();
+        private Edge Edge = new();
+        private GraphState X = new();
+        private GraphState XBest = new();
+        public override LinkedList<GraphState> FindPath(GraphProblem graph) {
             graph.Reset();
+            var history = new LinkedList<GraphState>();
+            var state = new GraphState { Nodes = graph.Nodes };
 
-            var current = Start;
+            Current = Start;
             Start.Visited = true;
-            state.Path.Add(current);
-
-            UpdateStateMessages(state);
-            yield return state;
+            state.Path.Add(Current);
+            history.AddLast(state);
 
             while (true) {
-                var edge = Edge.FindShortest(current);
+                Edge = Edge.FindShortest(Current);
 
-                if (edge == null) {
-                    var isClosed = true;
-
-                    if (Closed) {
-                        edge = current.Edges.Find(e => e.IsBetween(current, Start));
-                        isClosed = edge != null;
-
-                        if (edge != null) {
-                            state.Path.Add(edge.Opposite(current));
-                            state.PathEdges.Add(edge);
-                            state.Distance += edge.Distance;
-                        }
-                    }
-
-                    state.Finished = true;
-                    state.Success = graph.Nodes.All(n => n.Visited) && isClosed;
-                    UpdateStateMessages(state);
-                    yield break;
+                if (Edge == null) {
+                    Edge = Current.Edges.Find(e => e.IsBetween(Current, Start));
+                    history.AddLast(AdvanceState(history.Last.Value));
+                    break;
                 }
 
-                state.Distance += edge.Distance;
-                current = edge.Opposite(current);
-                current.Visited = true;
-
-                state.Path.Add(current);
-                state.PathEdges.Add(edge);
-                UpdateStateMessages(state);
-                yield return state;
+                history.AddLast(AdvanceState(history.Last.Value));
             }
+
+            return history;
         }
 
-        public IEnumerable<GraphState> FindLongestPath(GraphProblem graph) {
-            var state = new GraphState { Nodes = graph.Nodes };
+        private GraphState AdvanceState(GraphState state) {
+            var newState = state.DeepCopy();
+            var opposite = Edge.Opposite(Current);
+
+            Current = opposite;
+            Current.Visited = true;
+
+            newState.Path.Add(opposite);
+            newState.PathEdges.Add(Edge);
+            newState.Distance += Edge.Distance;
+
+            UpdateStateMessages(newState);
+            return newState;
+        }
+
+        private LinkedList<GraphState> FindLongestPath(GraphProblem graph) {
             graph.Reset();
+            var history = new LinkedList<GraphState>();
+            var state = new GraphState { Nodes = graph.Nodes };
 
-            var current = Start;
+            Current = Start;
             Start.Visited = true;
-            state.Path.Add(current);
-
-            UpdateStateMessages(state);
-            yield return state;
+            state.Path.Add(Current);
+            history.AddLast(state);
 
             while (true) {
-                var edge = Edge.FindLongest(current);
+                Edge = Edge.FindLongest(Current);
 
-                if (edge == null) {
-                    var isClosed = true;
-
-                    if (Closed) {
-                        edge = current.Edges.Find(e => e.IsBetween(current, Start));
-                        isClosed = edge != null;
-
-                        if (edge != null) {
-                            state.Path.Add(edge.Opposite(current));
-                            state.PathEdges.Add(edge);
-                            state.Distance += edge.Distance;
-                        }
-                    }
-
-                    state.Finished = true;
-                    state.Success = graph.Nodes.All(n => n.Visited) && isClosed;
-                    UpdateStateMessages(state);
-                    yield break;
+                if (Edge == null) {
+                    Edge = Current.Edges.Find(e => e.IsBetween(Current, Start));
+                    history.AddLast(AdvanceState(history.Last.Value));
+                    break;
                 }
 
-                state.Distance += edge.Distance;
-                current = edge.Opposite(current);
-                current.Visited = true;
-
-                state.Path.Add(current);
-                state.PathEdges.Add(edge);
-                UpdateStateMessages(state);
-                yield return state;
+                history.AddLast(AdvanceState(history.Last.Value));
             }
+
+            return history;
         }
 
-        public override IEnumerable<GraphState> MultiStart(GraphProblem graph) {
+        public LinkedList<GraphState> MultiStart(GraphProblem graph, bool shortest = true) {
             graph.Reset();
-            var best = new GraphState { Nodes = graph.Nodes };
-            var costs = double.MaxValue;            
+            var history = new LinkedList<GraphState>();
+            var state = new GraphState { Nodes = graph.Nodes };
+            var costs = double.MaxValue;
+
+            history.AddLast(state);
 
             foreach (var node in graph.Nodes) {
                 Start = node;
-                var current = FindPath(graph).Last();
+                X = shortest ? FindPath(graph).Last() : FindLongestPath(graph).Last();
 
-                if (current.CalcCosts() < costs) {
-                    costs = current.CalcCosts();
-                    best.Path = current.Path;
-                    best.PathEdges = current.PathEdges;
-                    best.Distance = current.Distance;
+                if (X.CalcCosts() < costs) {
+                    costs = X.Distance;
+                    XBest = X;
 
-                    UpdateStateMessages(best);
-                    yield return best;
+                    history.AddLast(AdvanceMultiStartState(history.Last.Value));
                 }                    
             }
+
+            return history;
         }
 
-        public IEnumerable<GraphState> MultiStartLongest(GraphProblem graph) {
-            var worst = new GraphState { Nodes = graph.Nodes };
-            var costs = double.MinValue;
+        private GraphState AdvanceMultiStartState(GraphState state) {
+            var newState = state.DeepCopy();
 
-            graph.Reset();
+            newState.Distance = XBest.Distance;
+            newState.Path = XBest.Path;
+            newState.PathEdges = XBest.PathEdges;
 
-            foreach (var node in graph.Nodes) {
-                Start = node;
-                var current = FindLongestPath(graph).Last();
-
-                if (current.CalcCosts() > costs) {
-                    costs = current.CalcCosts();
-                    worst.Path = current.Path;
-                    worst.PathEdges = current.PathEdges;
-                    worst.Distance = current.Distance;
-                    
-                    yield return worst;
-                }
-            }
+            UpdateStateMessages(newState);
+            return newState;
         }
 
         public override void UpdateStateMessages(GraphState state) {
+            state.Messages["Start Node"] = Start.Index.ToString();
             state.Messages["Route"] = string.Join('-', state.Path.Select(n => n.Index));
-            state.Messages["Distance"] = Math.Round(state.Distance, 1).ToString();
-        }
-
-        public override GraphState UpdateState(GraphState state) {
-            throw new NotImplementedException();
+            state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
         }
     }
 }

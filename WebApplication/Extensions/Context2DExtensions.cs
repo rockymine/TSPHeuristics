@@ -11,9 +11,14 @@ using System.Drawing;
 namespace WebApplication.Extensions {
     public static class Context2DExtensions {
         public static async Task DrawLine(this Context2D context, Brush brush, Vector2 pos1, Vector2 pos2) {
+            if (brush.Color == "red") {
+                await context.SetLineDashAsync(new double[] { 5 });
+            } else {
+                await context.SetLineDashAsync(new double[] { });
+            }                
+
             await context.StrokeStyleAsync(brush.Color);
             await context.LineWidthAsync(brush.Width);
-            //await context.SetLineDashAsync(new double[] { 1, 2, 3 });
             await context.BeginPathAsync();
             await context.MoveToAsync(pos1.X, pos1.Y);
             await context.LineToAsync(pos2.X, pos2.Y);

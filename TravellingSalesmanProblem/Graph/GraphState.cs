@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ChartData;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,15 +11,13 @@ namespace TravellingSalesmanProblem.Graph {
         public List<Node> Nodes { get; set; } = new();
         public List<Node> Path { get; set; } = new();
         public List<Edge> PathEdges { get; set; } = new();
-        public List<GraphSegment> Segments { get; set; } = new();
         public SwapInfo SwapInfo { get; set; }
-        public bool Finished { get; set; } = false;
-        public bool Success { get; set; }
         public double Distance { get; set; }
         public double Temperature { get; set; }
         public int Iteration { get; set; }
         public Dictionary<string, string> Messages { get; set; } = new();
         public Dictionary<string, MathString> Equations { get; set; } = new();
+        public List<ChartInfo> ChartInfo { get; set; } = new();
 
         public GraphProblem ToGraphProblem() {
             return new GraphProblem {
@@ -34,32 +33,15 @@ namespace TravellingSalesmanProblem.Graph {
             state.Nodes.AddRange(Nodes);
             state.Path.AddRange(Path);
             state.PathEdges.AddRange(PathEdges);
-            state.Segments.AddRange(Segments);
-            state.SwapInfo = SwapInfo;
-            state.Finished = Finished;
-            state.Success = Success;
+            state.SwapInfo = SwapInfo?.DeepCopy();
             state.Distance = Distance;
             state.Temperature = Temperature;
             state.Iteration = Iteration;
-            state.Messages = Messages;
-            state.Equations = Equations;
+            state.Messages = new Dictionary<string, string>(Messages);
+            state.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
+            state.ChartInfo = ChartInfo?.Select(c => c.DeepCopy()).ToList();
 
             return state;
-        }
-
-        public void ComparePathEdges(GraphState state) {
-            //an edge was removed
-            SetEdgeColors(state.PathEdges, PathEdges, "red");
-
-            //an edge was added
-            SetEdgeColors(PathEdges, state.PathEdges, "green");
-        }
-
-        private static void SetEdgeColors(List<Edge> current, List<Edge> compareAgainst, string color) {
-            foreach (var edge in compareAgainst) {
-                var condition = current.Find(e => e.IsEqual(edge)) == null;
-                edge.Color = condition ? color : "black";
-            }
         }
     }
 }

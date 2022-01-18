@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PerformanceAnalysis.cli": {
+      "commandName": "Project",
+      "commandLineArgs": "-x 20 -y 20 -c 20 --heuristic annealing --neighbor TwoOpt --phase 10 --start 100 --min 0.000000001 --alpha 0.98 -p SimulationResult"
+    }
+  }
+}

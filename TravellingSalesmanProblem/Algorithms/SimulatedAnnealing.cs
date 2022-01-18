@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ChartData;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,96 +15,122 @@ namespace TravellingSalesmanProblem.Algorithms {
         public double Alpha { get; set; }
         public NeighbourType NeighbourEnum { get; set; }
 
-        private GraphProblem CurrentBest = new();
+        private GraphProblem X = new();
+        private GraphProblem XBest = new();
+        private GraphProblem Y = new();
 
         private static readonly Random Random = new();
 
-        public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
-            var x = GraphProblem.OrderedGraphProblem(graph.DeepCopy());
-            var state = new GraphState {
-                Nodes = x.Nodes,
-                PathEdges = x.Edges,
-                Temperature = CalculateInitialTemperature(x)
+        public override LinkedList<GraphState> FindPath(GraphProblem graph) {
+            graph.Reset();
+            var history = new LinkedList<GraphState>();
+            X = GraphProblem.OrderedGraphProblem(graph);
+
+            var chartInfo = new ChartInfo {
+                Title = "Distance Progress",
+                XAxis = new ChartSet { Title = "Iteration" },
+                YAxis = new List<ChartSet> {
+                    new ChartSet { Title = "Distance" }
+                }
             };
 
-            CurrentBest = x;
-            UpdateStateMessages(state);
-            yield return state;
-            
-            while (state.Temperature >= MinTemp) {
+            var chartInfo2 = chartInfo.DeepCopy();
+            chartInfo2.Title = "Temperature Progress";
+            chartInfo.YAxis[0].Title = "Temperature";
+
+            //StartTemp = CalculateInitialTemperature(X);
+
+            var state = new GraphState {
+                Nodes = X.Nodes,
+                PathEdges = X.Edges,
+                Temperature = StartTemp,
+                ChartInfo = new List<ChartInfo>() { chartInfo, chartInfo2 }
+            };
+
+            XBest = X;
+            var iteration = 0;
+            var temperature = state.Temperature;
+            history.AddLast(AdvanceState(state, iteration, temperature));
+
+            while (temperature >= MinTemp) {
                 for (int i = 0; i < PhaseLength; i++) {
-                    /* Generate Neighbor */
-                    x.Reset();
-                    var y = NeighbourState.Create(x, NeighbourEnum);
-                    state.SwapInfo = y.SwapInfo;
-                    state.Segments = y.Segments;
+                    Y = NeighbourState.Create(X, NeighbourEnum, DescentType.Random);
 
-                    if (y.Costs <= x.Costs) {
-                        x = y;
+                    if (Y.Costs <= X.Costs) {
+                        X = Y;
 
-                        /* Update Current Best */
-                        if (x.Costs < CurrentBest.Costs) {
-                            CurrentBest = x;
-                            yield return UpdateState(state);
+                        if (X.Costs < XBest.Costs) {
+                            XBest = X;
+                            /*If no better solution is found this will never be executed
+                             Therefore the updated iteration and temperature are never shown
+                            Oh the other hand, if it doesn't find an improvement, it doesn't find one
+                            But at least the temperature and iteration should go down!!!
+                            maybe also look into fixing the random descent type (Niels fragen ob random
+                            wirklich random sein soll oder mehrfach gewürfelt werden soll)*/
+                            history.AddLast(AdvanceState(history.Last.Value, iteration, temperature));
                         }
-
-                    } else if (MetropolisRule(y, state)) {
-                        x = y;
+                    } else if (MetropolisRule(history.Last.Value)) {
+                        X = Y;
                     }
                 }
 
-                Equations["Temperature Update"] = MathString.UpdateTemperature(state, Alpha);
-                state.Iteration++;
-                state.Temperature *= Alpha;                
+                Equations["Temperature Update"] = MathString.UpdateTemperature(history.Last.Value, Alpha);
+                //
+                iteration++;
+                temperature *= Alpha;
+
+                history.Last.Value.ChartInfo[0].XAxis.Add(iteration, "red");
+                history.Last.Value.ChartInfo[0].YAxis[0].Add(temperature, "red");
+
+                history.Last.Value.ChartInfo[1].XAxis.Add(iteration, "red");
+                history.Last.Value.ChartInfo[1].YAxis[0].Add(X.Costs, "red");
             }
 
-            state.Finished = true;
-            UpdateStateMessages(state);
-            //yield return UpdateState(state, true);
+            //history.Last.Value.Iteration = iteration;
+            //history.Last.Value.Temperature = temperature;
+            return history;
         }
 
         private static double CalculateInitialTemperature(GraphProblem graph) {            
             var nearestNeighbor = new NearestNeighbour { Start = graph.Nodes[Random.Next(0, graph.Nodes.Count)] };
-
-            /* Calculate Best Nearest Neighbor Solution */
             var best = nearestNeighbor.MultiStart(graph).Last().Distance;
-
-            /* Calculate Worst Nearest Neighbor Solution */
-            var worst = nearestNeighbor.MultiStartLongest(graph).Last().Distance;
+            var worst = nearestNeighbor.MultiStart(graph, false).Last().Distance;
 
             return worst - best;
         }
 
-        private bool MetropolisRule(GraphProblem x, GraphState state) {
-            var p = Math.Exp(-(x.Costs - state.Distance) / state.Temperature);
-            Console.WriteLine($"x:" + string.Join(",", x.Nodes.Select(n => n.Index)));
-            Console.WriteLine($"x.Costs: {x.Costs}");
+        private bool MetropolisRule(GraphState state) {
             var r = Random.NextDouble();
-            bool condition = p > r;
+            bool condition = r < Math.Exp(-(Y.Costs - X.Costs) / state.Temperature);
 
-            Equations["Metropolis Rule"] = MathString.MetropolisRule(x, state, r, condition);
-
+            Equations["Metropolis Rule"] = MathString.MetropolisRule(X, Y, state, r, condition);
             return condition;
         }
 
-        public override IEnumerable<GraphState> MultiStart(GraphProblem graph) {
-            throw new NotImplementedException();
-        }
+        private GraphState AdvanceState(GraphState state, int iteration, double temperature) {
+            var newState = state.DeepCopy();
 
-        public override GraphState UpdateState(GraphState state) {
-            state.Distance = CurrentBest.Costs;
-            state.Path = CurrentBest.Nodes;
-            state.PathEdges = CurrentBest.Edges;
-            state.Equations = Equations;
+            newState.Distance = XBest.Costs;
+            newState.Path = XBest.Nodes;
+            newState.PathEdges = XBest.Edges;
+            newState.Equations = Equations;
+            newState.SwapInfo = XBest.SwapInfo?.DeepCopy();
+            newState.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
+            newState.Temperature = temperature;
+            newState.Iteration = iteration;
 
-            UpdateStateMessages(state);
-            return state;
+            for (int i = 0; i < newState.ChartInfo[0].YAxis[0].Values.Count; i++) {
+                newState.ChartInfo[0].YAxis[0].Colors[i] = (i == iteration - 1) ? "blue" : "red";
+            }
+
+            UpdateStateMessages(newState);
+            return newState;
         }
 
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Iteration"] = state.Iteration.ToString();
             state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
-            state.Messages["Distance"] = state.Distance.ToString();
+            state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
             state.Messages["Temperature"] = state.Temperature.ToString();
         }
     }}

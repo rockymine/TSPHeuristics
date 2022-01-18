@@ -1,16 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TravellingSalesmanProblem.Graph;
 
 namespace TravellingSalesmanProblem.Algorithms {
     public abstract class Algorithm {
         public Dictionary<string, MathString> Equations { get; set; } = new();
-        public abstract IEnumerable<GraphState> FindPath(GraphProblem graph);
-        public abstract IEnumerable<GraphState> MultiStart(GraphProblem graph);
-        public abstract GraphState UpdateState(GraphState state);
+        public abstract LinkedList<GraphState> FindPath(GraphProblem graph);
         public abstract void UpdateStateMessages(GraphState state);
     }
 
@@ -31,7 +26,7 @@ namespace TravellingSalesmanProblem.Algorithms {
     public enum AlgorithmEnum {
         NN = 0,
         SA = 1,
-        ACS = 3,
+        AS = 3,
         HC = 4
     }
 }

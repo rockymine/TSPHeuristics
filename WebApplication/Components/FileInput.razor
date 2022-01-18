@@ -1,0 +1,19 @@
+﻿@using System.IO
+<h5>File Input</h5>
+<p>
+    <label>
+        <InputFile OnChange="@LoadFile"/>
+    </label>
+</p>
+
+@code {
+    public string LoadedFile { get; private set; }
+    public event Action LoadedFileChanged;
+
+    private async Task LoadFile(InputFileChangeEventArgs e)
+    {
+        using var sr = new StreamReader(e.File.OpenReadStream());
+        LoadedFile = await sr.ReadToEndAsync();
+        LoadedFileChanged?.Invoke();
+    }
+}

@@ -1,0 +1,97 @@
+﻿<div class="form-group">
+    <label for="iterations">Iterations</label>
+    <input type="number" id="iterations" class="form-control" @bind="Iterations">
+</div>
+<div class="form-group">
+    <label for="ants">Ant Count</label>
+    <input type="number" id="ants" class="form-control" @bind="AntCount">
+</div>
+<div class="form-group">
+    <label for="alphaACS">Alpha</label>
+    <input type="number" step="0.05" id="alphaACS" class="form-control" @bind="AlphaACS">
+</div>
+<div class="form-group">
+    <label for="beta">Beta</label>
+    <input type="number" step="0.5" id="beta" class="form-control" @bind="Beta">
+</div>
+<div class="form-group form-check">
+    <input class="form-check-input" type="checkbox" id="breakWhenEqual" @bind="@BreakWhenPathsAreEqual">
+    <label class="form-check-label" for="breakWhenEqual">Break when all ants are on the same path</label>
+</div>
+
+@code {
+    private int iterations;
+    [Parameter]
+    public int Iterations {
+        get => iterations;
+        set {
+            if (value == iterations)
+                return;
+
+            iterations = value;
+            IterationsChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<int> IterationsChanged { get; set; }
+
+    private int antCount;
+    [Parameter]
+    public int AntCount {
+        get => antCount;
+        set {
+            if (value == antCount)
+                return;
+
+            antCount = value;
+            AntCountChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<int> AntCountChanged { get; set; }
+
+    private double alphaACS;
+    [Parameter]
+    public double AlphaACS {
+        get => alphaACS;
+        set {
+            if (value == alphaACS)
+                return;
+
+            alphaACS = value;
+            AlphaACSChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<double> AlphaACSChanged { get; set; }
+
+    private double beta;
+    [Parameter]
+    public double Beta {
+        get => beta;
+        set {
+            if (value == beta)
+                return;
+
+            beta = value;
+            BetaChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<double> BetaChanged { get; set; }
+
+    private bool _breakWhenPathsAreEqual;
+    [Parameter]
+    public bool BreakWhenPathsAreEqual {
+        get => _breakWhenPathsAreEqual;
+        set {
+            if (value == _breakWhenPathsAreEqual)
+                return;
+
+            _breakWhenPathsAreEqual = value;
+            BreakWhenPathsAreEqualChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<bool> BreakWhenPathsAreEqualChanged { get; set; }
+}

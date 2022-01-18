@@ -7,63 +7,61 @@ using TravellingSalesmanProblem.Graph;
 
 namespace TravellingSalesmanProblem.Algorithms {
     public class HillClimbing : Algorithm {
-        public NeighbourType NeighbourType { get; set; }
-        private GraphProblem CurrentBest = new();
-        public override IEnumerable<GraphState> FindPath(GraphProblem graph) {
-            var x = GraphProblem.OrderedGraphProblem(graph.DeepCopy());
-            var y = new GraphProblem();
+        public NeighbourType NeighbourEnum { get; set; }
+        public DescentType DescentType { get; set; }
+        private GraphProblem X = new();
+        private GraphProblem XBest = new();
+        private GraphProblem Y = new();
+
+        private GraphState XState = new();
+        private GraphState XBestState = new();
+        public override LinkedList<GraphState> FindPath(GraphProblem graph) {
+            var history = new LinkedList<GraphState>();
+            X = GraphProblem.OrderedGraphProblem(graph);
+
             var state = new GraphState {
-                Nodes = x.Nodes,
-                PathEdges = x.Edges,
+                Nodes = X.Nodes,
+                PathEdges = X.Edges,
                 Distance = double.MaxValue
             };
 
-            yield return state;
+            XBest = X;
+            var iteration = 0;
+            history.AddLast(AdvanceState(state, iteration));
 
             while (true) {
-                switch (NeighbourType) {
-                    case NeighbourType.Swap:
-                        y = NeighbourState.Swap(x);
-                        break;
-                    case NeighbourType.TwoOpt:
-                        y = NeighbourState.TwoOptFull(x);
-                        state.SwapInfo = y.SwapInfo;
-                        break;
-                    case NeighbourType.ThreeOpt:
-                        y = NeighbourState.ThreeOpt(x);
-                        break;
-                    case NeighbourType.FourOpt:
-                        y = NeighbourState.DoubleBridgeFourOpt(x);
-                        break;
-                }
+                Y = NeighbourState.Create(X, NeighbourEnum, DescentType);
 
-                if (y.Costs >= state.Distance) {
-                    state.Finished = true;
-                    UpdateStateMessages(state);
-                    yield break;
-                } 
+                if (Y.Costs >= X.Costs)
+                    break;
 
-                x = y;
-                CurrentBest = y;
-                yield return UpdateState(state);
-            }            
+                X = Y;
+                XBest = X;
+                iteration++;
+                history.AddLast(AdvanceState(history.Last.Value, iteration));
+            }
+
+            return history;
         }
 
-        public override IEnumerable<GraphState> MultiStart(GraphProblem graph) {
-            var best = new GraphState { Nodes = graph.Nodes };
+        public LinkedList<GraphState> MultiStart(GraphProblem graph) {
+            var state = new GraphState { Nodes = graph.Nodes };
+            var history = new LinkedList<GraphState>();
             var costs = double.MaxValue;
+            history.AddLast(state);
 
             for (int i = 0; i < graph.Nodes.Count; i++) {
-                var state = FindPath(graph).Last();
+                XState = FindPath(graph).Last();
 
-                if (state.CalcCosts() < costs) {
-                    costs = state.CalcCosts();
-                    best.Path = state.Path;
-                    best.PathEdges = state.PathEdges;
-                    best.Distance = state.Distance;
-                    yield return UpdateState(best);
+                if (XState.Distance < costs) {
+                    costs = XState.Distance;
+                    XBestState = XState;
+
+                    history.AddLast(AdvanceMultiStartState(history.Last.Value));
                 }
             }
+
+            return history;
         }
 
         public override void UpdateStateMessages(GraphState state) {
@@ -72,14 +70,28 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Messages["Distance"] = state.Distance.ToString();
         }
 
-        public override GraphState UpdateState(GraphState state) {
-            state.Iteration++;
-            state.Distance = CurrentBest.Costs;
-            state.Path = CurrentBest.Nodes;
-            state.PathEdges = CurrentBest.Edges;
+        private GraphState AdvanceState(GraphState state, int iteration) {
+            var newState = state.DeepCopy();
 
-            UpdateStateMessages(state);
-            return state;
+            newState.Distance = XBest.Costs;
+            newState.Path = XBest.Nodes;
+            newState.PathEdges = XBest.Edges;
+            newState.SwapInfo = XBest.SwapInfo?.DeepCopy();
+            newState.Iteration = iteration;
+
+            UpdateStateMessages(newState);
+            return newState;
+        }
+
+        private GraphState AdvanceMultiStartState(GraphState state) {
+            var newState = state.DeepCopy();
+
+            newState.Distance = XBestState.Distance;
+            newState.Path = XBestState.Path;
+            newState.PathEdges = XBestState.PathEdges;
+
+            UpdateStateMessages(newState);
+            return newState;
         }
     }
 }

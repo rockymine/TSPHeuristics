@@ -28,18 +28,16 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public SwapInfo GenerateSwapInfo() {
-            return new SwapInfo(new List<Node> { NodeI, NodeJ }, $"${Di_j}+{Di1_j1}-{Di_i1}-{Dj_j1}={Costs}$");
+            var nodes = new List<Node> { NodeI, NodeJ };
+            string calculation = $"${Di_j}+{Di1_j1}-{Di_i1}-{Dj_j1}={Costs}$";
+            return new(nodes, calculation);
         }
 
-        public GraphProblem SwapEdges(bool colorize = false) {
-            if (colorize) {
-                NodeI.Color = "orange";
-                NodeJ.Color = "pink";
-            }
-            
+        public GraphProblem SwapEdges() {
+            var tour = Graph.Nodes.ToArray();
             var i = I + 1;
             var j = J + 1;
-            var tour = Graph.Nodes.ToArray();
+
             var a = tour[0..i];
             var b = tour[i..j];
             var c = tour[j..^0];
@@ -48,15 +46,6 @@ namespace TravellingSalesmanProblem.Algorithms {
             var best = new GraphProblem { Nodes = nodes };
             best.ConnectPathNodes();
             return best;
-        }
-    }
-
-    public class SwapInfo {
-        public List<Node> Nodes { get; set; }
-        public string Calculation { get; set; }
-        public SwapInfo(List<Node> nodes, string calculation) {
-            Nodes = nodes;
-            Calculation = calculation;
         }
     }
 }

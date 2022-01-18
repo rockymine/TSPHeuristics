@@ -1,5 +1,4 @@
-﻿@page "/graph"
-@using Excubo.Blazor.Canvas
+﻿@using Excubo.Blazor.Canvas
 @using Excubo.Blazor.Canvas.Contexts
 @using System.Diagnostics
 @using TravellingSalesmanProblem.Algorithms
@@ -10,585 +9,374 @@
 <div class="container-fluid">
     <h2 class="font-weight-bold">Interactive visualization of different TSP heuristics</h2>
     <div class="row">
-        <div class="col-md-3 p-0"><!-- Settings -->
+        <div class="col-md-2 p-0">
+            <!-- Algorithm Settings -->
             <div class="bg-custom-light custom-input-group">
-                <AlgorithmSettings @bind-AlgorithmEnum="@AlgorithmEnum" @bind-MultiStart="@MultiStart"
-                    @bind-ShowPrevious="@ShowPrevious" @bind-AnnotateEdges="@AnnotateEdges"
-                    @bind-ColorizeChanges="@ColorizeChanges" @bind-AnimationDelay="@AnimationDelay"></AlgorithmSettings>
+                <h5>Algorithm Settings</h5>
+                <AlgorithmSettings @bind-AlgorithmEnum="@AppState.AlgorithmEnum"
+                    @bind-MultiStart="@AppState.MultiStart"/>
             </div>
-        </div>
-        <div class="col-md-9 p-0">
+            <!-- Heuristic Settings -->
             <div class="bg-custom-light custom-input-group">
                 <h5>Heuristic Settings</h5>
-                @if (StateEnumerator != null) {
-                    @if (AlgorithmEnum == AlgorithmEnum.NN && !MultiStart) {
-                        <NearestNeighborSettings @bind-StartNode="@StartNode"></NearestNeighborSettings>
+                <form>
+                    @if (AppState.GraphHistory != null) {
+                    @if (AppState.AlgorithmEnum == AlgorithmEnum.NN && !AppState.MultiStart) {
+                        <NearestNeighborSettings @bind-StartNode="@AppState.StartNode"/>
                     }
-                    @if (AlgorithmEnum == AlgorithmEnum.SA) {
-                        <SimulatedAnnealingSettings @bind-AlphaSA="@AlphaSA" @bind-MaxIter1="@PhaseLength" 
-                            @bind-MaxIter2="@MaxPhases" @bind-MinTemp="@MinTemp" @bind-StartTemp="@StartTemp"
-                            @bind-NeighbourEnum="@NeighbourEnum"></SimulatedAnnealingSettings>
+                    @if (AppState.AlgorithmEnum == AlgorithmEnum.SA) {
+                        <SimulatedAnnealingSettings @bind-AlphaSA="@AppState.AlphaSA" @bind-PhaseLength="@AppState.PhaseLength" 
+                            @bind-MinTemp="@AppState.MinTemp" @bind-StartTemp="@AppState.StartTemp"
+                            @bind-NeighbourEnum="@AppState.NeighbourEnum"/>
                     }
-                    @if (AlgorithmEnum == AlgorithmEnum.HC) {
-                        <NeighborFunctionSettings @bind-NeighbourEnum="@NeighbourEnum"></NeighborFunctionSettings>
+                    @if (AppState.AlgorithmEnum == AlgorithmEnum.HC) {
+                        <HillClimbingSettings @bind-NeighbourEnum="@AppState.NeighbourEnum" @bind-DescentType="AppState.DescentType"/>
                     }
-                    @if (AlgorithmEnum == AlgorithmEnum.ACS) {
-                        <AntColonySettings @bind-AlphaACS="AlphaACS" @bind-AntCount="@AntCount" @bind-Beta="@Beta"
-                            @bind-Rho="@Rho" @bind-ExploitVsExplore="@StateTransition"></AntColonySettings>
+                    @if (AppState.AlgorithmEnum == AlgorithmEnum.AS) {
+                        <AntSystemSettings @bind-Iterations="AppState.Iterations" @bind-AlphaACS="AppState.AlphaACS"
+                            @bind-AntCount="@AppState.AntCount" @bind-Beta="@AppState.Beta"
+                            @bind-BreakWhenPathsAreEqual="AppState.BreakWhenPathsAreEqual"/>
                     }
-                    <div class="form-group">
-                        <button class="btn btn-danger" type="button" @onclick="e => NextState(true)">Reset</button>
-                    </div>
-                }
+                    <button class="btn btn-danger" type="submit" @onclick="e => UpdateEnumerator()">Reset</button>
+                } 
+                </form>
             </div>
-        </div>
-    </div>
-    <div class="row">
-        <p>
-            <button class="btn btn-primary" @onclick="@(e => SettingsCollapse = SettingsCollapse == "" ? "collapse" : "")">
-                Graph settings ˅
-            </button>
-        </p>
-        <div class="@SettingsCollapse" id="collapseExample">
-            <div class="row">
-                <div class="col-md-6 p-0">
-                    <div class="bg-custom-light custom-input-group">
-                        <h5>Text-based graph</h5>
-                        <div class="form-group">
-                            <textarea class="form-control" @bind="DefaultGraph" style="height: 200px;"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(true)">Draw From Text</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 p-0">
-                    <div class="bg-custom-light custom-input-group">
-                        <RandomGraphSettings @bind-NodeCount="NodeCount" @bind-MaxX="MaxX" @bind-MaxY="MaxY"></RandomGraphSettings>
-                        <div class="form-group">
-                            <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(false)">Draw Random Graph</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-8 p-0">
+            <!-- Canvas Settings -->
             <div class="bg-custom-light custom-input-group">
-                <h5>Graph View</h5>
-                <div class="row">
-                    <div class="col">
-                        <h5 class="font-weight-bold">Current</h5>
-                        <Canvas @ref="@CurrentCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"></Canvas>
-                    </div>
-                    <div class="col">
-                        @if (ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
-                            <h5 class="font-weight-bold">Previous</h5>
-                            <Canvas @ref="@PreviousCanvas" width="@MainCanvasSettings.Width" height="@MainCanvasSettings.Height"></Canvas>
-                        }
-                    </div>
+                <CanvasDisplaySettings @bind-Scale="@AppState.Scale" @bind-NodeRadius="@AppState.NodeRadius"
+                    @bind-ShowGrid="@AppState.ShowGrid" @bind-AnnotateEdges="@AppState.AnnotateEdges" @bind-ColorizeChanges="@AppState.ColorizeChanges"
+                    @bind-AnimationDelay="@AppState.AnimationDelay"/>                
+            </div>
+            <!-- Graph Settings -->
+            <div class="bg-custom-light custom-input-group">
+                <h5>Graph Settings</h5>
+                <div class="form-group">
+                    <label for="selectGraphSource">Graph Source</label>
+                    <select class="form-control" name="graphSource" id="selectGraphSource" @bind="AppState.GraphSource">
+                        <option value="Text" @onselect="e => AppState.GraphSource = GraphSource.Text">Text</option>
+                        <option value="File" @onselect="e => AppState.GraphSource = GraphSource.File">File</option>
+                        <option value="Random" @onselect="e => AppState.GraphSource = GraphSource.Random">Random</option>
+                    </select>
                 </div>
+                @if (AppState.GraphSource == GraphSource.Text) {
+                    <div class="form-group">
+                        <textarea class="form-control" @bind="AppState.DefaultGraph" style="height: 200px;"></textarea>
+                    </div>
+                } else if (AppState.GraphSource == GraphSource.Random) {
+                    <RandomGraphSettings @bind-NodeCount="AppState.NodeCount" @bind-MaxX="AppState.MaxX" @bind-MaxY="AppState.MaxY"/>
+                } else if (AppState.GraphSource == GraphSource.File) {
+                    <FileInput @ref="@AppState.FileInput"/>
+                }
+                <div class="form-group">
+                    <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(AppState.GraphSource)">Execute Algorithm</button>
+                </div>
+                <p>@AppState.Error</p>
             </div>
         </div>
         <div class="col-md-4 p-0">
+            <!-- State -->
             <div class="bg-custom-light custom-input-group">
                 <h5>State</h5>
-                @if (StateEnumerator != null && !StateEnumerator.Current.Finished) {
+                <span><b>Execution Time</b>: @AppState.TimeSpan.Minutes m @AppState.TimeSpan.Seconds s @AppState.TimeSpan.Milliseconds ms (@Math.Round((double)AppState.Stopwatch.ElapsedMilliseconds / 1000, 3) s)</span><br/>
+                @if (AppState.GraphHistory != null) {
                     <div class="row g-3">
                         <div class="input-group">
                             <div class="col-auto">
-                                @if (!AutoAdvance) {
                                     <div class="form-group">
-                                        <button class="btn btn-primary btn-sm" type="button" @onclick="e => NextState(false)">Next</button>
+                                        <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump First" @onclick="e => JumpFirst()">«</button>
+                                        <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse" @onclick="e => ReverseHistory()">‹</button>
+                                        @if (AppState.AutoAdvance) {
+                                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="AutoAdvance = false" @onclick="e => AppState.AutoAdvance = false">⏸</button>
+                                        } else {
+                                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="AutoAdvance = true" @onclick="e => AppState.AutoAdvance = true">▶</button>
+                                        }
+                                        <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Advance" @onclick="e => AdvanceHistory()">›</button>
+                                        <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump Last" @onclick="e => JumpLast()">»</button>
                                     </div>
-                                }
-                            </div>
-                            <div class="col-auto">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="switchAdvance" @bind="@AutoAdvance">
-                                    <label class="form-check-label" for="switchAdvance">Auto</label>
-                                </div>
                             </div>
                         </div>
                     </div>
+                    @*<div class="row">
+                        @if (AppState.AlgorithmEnum is AlgorithmEnum.SA) {
+                            if (AppState.CurrentHistoryNode.Value.ChartInfo.Count >= 1) {
+                                <ChartJS @ref="@AppState.ChartJS[0]" Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[0]" ChartID="sa_temperature"></ChartJS>
+                            }
+                            if (AppState.CurrentHistoryNode.Value.ChartInfo.Count >= 2) {
+                                <ChartJS @ref="@AppState.ChartJS[1]" Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[1]" ChartID="sa_distance"></ChartJS>
+                            }
+                        }
+                    </div>*@
                 }
-                @if (StateEnumerator != null && StateEnumerator.Current != null) {
-                    <span><b>Success</b>: @StateEnumerator.Current.Success</span><br/>
-                    <span><b>Finished</b>: @StateEnumerator.Current.Finished</span><br/>
-                    <span><b>Elapsed Time</b>: @TimeSpan.Minutes m @TimeSpan.Seconds s @TimeSpan.Milliseconds ms</span><br/>
-
-                    @foreach (var kvp in StateEnumerator.Current.Messages) {
+                @if (AppState.CurrentHistoryNode != null) {
+                    @foreach (var kvp in AppState.CurrentHistoryNode.Value.Messages) {
                         <span><b>@kvp.Key</b>: @kvp.Value</span><br/>
                     }
                 }
             </div>
+            <!-- Graph View -->
+            <div class="bg-custom-light custom-input-group">
+                <h5>Graph View</h5>
+                @if (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
+                    <h5 class="font-weight-bold">Previous (Iteration Start)</h5>
+                    <Canvas @ref="@AppState.PreviousCanvas" width="@AppState.CanvasSettings.Width" height="@AppState.CanvasSettings.Height"/>
+                }
+                    <h5 class="font-weight-bold">Current (Iteration End)</h5>
+                    <Canvas @ref="@AppState.CurrentCanvas" width="@AppState.CanvasSettings.Width" height="@AppState.CanvasSettings.Height"/>
+            </div>
+            <!-- Calculations -->
+            <div class="bg-custom-light custom-input-group">
+                <h5>Calculations</h5>
+                @if (AppState.GraphHistory != null &&
+                    AppState.CurrentHistoryNode.Value != null &&
+                    AppState.CurrentHistoryNode.Value.Equations.Count != 0) {
+                    @foreach (var kvp in AppState.CurrentHistoryNode.Value.Equations) {
+                        <h5>@kvp.Key</h5>
+                        <MarkdownRenderer Value="@kvp.Value.Latex"/>
+                        <MarkdownRenderer Value="@kvp.Value.Generate()"/>
+                        <MarkdownRenderer Value="@kvp.Value.Result"/>
+                    }
+                }
+            </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-md-12">
-            <h5>Details</h5>
-            @if (StateEnumerator != null && StateEnumerator.Current != null && StateEnumerator.Current.Equations.Count != 0) {
+        <div class="col-md-6 p-0">
+            <!-- Charts -->
+            <div class="bg-custom-light custom-input-group">
                 <div class="row">
-                <div class="col-md-6 col-sm-6">
-                    <h3 class="font-weight-bold">Formulas</h3>
-                        @foreach (var kvp in StateEnumerator.Current.Equations) {
-                            <p><b>@kvp.Key</b></p>
-                            <MarkdownRenderer Value="@kvp.Value.Latex"/>
-                            <MarkdownRenderer Value="@kvp.Value.Generate()"/>
-                            <MarkdownRenderer Value="@kvp.Value.Result"/>
-                        }
-                    </div>
-                </div> 
-            }
-            @if (AlgorithmEnum == AlgorithmEnum.SA && StateEnumerator != null && StateEnumerator.Current != null
-            && StateEnumerator.Current.Segments != null && StateEnumerator.Current.Segments.Count != 0 && !DrawComplete) {
-                <div class="row">
-                    @if (CanvasArray != null && CanvasArray.Length != 0) {
-                        <div class="col md-2">
-                            <h5 class="font-weight-bold">Details</h5>
-                            <div class="row">
-                                @for (int i = 0; i < StateEnumerator.Current.Segments.Count; i++) {
-                                    int j = i;
-                                    <div class="col">
-                                        <div class="card">
-                                            <Canvas @ref="@CanvasArray[j]" width="@AdditionalCanvasSettings.Width"
-                                                height="@AdditionalCanvasSettings.Height"></Canvas>
-                                            <div class="card-body">
-                                                <h5>@StateEnumerator.Current.Segments[j].Identifier</h5>
-                                                <h6 class="card-subtitle mb-2 text-muted">@StateEnumerator.Current.Segments[j].Type</h6>
-                                                @foreach (var info in StateEnumerator.Current.Segments[j].Info) {
-                                                    <span><b>@info.Key</b>: @info.Value</span><br/>
-                                                }
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
+                    @if (AppState.GraphHistory != null && AppState.AlgorithmEnum is AlgorithmEnum.SA) {
+                        if (AppState.CurrentHistoryNode.Value.ChartInfo.Count >= 1) {
+                            <div class="col-md-6">
+                                <ChartJS @ref="@AppState.ChartJS[0]"
+                                    Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[0]"
+                                    ChartID="sa_temperature">
+                                </ChartJS>
                             </div>
-                        </div>
+                        }
+                        if (AppState.CurrentHistoryNode.Value.ChartInfo.Count >= 2) {
+                            <div class="col-md-6">
+                                <ChartJS @ref="@AppState.ChartJS[1]"
+                                    Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[1]"
+                                    ChartID="sa_distance">
+                                </ChartJS>
+                            </div>
+                        }
                     }
                 </div>
-            }
+            </div>
+            <!-- Tables -->
+            <div class="bg-custom-light custom-input-group">
+                <h5>Table</h5>
+                <TableGenerator @ref="@AppState.TableGenerator"/>
+            </div>
         </div>
     </div>
-    <TableGenerator @ref="@TableGenerator"></TableGenerator>
 </div>
 
 @code {
-    private Canvas CurrentCanvas;
-    private Canvas PreviousCanvas;
-    private Canvas[] CanvasArray = new Canvas[5];
+    private AppState AppState = new();
 
-    private TableGenerator TableGenerator;
-
-	private GraphProblem Instance;
-    private GraphState PreviousState;
-    private IEnumerator<GraphState> StateEnumerator;
-
-    private AlgorithmEnum AlgorithmEnum;
-    private NeighbourType NeighbourEnum;
-    private NearestNeighbour NearestNeighbor = new();
-    private SimulatedAnnealing SimulatedAnnealing = new();
-    private AntAlgorithm AntAlgorithm = new();
-    private HillClimbing HillClimbing = new();
-	
-	private string DefaultGraph = @"n,1,11,5
-n,2,6,4
-n,3,4,10
-n,4,4,2
-n,5,2,4
-n,6,7,7
-n,7,8,8
-n,8,9,2
-n,9,5,7
-n,10,7,1
-n,11,1,6
-n,12,11,11";
-    
-    private bool AutoAdvance;
-    private bool AnnotateEdges;
-    private bool ColorizeChanges = true;
-    private bool DrawComplete;
-    private bool ShowPrevious = true;
-    private bool MultiStart;
-    private string SettingsCollapse = "";
-    private CanvasSettings MainCanvasSettings = new();
-    private CanvasSettings AdditionalCanvasSettings = new();
-
-    private Stopwatch Stopwatch = new();
-    private TimeSpan TimeSpan = new();
-
-    private int _animationDelay = 1;
-    private int AnimationDelay {
-        get => _animationDelay;
-        set {
-            if (value == _animationDelay)
-                return;
-            if (value < 1 || value > 5000)
-                return;
-
-            _animationDelay = value;
-        }
-    }
-
-    private int _maxX = 30;
-    private int MaxX {
-        get => _maxX;
-        set {
-            if (value == _maxX)
-                return;
-            if (value < 10 || value > 90)
-                return;
-
-            _maxX = value;
-        }
-    }
-
-    private int _maxY = 30;
-    private int MaxY {
-        get => _maxY;
-        set {
-            if (value == _maxY)
-                return;
-            if (value < 10 || value > 90)
-                return;
-
-            _maxY = value;
-        }
-    }
-    
-    private int _nodeCount = 30;
-    private int NodeCount {
-        get => _nodeCount;
-        set {
-            if (value == _nodeCount)
-                return;
-            if (value < 5 || value > 90)
-                return;
-
-            _nodeCount = value;
-        }
-    }
-
-    /* Nearest Neighbor */
-    private int _startNode;
-    private int StartNode {
-        get => _startNode;
-        set {
-            if (value == _startNode)
-                return;
-            if (value < 0 || value > Instance.Nodes.Count - 1)
-                return;
-
-            _startNode = value;
-        }
-    }
-
-    /* Simulated Annealing */
-    private int _phaseLength = 1;
-    private int PhaseLength {
-        get => _phaseLength;
-        set {
-            if (value == _phaseLength)
-                return;
-            if (value < 1 || value > 20)
-                return;
-
-            _phaseLength = value;
-        }
-    }
-
-    private int _maxPhases = 100;
-    private int MaxPhases {
-        get => _maxPhases;
-        set {
-            if (value == _maxPhases)
-                return;
-            if (value < 100 || value > 1000)
-                return;
-
-            _maxPhases = value;
-        }
-    }
-
-    private double _startTemp = 100;
-    private double StartTemp {
-        get => _startTemp;
-        set {
-            if (value == _startTemp)
-                return;
-            if (value < 50 || value > 100_000) {
-                return;
-            }
-
-            _startTemp = value;
-        }
-    }
-
-    private double _minTemp = Math.Pow(10,-8);
-    private double MinTemp {
-        get => _minTemp;
-        set {
-            if (value == _minTemp)
-                return;
-            if (value < 0.0000001 || value >= _startTemp)
-                return;
-
-            _minTemp = value;
-        }
-    }
-
-    private double _alphaSA = 0.98;
-    private double AlphaSA {
-        get => _alphaSA;
-        set {
-            if (value == _alphaSA)
-                return;
-            if (value < 0.5 || value >= 1)
-                return;
-
-            _alphaSA = value;
-        }
-    }
-
-    /* Ant Algorithm */
-    private double _alphaACS = 0.1;
-    private double AlphaACS {
-        get => _alphaACS;
-        set {
-            if (value == _alphaACS)
-                return;
-            if (value <= 0 || value >= 1)
-                return;
-
-            _alphaACS = value;
-        }
-    }
-
-    private double _beta = 2;
-    private double Beta {
-        get => _beta;
-        set {
-            if (value == _beta)
-                return;
-            if (value <= 0 || value >= 10)
-                return;
-
-            _beta = value;
-        }
-    }
-
-    private double _rho = 0.1;
-    private double Rho {
-        get => _rho;
-        set {
-            if (value == _rho)
-                return;
-            if (value <= 0 || value >= 1)
-                return;
-
-            _rho = value;
-        }
-    }
-
-    private double _stateTransition = 0.9;
-    private double StateTransition {
-        get => _stateTransition;
-        set {
-            if (value == _stateTransition)
-                return;
-            if (value < 0.5 || value >= 1)
-                return;
-
-            _stateTransition = value;
-        }
-    }
-
-    private int _antCount = 10;
-    private int AntCount {
-        get => _antCount;
-        set {
-            if (value == _antCount)
-                return;
-            if (value < 1 || value > StateEnumerator.Current.Nodes.Count)
-                return;
-
-            _antCount = value;
-        }
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender) {
+    protected override Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
             Task.Run(async () => {
                 while (true) {
-                    await Task.Delay(AnimationDelay);
+                    await Task.Delay(AppState.AnimationDelay);
 
-                    if (AutoAdvance)
-                        await NextState(false);
+                    if (AppState.AutoAdvance)
+                        await AdvanceHistory();
                 }
             });
+
+            AppState.FileInput.LoadedFileChanged += StateHasChanged;
         }
+
+        return base.OnAfterRenderAsync(firstRender);
     }
 
-    private async Task InitiateGraph(bool textbased) {
-        Instance = textbased ? GraphProblem.FromText(DefaultGraph) :
-        GraphProblem.RandomGraphProblem(MaxX, MaxY, NodeCount);
-        MainCanvasSettings.Max = Instance.FindMax();
-        MainCanvasSettings.Scale = 30;
-        MainCanvasSettings.NodeRadius = 8;
-
-        AdditionalCanvasSettings.Max = Instance.FindMax();
-        AdditionalCanvasSettings.Scale = 15;
-        AdditionalCanvasSettings.NodeRadius = 6;
-        
-        await NextState(true);
-    }   
-
-    private async Task NextState(bool reset) {
-        if (reset)
-            await UpdateEnumerator();
-            
-        if (StateEnumerator == null)
-            await InitiateGraph(true);
-
-        if (!DrawComplete) {
-            StateEnumeratorOperations();
-            await FillCanvases();
-            StateHasChanged();
-            UpdateVisualsFromGraphState();
+    public async Task InitiateGraph(GraphSource graphSource) {
+        switch (graphSource) {
+            case GraphSource.Text:
+                try {
+                    AppState.Instance = GraphProblem.FromText(AppState.DefaultGraph);
+                } catch {
+                    AppState.Error = "The specified text does not contain a valid graph definition.";
+                    return;
+                }
+                break;
+            case GraphSource.Random:
+                AppState.Instance = GraphProblem.RandomGraphProblem(AppState.MaxX, AppState.MaxY, AppState.NodeCount);
+                break;
+            case GraphSource.File:
+                try {
+                    AppState.Instance = GraphProblem.FromText(AppState.FileInput.LoadedFile);
+                } catch {
+                    AppState.Error = "The specified file does not contain a valid graph definition.";
+                    return;
+                }
+                break;
         }
+
+        AppState.CanvasSettings.MinPos = AppState.Instance.FindMin();
+        AppState.CanvasSettings.MaxPos = AppState.Instance.FindMax();
+        AppState.CanvasSettings.Scale = AppState.Scale;
+        AppState.CanvasSettings.NodeRadius = AppState.NodeRadius;
+        AppState.CanvasSettings.ShowGrid = AppState.ShowGrid;
+        AppState.CanvasSettings.BackgroundColor = AppState.BackgroundColor;
+
+        await UpdateEnumerator();
     }
 
-    private void StateEnumeratorOperations() {
-        if (StateEnumerator.Current != null) {
-            PreviousState = StateEnumerator.Current.DeepCopy();
+    private async Task JumpFirst() {
+        var canChange = await CanChangeHistory();
+        if (!canChange)
+            return;
 
-            if (StateEnumerator.Current.Finished) {
-                DrawComplete = true;
-                Stopwatch.Stop();
-            }
-        }            
+        if (AppState.GraphHistory.First == null)
+            return;
 
-        StateEnumerator.MoveNext();
-        TimeSpan = Stopwatch.Elapsed;
+        AppState.CurrentHistoryNode = AppState.GraphHistory.First;
+        await Redraw();
+    }
+
+    private async Task JumpLast() {
+        var canChange = await CanChangeHistory();
+        if (!canChange)
+            return;
+
+        if (AppState.GraphHistory.Last == null)
+            return;
+
+        AppState.CurrentHistoryNode = AppState.GraphHistory.Last;
+        await Redraw();
+    }
+
+    private async Task AdvanceHistory() {
+        var canChange = await CanChangeHistory();
+        if (!canChange)
+            return;
+
+        if (AppState.CurrentHistoryNode.Next == null)
+            return;
+
+        AppState.CurrentHistoryNode = AppState.CurrentHistoryNode.Next;
+        await Redraw();
+    }
+
+    private async Task ReverseHistory() {
+        var canChange = await CanChangeHistory();
+        if (!canChange)
+            return;
+
+        if (AppState.CurrentHistoryNode.Previous == null)
+            return;
+
+        AppState.CurrentHistoryNode = AppState.CurrentHistoryNode.Previous;
+        await Redraw();
+    }
+
+    private async Task<bool> CanChangeHistory() {
+        if (AppState.GraphHistory == null)
+            return false;
+        if (AppState.CurrentHistoryNode == null) {
+            AppState.CurrentHistoryNode = AppState.GraphHistory.First;
+            await Redraw();
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task Redraw() {
+        AppState.CanvasSettings.Annotate = AppState.AnnotateEdges;
+        AppState.CanvasSettings.Colorize = AppState.ColorizeChanges;
+
+        await FillCanvases();
+        await UpdateVisualsFromGraphState();
+        StateHasChanged();
     }
 
     private async Task FillCanvases() {
-        if (PreviousState != null && ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
-            await ResetCanvas(await PreviousCanvas.GetContext2DAsync(), MainCanvasSettings);
-            await FillCanvas(PreviousCanvas);
+        if (AppState.CurrentHistoryNode.Previous != null && (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
+            await ResetCanvas(await AppState.PreviousCanvas.GetContext2DAsync(), AppState.CanvasSettings);
+            await FillCanvas(AppState.PreviousCanvas, AppState.CurrentHistoryNode.Previous.Value);
         }
 
-        await ResetCanvas(await CurrentCanvas.GetContext2DAsync(), MainCanvasSettings);
-        await FillCanvas(CurrentCanvas);
-        
-        for (int i = 0; i < CanvasArray.Length; i++) {
-            if (CanvasArray[i] != null && !DrawComplete && StateEnumerator.Current.Segments.Count > 0) {
-                await ResetCanvas(await CanvasArray[i].GetContext2DAsync(), AdditionalCanvasSettings);
-                await FillCanvas(CanvasArray[i]);
-            }
-        }
+        await ResetCanvas(await AppState.CurrentCanvas.GetContext2DAsync(), AppState.CanvasSettings);
+        await FillCanvas(AppState.CurrentCanvas, AppState.CurrentHistoryNode.Value);
     }
 
-    private async Task FillCanvas(Canvas canvas) {
+    private async Task FillCanvas(Canvas canvas, GraphState state) {
         await using (var context = await canvas.GetContext2DAsync()) {
-            if (canvas == PreviousCanvas) {
-                PreviousState.ComparePathEdges(StateEnumerator.Current);                
-
-                await CanvasRenderer.DrawPath(context, PreviousState.Nodes, PreviousState.PathEdges,
-                    MainCanvasSettings, AnnotateEdges, ColorizeChanges);
-            }                
-
-            if (canvas == CurrentCanvas) {
-                await CanvasRenderer.DrawPath(context, StateEnumerator.Current.Nodes, StateEnumerator.Current.PathEdges,
-                    MainCanvasSettings, AnnotateEdges, ColorizeChanges);
-            }                
-            
-            for (int i = 0; i < StateEnumerator.Current.Segments.Count; i++) {
-                if (canvas == CanvasArray[i] && !StateEnumerator.Current.Finished) {
-                    var nodes = StateEnumerator.Current.Segments[i].Nodes;
-                    var edges = StateEnumerator.Current.Segments[i].Edges;
-
-                    await CanvasRenderer.DrawPath(context, nodes, edges, AdditionalCanvasSettings, false, false);
-                }
-            }
+            await CanvasRenderer.DrawEdges(context, state, AppState.CurrentHistoryNode, AppState.CanvasSettings);
+            await CanvasRenderer.DrawNodes(context, state, AppState.CurrentHistoryNode, AppState.CanvasSettings);
         }
     }
 
     private async Task ResetCanvases() {
-        if (PreviousCanvas != null && ShowPrevious && (AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
-            PreviousState = null;
-            await ResetCanvas(await PreviousCanvas.GetContext2DAsync(), MainCanvasSettings);
+        if (AppState.PreviousCanvas != null && (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
+            await ResetCanvas(await AppState.PreviousCanvas.GetContext2DAsync(), AppState.CanvasSettings);
         }
 
-        if (CurrentCanvas != null) {
-            await ResetCanvas(await CurrentCanvas.GetContext2DAsync(), MainCanvasSettings);
-        }
-        
-        if (StateEnumerator != null && StateEnumerator.Current != null && StateEnumerator.Current.Segments.Count > 0) {
-            for (int i = 0; i < CanvasArray.Length; i++) {
-                if (CanvasArray[i] != null) {
-                    if (AlgorithmEnum == AlgorithmEnum.SA && NeighbourEnum == NeighbourType.TwoOpt) {
-                        if (CanvasArray[i].GetContext2DAsync() != null)
-                            await ResetCanvas(await CanvasArray[i].GetContext2DAsync(), AdditionalCanvasSettings);
-                    }
-                }
-            }
+        if (AppState.CurrentCanvas != null) {
+            await ResetCanvas(await AppState.CurrentCanvas.GetContext2DAsync(), AppState.CanvasSettings);
         }
     }
 
     private async Task ResetCanvas(Context2D context, CanvasSettings settings) {
-        await context.ClearRectAsync(0, 0, settings.Width, settings.Height);
-        await CanvasRenderer.DrawGrid(context, settings);
+        await context.ClearRectAsync((int)settings.MinPos.X, (int)settings.MinPos.Y, settings.Width, settings.Height);
+        await context.FillStyleAsync(settings.BackgroundColor);
+        await context.FillRectAsync((int)settings.MinPos.X, (int)settings.MinPos.Y, settings.Width, settings.Height);
+
+        if (settings.ShowGrid)
+            await CanvasRenderer.DrawGrid(context, settings);
     }
 
     private async Task UpdateEnumerator() {
-        Instance.Reset();
-        DrawComplete = false;
-        Stopwatch.Restart();
-        TableGenerator.Reset();
-
+        AppState.Instance.Reset();
+        AppState.TableGenerator.Reset();
         await ResetCanvases();
 
-        switch (AlgorithmEnum) {
+        AppState.Stopwatch.Restart();
+
+        switch (AppState.AlgorithmEnum) {
             case AlgorithmEnum.NN:
-                NearestNeighbor.Start = Instance.Nodes[StartNode];
-                StateEnumerator = MultiStart ? NearestNeighbor.MultiStart(Instance).GetEnumerator() :
-                    NearestNeighbor.FindPath(Instance).GetEnumerator();
+                AppState.NearestNeighbor.Start = AppState.Instance.Nodes[AppState.StartNode];
+                AppState.GraphHistory = AppState.NearestNeighbor.FindPath(AppState.Instance);
                 break;
             case AlgorithmEnum.SA:
-                SimulatedAnnealing.Alpha = AlphaSA;
-                SimulatedAnnealing.PhaseLength = PhaseLength;
-                SimulatedAnnealing.MaxPhases = MaxPhases;
-                SimulatedAnnealing.StartTemp = StartTemp;
-                SimulatedAnnealing.MinTemp = MinTemp;
-                SimulatedAnnealing.NeighbourEnum = NeighbourEnum;
-                StateEnumerator = SimulatedAnnealing.FindPath(Instance).GetEnumerator();
+                AppState.SimulatedAnnealing.Alpha = AppState.AlphaSA;
+                AppState.SimulatedAnnealing.PhaseLength = AppState.PhaseLength;
+                //AppState.SimulatedAnnealing.MaxPhases = AppState.MaxPhases;
+                AppState.SimulatedAnnealing.StartTemp = AppState.StartTemp;
+                AppState.SimulatedAnnealing.MinTemp = AppState.MinTemp;
+                AppState.SimulatedAnnealing.NeighbourEnum = AppState.NeighbourEnum;
+                AppState.GraphHistory = AppState.SimulatedAnnealing.FindPath(AppState.Instance);
                 break;
-            case AlgorithmEnum.ACS:
-                AntAlgorithm.AntCount = AntCount;
-                AntAlgorithm.Alpha = AlphaACS;
-                AntAlgorithm.Rho = Rho;
-                AntAlgorithm.Beta = Beta;
-                AntAlgorithm.StateTransition = StateTransition;
-                StateEnumerator = AntAlgorithm.FindPath(Instance).GetEnumerator();
+            case AlgorithmEnum.AS:
+                AppState.AntSystem.Iterations = AppState.Iterations;
+                AppState.AntSystem.AntCount = AppState.AntCount;
+                AppState.AntSystem.Alpha = AppState.AlphaACS;
+                AppState.AntSystem.Beta = AppState.Beta;
+                AppState.AntSystem.BreakWhenPathsAreEqual = AppState.BreakWhenPathsAreEqual;
+                AppState.GraphHistory = AppState.AntSystem.FindPath(AppState.Instance);
                 break;
             case AlgorithmEnum.HC:
-                HillClimbing.NeighbourType = NeighbourEnum;
-                StateEnumerator = MultiStart ? HillClimbing.MultiStart(Instance).GetEnumerator() :
-                    HillClimbing.FindPath(Instance).GetEnumerator();
+                AppState.HillClimbing.NeighbourEnum = AppState.NeighbourEnum;
+                AppState.HillClimbing.DescentType = AppState.DescentType;
+                AppState.GraphHistory = AppState.HillClimbing.FindPath(AppState.Instance);
                 break;
-            default: break;
         }
+
+        AppState.Stopwatch.Stop();
+        AppState.TimeSpan = AppState.Stopwatch.Elapsed;
+
+        AppState.CurrentHistoryNode = AppState.GraphHistory.First;
+        await Redraw();
     }
 
-    private void UpdateVisualsFromGraphState() {
-        if (AlgorithmEnum == AlgorithmEnum.NN) {
-            TableGenerator.UpdateFromGraphState(StateEnumerator.Current, TableType.DistanceMatrix);
-        } else if ((AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) && NeighbourEnum is NeighbourType.TwoOpt) {
-            TableGenerator.UpdateFromGraphState(StateEnumerator.Current, TableType.SwapSummary);
-        } else {
-            TableGenerator.UpdateFromGraphState(StateEnumerator.Current, TableType.RouteSummary);
+    private async Task UpdateVisualsFromGraphState() {
+        AppState.TableGenerator.UpdateFromGraphState(AppState.CurrentHistoryNode, AppState.AlgorithmEnum, AppState.NeighbourEnum);
+        foreach (var chart in AppState.ChartJS) {
+            if (chart != null)
+                await chart.UpdateFromGraphState();
         }
     }
 }

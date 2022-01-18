@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,15 +9,15 @@ using TravellingSalesmanProblem.Graph;
 namespace TravellingSalesmanProblem.Algorithms {
     public class NeighbourState {
         private static readonly Random Random = new();
-
-        public static GraphProblem Create(GraphProblem graph, NeighbourType type) {
+        public static GraphProblem Create(GraphProblem graph, NeighbourType type, DescentType descent) {
+            graph.Reset();
             var neighbor = new GraphProblem();
             switch (type) {
                 case NeighbourType.Swap:
-                    neighbor = Swap(graph);
+                    neighbor = Swap(graph, descent);
                     break;
                 case NeighbourType.TwoOpt:
-                    neighbor = TwoOpt(graph);
+                    neighbor = TwoOpt(graph, descent);
                     break;
                 case NeighbourType.ThreeOpt:
                     neighbor = ThreeOpt(graph);
@@ -29,51 +30,91 @@ namespace TravellingSalesmanProblem.Algorithms {
             return neighbor;
         }
 
-        public static GraphProblem TwoOpt(GraphProblem graph) {
-            var n = graph.Nodes.Count;
-            var i = Random.Next(1, n - 3);
-            var j = Random.Next(i + 1, n - 2);
+        public static GraphProblem TwoOpt(GraphProblem graph, DescentType descent) {
+            TwoOptMove move;
+            if (descent == DescentType.Random) {
+                var n = graph.Nodes.Count;
+                var pos1 = Random.Next(0, n - 2);
+                var pos2 = Random.Next(pos1 + 1, n - 1);
+                move = new TwoOptMove(graph, pos1, pos2);
+            } else {
+                move = TwoOptLoop(graph, descent);
+            }
 
-            Console.WriteLine($"Random Numbers: i: {i}, j: {j}");
-            Console.WriteLine("Path: " + string.Join('-', graph.Nodes.Select(n => n.Index)));
-            Console.WriteLine($"Two Opt: i: ({graph.Nodes[i].Index}),j: ({graph.Nodes[j].Index})");
-            Console.WriteLine($"Two Opt: i+1: ({graph.Nodes[i + 1].Index}),j: ({graph.Nodes[j + 1].Index})");
+            if (move == null)
+                return graph;
 
-            var move = new TwoOptMove(graph, i, j);
-
-            var swapped = move.SwapEdges(true);
-            swapped.SwapInfo = move.SwapInfo;
-            swapped.Segments = GraphSegment.Split(swapped.Edges, i, j + 1);
-
-            return swapped;
+            var best = move.SwapEdges();
+            best.SwapInfo = move.SwapInfo;
+            return best;
         }
 
-        public static GraphProblem TwoOptFull(GraphProblem graph) {
-            var n = graph.Nodes.Count;
-            var improvement = true;
 
-            while (improvement) {
-            StartAgain:
-                improvement = false;
-                for (int i = 1; i <= n - 3; i++) {
-                    for (int j = i + 1; j <= n - 2; j++) {
-                        var move = new TwoOptMove(graph, i, j);
-                        if (move.Costs < 0) {
-                            graph = move.SwapEdges();
-                            graph.SwapInfo = move.SwapInfo;
-                            goto StartAgain;
-                        }
+        private static TwoOptMove TwoOptLoop(GraphProblem graph, DescentType descent) {
+            var n = graph.Nodes.Count;
+            var savings = 0d;
+            TwoOptMove move = null;
+
+            for (int i = 1; i <= n - 3; i++) {
+                for (int j = i + 1; j <= n - 2; j++) {
+                    var temp = new TwoOptMove(graph, i, j);
+                    if (temp.Costs < savings) {
+                        savings = temp.Costs;
+                        move = temp;
+
+                        if (descent == DescentType.Next)
+                            return move;
                     }
                 }
             }
 
-            return graph;
+            return move;
+        }
+
+        public static GraphProblem Swap(GraphProblem graph, DescentType descent) {
+            SwapMove move;
+            if (descent == DescentType.Random) {
+                var n = graph.Nodes.Count;
+                var pos1 = Random.Next(1, n - 2);
+                var pos2 = Random.Next(pos1 + 1, n - 1);
+                move = new SwapMove(graph, pos1, pos2);
+            } else {
+                move = SwapLoop(graph, descent);
+            }
+
+            if (move == null)
+                return graph;
+
+            var best = move.SwapNodes();
+            best.SwapInfo = move.SwapInfo;
+            return best;
+        }
+
+        private static SwapMove SwapLoop(GraphProblem graph, DescentType descent) {
+            var n = graph.Nodes.Count;
+            var savings = 0d;
+            SwapMove move = null;
+
+            for (int i = 1; i <= n - 3; i++) {
+                for (int j = i + 1; j <= n - 2; j++) {
+                    var temp = new SwapMove(graph, i, j);
+                    if (temp.Costs < savings) {
+                        savings = temp.Costs;
+                        move = temp;
+
+                        if (descent == DescentType.Next)
+                            return move;
+                    }
+                }
+            }
+
+            return move;
         }
 
         public static GraphProblem ThreeOpt(GraphProblem graph) {
             var tour = graph.Nodes.ToArray();
             var n = tour.Length;
-            
+
             //random indexes for split
             var i = Random.Next(1, n - 3);
             var j = Random.Next(i + 1, n - 2);
@@ -100,15 +141,15 @@ namespace TravellingSalesmanProblem.Algorithms {
             var dAC = Edge.GetDistanceRounded(A, C);
             var dAD = Edge.GetDistanceRounded(A, D);
             var dCD = Edge.GetDistanceRounded(C, D);
-            var dEF = Edge.GetDistanceRounded(E, F);           
+            var dEF = Edge.GetDistanceRounded(E, F);
             var dBD = Edge.GetDistanceRounded(B, D);
             var dCE = Edge.GetDistanceRounded(C, E);
-            var dDF = Edge.GetDistanceRounded(D, F);            
+            var dDF = Edge.GetDistanceRounded(D, F);
             var dEB = Edge.GetDistanceRounded(E, B);
             var dCF = Edge.GetDistanceRounded(C, F);
             var dFB = Edge.GetDistanceRounded(F, B);
             var dAE = Edge.GetDistanceRounded(A, E);
-            
+
             IEnumerable<Node> final = null;
             var distances = new List<double>();
 
@@ -133,22 +174,22 @@ namespace TravellingSalesmanProblem.Algorithms {
 
             if (min == d1)
                 final = start.Concat(CB).Concat(DE);
-            
+
             if (min == d2)
-                final = start.Concat(BC).Concat(ED);        
-            
+                final = start.Concat(BC).Concat(ED);
+
             if (min == d3)
                 final = start.Concat(DE).Concat(CB);
-            
+
             if (min == d4)
                 final = start.Concat(DE).Concat(BC);
-            
+
             if (min == d5)
                 final = start.Concat(ED).Concat(CB);
-            
+
             if (min == d6)
                 final = start.Concat(ED).Concat(BC);
-            
+
             if (min == d7)
                 final = start.Concat(CB).Concat(ED);
 
@@ -159,10 +200,6 @@ namespace TravellingSalesmanProblem.Algorithms {
             };
             swapped.ConnectPathNodes();
             return swapped;
-        }
-
-        public static GraphProblem Reversed(GraphProblem tour, int i, int j) {
-            return null;
         }
 
         public static GraphProblem DoubleBridgeFourOpt(GraphProblem graph) {
@@ -189,32 +226,18 @@ namespace TravellingSalesmanProblem.Algorithms {
             swapped.ConnectPathNodes();
             return swapped;
         }
-
-        public static GraphProblem Swap(GraphProblem graph) {
-            var n = graph.Nodes.Count;
-            var x = graph.DeepCopy();
-            
-            var i = Random.Next(1, n - 2);
-            var j = Random.Next(i + 1, n - 1);
-
-            var temp = x.Nodes;
-            var node = temp[i];
-            temp[i] = temp[j];
-            temp[j] = node;
-
-            var final = new GraphProblem {
-                Nodes = temp
-            };
-
-            final.ConnectPathNodes();
-            return final;
-        }
     }
 
     public enum NeighbourType {
-        Swap = 0,
-        TwoOpt = 1,
-        ThreeOpt = 2,
-        FourOpt = 3
+        Swap,
+        TwoOpt,
+        ThreeOpt,
+        FourOpt
+    }
+
+    public enum DescentType {
+        Random,
+        Next,
+        Steepest
     }
 }
