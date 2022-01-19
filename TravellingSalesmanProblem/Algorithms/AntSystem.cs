@@ -13,6 +13,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         public double Alpha { get; set; }
         public int Iterations { get; set; }
         public bool BreakWhenPathsAreEqual { get; set; }
+        public GlobalUpdatingRule GlobalUpdatingRule { get; set; }
         public double InitialPheromone { get; set; }
         private static readonly Random Random = new();
         private GraphProblem XBest = new();
@@ -63,6 +64,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             newState.Path = XBest.Nodes;
             newState.PathEdges = X.Edges;
             newState.Iteration = iteration;
+            newState.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
 
             UpdateStateMessages(newState);
             return newState;
@@ -79,14 +81,18 @@ namespace TravellingSalesmanProblem.Algorithms {
                 edge.Node1 = graph.Nodes.Find(n => n.Index == edge.Node1Id);
                 edge.Node2 = graph.Nodes.Find(n => n.Index == edge.Node2Id);
 
-                //Ant System Global Updating Rule
-                //edge.Pheromone = (1 - Alpha) * edge.Pheromone + Colony.Sum(n => DeltaAntij(n, edge));
-
-                //Ant Colony System Global Updating Rule
                 edge.Pheromone = (1 - Alpha) * edge.Pheromone;
-                if (edge.IsInside(XBest.Edges)) {
-                    var lgbInversed = Math.Pow(XBest.Costs, -1);
-                    edge.Pheromone += Alpha * lgbInversed;
+
+                if (GlobalUpdatingRule == GlobalUpdatingRule.AS) {
+                    var sum = Colony.Sum(n => DeltaAntij(n, edge));
+                    Equations["Global Updating Rule"] = MathString.GlobalUpdatingRuleAS(edge, Alpha, sum);
+                    edge.Pheromone += sum;
+                } else {
+                    if (edge.IsInside(XBest.Edges)) {
+                        var lgbInversed = Math.Pow(XBest.Costs, -1);
+                        Equations["Global Updating Rule"] = MathString.GlobalUpdatingRule(edge, Alpha, lgbInversed);
+                        edge.Pheromone += Alpha * lgbInversed;
+                    }
                 }
             }
 
@@ -135,5 +141,10 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
             state.Messages["Ant Distances"] = string.Join(';', Colony.Select(a => Math.Round(a.Path.Costs, 3)));
         }
+    }
+
+    public enum GlobalUpdatingRule {
+        ACS = 0,
+        AS = 1
     }
 }

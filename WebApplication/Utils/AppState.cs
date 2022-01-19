@@ -224,6 +224,7 @@ namespace WebApplication.Utils {
         public NeighbourType NeighbourEnum;
         public GraphSource GraphSource;
         public DescentType DescentType;
+        public GlobalUpdatingRule GlobalUpdatingRule;
         public NearestNeighbour NearestNeighbor = new();
         public SimulatedAnnealing SimulatedAnnealing = new();
         public AntSystem AntSystem = new();
@@ -248,6 +249,7 @@ n,12,11,11";
         public bool ColorizeChanges = true;
         public string BackgroundColor = "#FFFFFF";
         public bool MultiStart;
+        public bool CalculateTemperature;
         public bool ShowGrid = true;
         public CanvasSettings CanvasSettings = new();
 

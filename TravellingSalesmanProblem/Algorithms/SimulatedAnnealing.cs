@@ -2,8 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TravellingSalesmanProblem.Graph;
 
 namespace TravellingSalesmanProblem.Algorithms {
@@ -14,6 +12,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         public double MinTemp { get; set; }
         public double Alpha { get; set; }
         public NeighbourType NeighbourEnum { get; set; }
+        public bool CalculateTemperature { get; set; }
 
         private GraphProblem X = new();
         private GraphProblem XBest = new();
@@ -38,12 +37,10 @@ namespace TravellingSalesmanProblem.Algorithms {
             chartInfo2.Title = "Temperature Progress";
             chartInfo.YAxis[0].Title = "Temperature";
 
-            //StartTemp = CalculateInitialTemperature(X);
-
             var state = new GraphState {
                 Nodes = X.Nodes,
                 PathEdges = X.Edges,
-                Temperature = StartTemp,
+                Temperature = CalculateTemperature ? CalculateInitialTemperature(X) : StartTemp,
                 ChartInfo = new List<ChartInfo>() { chartInfo, chartInfo2 }
             };
 
@@ -61,12 +58,6 @@ namespace TravellingSalesmanProblem.Algorithms {
 
                         if (X.Costs < XBest.Costs) {
                             XBest = X;
-                            /*If no better solution is found this will never be executed
-                             Therefore the updated iteration and temperature are never shown
-                            Oh the other hand, if it doesn't find an improvement, it doesn't find one
-                            But at least the temperature and iteration should go down!!!
-                            maybe also look into fixing the random descent type (Niels fragen ob random
-                            wirklich random sein soll oder mehrfach gewürfelt werden soll)*/
                             history.AddLast(AdvanceState(history.Last.Value, iteration, temperature));
                         }
                     } else if (MetropolisRule(history.Last.Value)) {
@@ -75,7 +66,7 @@ namespace TravellingSalesmanProblem.Algorithms {
                 }
 
                 Equations["Temperature Update"] = MathString.UpdateTemperature(history.Last.Value, Alpha);
-                //
+
                 iteration++;
                 temperature *= Alpha;
 
@@ -86,8 +77,6 @@ namespace TravellingSalesmanProblem.Algorithms {
                 history.Last.Value.ChartInfo[1].YAxis[0].Add(X.Costs, "red");
             }
 
-            //history.Last.Value.Iteration = iteration;
-            //history.Last.Value.Temperature = temperature;
             return history;
         }
 

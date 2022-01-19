@@ -111,6 +111,21 @@ namespace TravellingSalesmanProblem.Algorithms {
             return mathString;
         }
 
+        public static MathString GlobalUpdatingRuleAS(Edge edge, double alpha, double delta) {
+            var latex = "$\tau(r,s) \\leftarrow (1 - \\alpha) \\cdot \\tau(r,s) + \\sum_{k=1}^{m}\\triangle\\tau_{k}(r,s)$";
+            var dummy = "$\tau(?r?,?s?) = (1 - ?alpha?) \\cdot ?tau? + ?triangle?$";
+            var result = $"$\\tau({edge.Node1.Index},{edge.Node2.Index}) = {Math.Round(edge.Pheromone + delta, 3)}$";
+
+            var mathString = new MathString(latex, dummy, result);
+            mathString.SetVar("r", edge.Node1.Index);
+            mathString.SetVar("s", edge.Node2.Index);
+            mathString.SetVar("alpha", alpha);
+            mathString.SetVar("tau", Math.Round(edge.Pheromone, 3));
+            mathString.SetVar("triangle", delta);
+
+            return mathString;
+        }
+
         public static MathString LocalUpdatingRule(Edge edge, double rho, double initialPheromone) {
             var latex = "$\\tau(r,s) \\leftarrow (1-\\rho) \\cdot \\tau(r,s) + \\rho \\cdot \\triangle \\tau(r,s)$";
             var dummy = "$\\tau(?r?,?s?) = (1-?rho?) \\cdot ?tau? + ?rho? \\cdot ?triangle?$";
