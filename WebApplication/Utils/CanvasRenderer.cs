@@ -114,7 +114,7 @@ namespace WebApplication.Utils {
         }
 
         private static Vector2 Manipulate(Vector2 vector, CanvasSettings settings) {
-            return (vector * settings.Scale + settings.Offset).InverseY(settings.Height);
+            return ((vector - settings.MinPos) * settings.Scale + settings.Offset).InverseY(settings.Height);
         }
     }
 }

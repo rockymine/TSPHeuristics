@@ -10,8 +10,8 @@ namespace WebApplication.Utils {
         public Vector2 MaxPos { get; set; }
         public float Scale { get; set; }
         public Vector2 Offset => new(Scale / 2, Scale / 2);
-        public int Height => (int)(Scale * (MaxPos.Y + 1));
-        public int Width => (int)(Scale * (MaxPos.X + 1));
+        public int Height => (int)(Scale * (MaxPos.Y - MinPos.Y + 1));
+        public int Width => (int)(Scale * (MaxPos.X - MinPos.X + 1));
         public bool Colorize { get; set; }
         public bool Annotate { get; set; }
         public bool ShowGrid { get; set; }

@@ -182,7 +182,7 @@
                     await Task.Delay(AppState.AnimationDelay);
 
                     if (AppState.AutoAdvance)
-                        await AdvanceHistory();
+                        await AdvanceHistory(true);
                 }
             });
 
@@ -226,6 +226,7 @@
     }
 
     private async Task JumpFirst() {
+        AppState.AutoAdvance = false;
         var canChange = await CanChangeHistory();
         if (!canChange)
             return;
@@ -238,6 +239,7 @@
     }
 
     private async Task JumpLast() {
+        AppState.AutoAdvance = false;
         var canChange = await CanChangeHistory();
         if (!canChange)
             return;
@@ -249,7 +251,10 @@
         await Redraw();
     }
 
-    private async Task AdvanceHistory() {
+    private async Task AdvanceHistory(bool automatic = false) {
+        if (!automatic)
+            AppState.AutoAdvance = false;
+        
         var canChange = await CanChangeHistory();
         if (!canChange)
             return;
@@ -262,6 +267,7 @@
     }
 
     private async Task ReverseHistory() {
+        AppState.AutoAdvance = false;
         var canChange = await CanChangeHistory();
         if (!canChange)
             return;
