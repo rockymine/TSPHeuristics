@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ChartData;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,10 +20,19 @@ namespace TravellingSalesmanProblem.Algorithms {
             var history = new LinkedList<GraphState>();
             X = GraphProblem.OrderedGraphProblem(graph);
 
+            var chartInfo = new ChartInfo {
+                Title = "Distance Progress",
+                XAxis = new ChartSet { Title = "Iteration" },
+                YAxis = new List<ChartSet> {
+                    new ChartSet { Title = "Distance" }
+                }
+            };
+
             var state = new GraphState {
                 Nodes = X.Nodes,
                 PathEdges = X.Edges,
-                Distance = double.MaxValue
+                Distance = double.MaxValue,
+                ChartInfo = new List<ChartInfo>() { chartInfo }
             };
 
             XBest = X;
@@ -39,6 +49,9 @@ namespace TravellingSalesmanProblem.Algorithms {
                 XBest = X;
                 iteration++;
                 history.AddLast(AdvanceState(history.Last.Value, iteration));
+
+                history.Last.Value.ChartInfo[0].XAxis.Add(iteration, "red");
+                history.Last.Value.ChartInfo[0].YAxis[0].Add(X.Costs, "red");
             }
 
             return history;
@@ -78,6 +91,10 @@ namespace TravellingSalesmanProblem.Algorithms {
             newState.PathEdges = XBest.Edges;
             newState.SwapInfo = XBest.SwapInfo?.DeepCopy();
             newState.Iteration = iteration;
+
+            for (int i = 0; i < newState.ChartInfo[0].YAxis[0].Values.Count; i++) {
+                newState.ChartInfo[0].YAxis[0].Colors[i] = (i == iteration - 1) ? "blue" : "red";
+            }
 
             UpdateStateMessages(newState);
             return newState;

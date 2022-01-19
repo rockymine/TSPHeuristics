@@ -35,7 +35,8 @@
 		
 		if (algorithmEnum == AlgorithmEnum.NN) {
 			CreateDistanceMatrix(node);
-		} else if (algorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC && neighbourType is NeighbourType.Swap or NeighbourType.TwoOpt) {
+		} else if (algorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC &&
+			neighbourType is NeighbourType.Swap or NeighbourType.TwoOpt) {
 			CreateSwapSummary(node, neighbourType);
 		} else {
 			CreateIterationTable(node);
@@ -104,7 +105,7 @@
 		if (neighbourType == NeighbourType.Swap)
 			formula = "$\\triangle_{i,j}=\\begin{cases}d_{i,j-1}+d_{i,j+1}-d_{i,i-1}-d_{j,j+1},&i=j-1\\parallel j-1=i+1\\\\d_{j-1,i}+d_{j,i+1}-d_{j-1,j}-d_{i,i+1},&i=j+1 \\parallel j+1=i-1\\\\d_{i-1,j}+d_{j,i+1}+d_{j-1,i}+d_{i,j+1}-d_{i-1,i}-d_{i,i+1}-d_{j-1,j}-d_{j,j+1},&else\\end{cases}$";
 
-		tableInfo.Header = new List<string> { "Iteration", "$i$", "$j$", formula, "Before", "Tour" , "Distance"};
+		tableInfo.Header = new List<string> { "It.", "$i$", "$j$", "x", formula, "y" , "f(y)"};
 
 		if (tableInfo.Cells is null)
 			tableInfo.Cells = new TableCellInfo[0, tableInfo.Header.Count];
@@ -119,13 +120,22 @@
 			temp[lastRow, 0] = new TableCellInfo($"${state.Iteration}$", null);
 			temp[lastRow, 1] = new TableCellInfo($"${state.SwapInfo.Nodes[0].Index}$", null);
 			temp[lastRow, 2] = new TableCellInfo($"${state.SwapInfo.Nodes[1].Index}$", null);
-			temp[lastRow, 3] = new TableCellInfo(state.SwapInfo.Calculation, null);
-			temp[lastRow, 4] = new TableCellInfo("$(" + $"{string.Join(',', node.Previous?.Value.Path.Select(n => n == i || n == j ? "\\underset{i=" + state.Path.IndexOf(n) + "}{\\text{" + n.Index + "}}" : n.Index.ToString()))}" + ")$", null);
-			temp[lastRow, 5] = new TableCellInfo("$(" + $"{string.Join(',', state.Path.Select(n => n == i || n == j ? "\\underset{i=" + state.Path.IndexOf(n) + "}{\\text{" + n.Index + "}}" : n.Index.ToString()))}" + ")$", null);
+			temp[lastRow, 3] = IndexedTourSummary(node.Previous?.Value, state, i, j);
+			temp[lastRow, 4] = new TableCellInfo(state.SwapInfo.Calculation, null);
+			temp[lastRow, 5] = IndexedTourSummary(state, state, i, j);
 			temp[lastRow, 6] = new TableCellInfo(Math.Round(state.Distance, 1).ToString(), null);
 
 			tableInfo.Cells = temp;
 		}
+	}
+
+	private TableCellInfo IndexedTourSummary(GraphState a, GraphState b, Node i, Node j) {
+		var content = string.Join(',', a.Path.Select(n =>
+				n == i ? "\\underset{i}{\\text{" + n.Index + "}}" : 
+				n == j ? "\\underset{j}{\\text{" + n.Index + "}}" : 
+				n.Index.ToString()));
+
+		return new TableCellInfo("$("+ $"{content}" + ")$", null);
 	}
 
 	private bool InPath(List<Node> path, Node node1, Node node2) {
