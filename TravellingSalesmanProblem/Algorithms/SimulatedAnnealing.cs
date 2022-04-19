@@ -25,7 +25,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             var history = new LinkedList<GraphState>();
             X = GraphProblem.OrderedGraphProblem(graph);
 
-            var chartInfo = new ChartInfo {
+            var distanceInfo = new ChartInfo {
                 Title = "Distance Progress",
                 XAxis = new ChartSet { Title = "Iteration" },
                 YAxis = new List<ChartSet> {
@@ -33,15 +33,15 @@ namespace TravellingSalesmanProblem.Algorithms {
                 }
             };
 
-            var chartInfo2 = chartInfo.DeepCopy();
-            chartInfo2.Title = "Temperature Progress";
-            chartInfo.YAxis[0].Title = "Temperature";
+            var temperatureInfo = distanceInfo.DeepCopy();
+            temperatureInfo.Title = "Temperature Progress";
+            temperatureInfo.YAxis[0].Title = "Temperature";
 
             var state = new GraphState {
                 Nodes = X.Nodes,
                 PathEdges = X.Edges,
                 Temperature = CalculateTemperature ? CalculateInitialTemperature(X) : StartTemp,
-                ChartInfo = new List<ChartInfo>() { chartInfo, chartInfo2 }
+                ChartInfo = new List<ChartInfo>() { temperatureInfo, distanceInfo }
             };
 
             XBest = X;
