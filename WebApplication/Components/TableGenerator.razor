@@ -3,6 +3,7 @@
 @using WebApplication.Utils
 @using StardustDL.RazorComponents.Markdown
 @if (tableInfo.HasData) {
+	<h5>@title</h5>
 	<div class="table-responsive">
 		<table class="table" style="text-align: center">
 			<thead>
@@ -27,6 +28,7 @@
 
 @code {
 	private TableInfo tableInfo = new();
+	private string title;
 
 	public void Reset() => tableInfo = new TableInfo();
 
@@ -34,11 +36,14 @@
 		tableInfo.Header.Clear();
 		
 		if (algorithmEnum == AlgorithmEnum.NN) {
+			title = "Distance Matrix";
 			CreateDistanceMatrix(node);
 		} else if (algorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC &&
 			neighbourType is NeighbourType.Swap or NeighbourType.TwoOpt) {
+			title = "Neighbor Function History";
 			CreateSwapSummary(node, neighbourType);
 		} else {
+			title = "Tour History";
 			CreateIterationTable(node);
 		}
 		

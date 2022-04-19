@@ -106,7 +106,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             mathString.SetVar("s", edge.Node2.Index);
             mathString.SetVar("alpha", alpha);
             mathString.SetVar("tau", Math.Round(edge.Pheromone, 3));
-            mathString.SetVar("triangle", delta);
+            mathString.SetVar("triangle", Math.Round(delta, 5));
 
             return mathString;
         }

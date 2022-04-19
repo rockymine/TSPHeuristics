@@ -12,13 +12,13 @@
         <div class="col-md-2 p-0">
             <!-- Algorithm Settings -->
             <div class="bg-custom-light custom-input-group">
-                <h5>Algorithm Settings</h5>
+                <h5 class="font-weight-bold">Algorithm Settings</h5>
                 <AlgorithmSettings @bind-AlgorithmEnum="@AppState.AlgorithmEnum"
                     @bind-MultiStart="@AppState.MultiStart"/>
             </div>
             <!-- Heuristic Settings -->
             <div class="bg-custom-light custom-input-group">
-                <h5>Heuristic Settings</h5>
+                <h5 class="font-weight-bold">Heuristic Settings</h5>
                 <form>
                     @if (AppState.GraphHistory != null) {
                         @if (AppState.AlgorithmEnum == AlgorithmEnum.NN && !AppState.MultiStart) {
@@ -49,13 +49,14 @@
             </div>
             <!-- Canvas Settings -->
             <div class="bg-custom-light custom-input-group">
+                <h5 class="font-weigth-bold">Canvas Settings</h5>
                 <CanvasDisplaySettings @bind-Scale="@AppState.Scale" @bind-NodeRadius="@AppState.NodeRadius"
                     @bind-ShowGrid="@AppState.ShowGrid" @bind-AnnotateEdges="@AppState.AnnotateEdges" @bind-ColorizeChanges="@AppState.ColorizeChanges"
                     @bind-AnimationDelay="@AppState.AnimationDelay"/>                
             </div>
             <!-- Graph Settings -->
             <div class="bg-custom-light custom-input-group">
-                <h5>Graph Settings</h5>
+                <h5 class="font-weight-bold">Graph Settings</h5>
                 <div class="form-group">
                     <label for="selectGraphSource">Graph Source</label>
                     <select class="form-control" name="graphSource" id="selectGraphSource" @bind="AppState.GraphSource">
@@ -82,8 +83,7 @@
         <div class="col-md-4 p-0">
             <!-- State -->
             <div class="bg-custom-light custom-input-group">
-                <h5>State</h5>
-                <span><b>Execution Time</b>: @AppState.TimeSpan.Minutes m @AppState.TimeSpan.Seconds s @AppState.TimeSpan.Milliseconds ms (@Math.Round((double)AppState.Stopwatch.ElapsedMilliseconds / 1000, 3) s)</span><br/>
+                <h5 class="font-weight-bold">Visualization Control</h5>
                 @if (AppState.GraphHistory != null) {
                     <div class="input-group">
                         <div class="btn-toolbar">
@@ -99,20 +99,21 @@
                         </div>
                     </div>
                 }
+                <span>Execution Time: @AppState.TimeSpan.Minutes m @AppState.TimeSpan.Seconds s @AppState.TimeSpan.Milliseconds ms (@Math.Round((double)AppState.Stopwatch.ElapsedMilliseconds / 1000, 3) s)</span><br/>
                 @if (AppState.CurrentHistoryNode != null) {
                     @foreach (var kvp in AppState.CurrentHistoryNode.Value.Messages) {
-                        <span><b>@kvp.Key</b>: @kvp.Value</span><br/>
+                        <span>@kvp.Key: @kvp.Value</span><br/>
                     }
                 }
             </div>
             <!-- Graph View -->
             <div class="bg-custom-light custom-input-group">
-                <h5>Graph View</h5>
+                <h5 class="font-weight-bold">Graph View</h5>
                 @if (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
-                    <h5 class="font-weight-bold">Previous (Iteration Start)</h5>
+                    <h6>Previous (Iteration Start)</h6>
                     <Canvas @ref="@AppState.PreviousCanvas" width="@AppState.CanvasSettings.Width" height="@AppState.CanvasSettings.Height"/>
                 }
-                    <h5 class="font-weight-bold">Current (Iteration End)</h5>
+                    <h6>Current (Iteration End)</h6>
                     <Canvas @ref="@AppState.CurrentCanvas" width="@AppState.CanvasSettings.Width" height="@AppState.CanvasSettings.Height"/>
             </div>
             <!-- Calculations -->
@@ -120,9 +121,9 @@
                 AppState.CurrentHistoryNode.Value != null &&
                 AppState.CurrentHistoryNode.Value.Equations.Count != 0) {
                 <div class="bg-custom-light custom-input-group">
-                    <h5>Calculations</h5>
+                    <h5 class="font-weight-bold">Calculations</h5>
                     @foreach (var kvp in AppState.CurrentHistoryNode.Value.Equations) {
-                        <h5>@kvp.Key</h5>
+                        <span>@kvp.Key</span><br/>
                         <MarkdownRenderer Value="@kvp.Value.Latex"/>
                         <MarkdownRenderer Value="@kvp.Value.Generate()"/>
                         <MarkdownRenderer Value="@kvp.Value.Result"/>
@@ -165,7 +166,6 @@
             }
             <!-- Tables -->
             <div class="bg-custom-light custom-input-group">
-                <h5>Table</h5>
                 <TableGenerator @ref="@AppState.TableGenerator"/>
             </div>
         </div>
