@@ -9,20 +9,43 @@ using System.Text;
 using System.Threading.Tasks;
 using Modulight.Modules.Hosting;
 using StardustDL.RazorComponents.Markdown;
+using Photino.Blazor;
 
 namespace WebApplication {
     public class Program {
-        public static async Task Main(string[] args) {
-            var builder = WebAssemblyHostBuilder.CreateDefault(args);
-            builder.RootComponents.Add<App>("#app");
+        public static void Main(string[] args)
+        {
+            try {
+                Run(args);
+            } catch (Exception ex) {
 
-            builder.Services.AddModules(builder => {
-                builder.UseRazorComponentClientModules().AddMarkdownModule();
-            });
+                throw;
+            }
+            
+        }
 
-            builder.Services.AddTransient(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+        private static void Run(string[] args)
+        {
+            AppDomain.CurrentDomain.UnhandledException += (s, args)
+              => Console.WriteLine(args.ExceptionObject.ToString());
 
-            await builder.Build().RunAsyncWithModules();
+            var builder = PhotinoBlazorAppBuilder.CreateDefault(args);
+
+            builder.Services.AddLogging();
+            builder.RootComponents.Add<App>("app");
+
+            var app = builder.Build();
+
+            app.MainWindow.SetTitle("Test");
+            app.MainWindow.ContextMenuEnabled = true;
+            app.MainWindow.DevToolsEnabled = true;
+            app.MainWindow.GrantBrowserPermissions = false;
+
+            app.MainWindow.Width = 800;
+            app.MainWindow.Height = 600;
+
+            app.MainWindow.Load("wwwroot/index.html");
+            app.Run();
         }
     }
 }
