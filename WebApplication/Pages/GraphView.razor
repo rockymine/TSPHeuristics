@@ -76,6 +76,10 @@
                 }
                 <div class="form-group">
                     <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(AppState.GraphSource)">Execute Algorithm</button>
+                    
+                    @if (AppState.Instance != null) {
+                        <FileOutput @ref="@AppState.FileOutput"/>
+                    }                    
                 </div>
                 <p>@AppState.Error</p>
             </div>
@@ -373,6 +377,7 @@
                 break;
         }
 
+        AppState.FileOutput.LoadedFile = GraphProblem.SerializeGraph(AppState.Instance);
         AppState.Stopwatch.Stop();
         AppState.TimeSpan = AppState.Stopwatch.Elapsed;
 
