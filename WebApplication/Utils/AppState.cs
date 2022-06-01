@@ -231,6 +231,7 @@ namespace WebApplication.Utils {
         public HillClimbing HillClimbing = new();
 
         public FileInput FileInput = new();
+        public FileOutput FileOutput = new();
         public string DefaultGraph = @"n,1,11,5
 n,2,6,4
 n,3,4,10
