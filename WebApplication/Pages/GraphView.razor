@@ -8,7 +8,6 @@
 @using WebApplication.Components
 @using StardustDL.RazorComponents.Markdown
 <div class="container-fluid">
-    <i class="bi bi-123"></i>
     <h2 class="font-weight-bold">Interactive visualization of different TSP heuristics</h2>
     <div class="row">
         <div class="col-md-2 p-0">
@@ -44,7 +43,6 @@
                             @bind-BreakWhenPathsAreEqual="@AppState.BreakWhenPathsAreEqual"
                             @bind-GlobalUpdatingRule="@AppState.GlobalUpdatingRule"/>
                     }
-                    <button class="btn btn-danger" type="submit" @onclick="e => UpdateEnumerator()">Reset</button>
                 </form>
             </div>
             <!-- Canvas Settings -->
@@ -91,15 +89,25 @@
                 @if (AppState.GraphHistory != null) {
                     <div class="input-group">
                         <div class="btn-toolbar">
-                            <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump First" @onclick="e => JumpFirst()">«</button>
-                            <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse" @onclick="e => ReverseHistory()">‹</button>
+                            <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
+                                class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump First"
+                                @onclick="e => JumpFirst()"><i class="bi bi-chevron-double-left"></i></button>
+                            <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
+                                class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse"
+                                @onclick="e => ReverseHistory()"><i class="bi bi-chevron-left"></i></button>
                             @if (AppState.AutoAdvance) {
-                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="AutoAdvance = false" @onclick="e => AppState.AutoAdvance = false">⏸</button>
+                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="Pause" @onclick="e => AppState.AutoAdvance = false"><i class="bi bi-pause"></i></button>
                             } else {
-                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="AutoAdvance = true" @onclick="e => AppState.AutoAdvance = true">▶</button>
+                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="Play" @onclick="e => AppState.AutoAdvance = true"><i class="bi bi-play"></i></button>
                             }
-                            <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Advance" @onclick="e => AdvanceHistory()">›</button>
-                            <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump Last" @onclick="e => JumpLast()">»</button>
+                            <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
+                                class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Advance"
+                                @onclick="e => AdvanceHistory()"><i class="bi bi-chevron-right"></i></button>
+                            <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
+                                class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump Last"
+                                @onclick="e => JumpLast()"><i class="bi bi-chevron-double-right"></i></button>
                         </div>
                     </div>
                 }
@@ -350,7 +358,9 @@
         switch (AppState.AlgorithmEnum) {
             case AlgorithmEnum.NN:
                 AppState.NearestNeighbor.Start = AppState.Instance.Nodes[AppState.StartNode];
-                AppState.GraphHistory = AppState.NearestNeighbor.FindPath(AppState.Instance);
+                AppState.GraphHistory = AppState.MultiStart ?
+                    AppState.NearestNeighbor.MultiStart(AppState.Instance) :
+                    AppState.NearestNeighbor.FindPath(AppState.Instance);
                 break;
             case AlgorithmEnum.SA:
                 AppState.SimulatedAnnealing.Alpha = AppState.AlphaSA;
@@ -373,7 +383,9 @@
             case AlgorithmEnum.HC:
                 AppState.HillClimbing.NeighbourEnum = AppState.NeighbourEnum;
                 AppState.HillClimbing.DescentType = AppState.DescentType;
-                AppState.GraphHistory = AppState.HillClimbing.FindPath(AppState.Instance);
+                AppState.GraphHistory = AppState.MultiStart ?
+                    AppState.HillClimbing.MultiStart(AppState.Instance) : 
+                    AppState.HillClimbing.FindPath(AppState.Instance);
                 break;
         }
 

@@ -1,13 +1,11 @@
 ﻿<div class="form-group">
-    <label for="startnodeselect">Select Start Node</label>
-    <div id="startnodeselect" class="input-group">
-        <div class="input-group-prepend">
-            <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode--">-</button>
-        </div>
+    <label for="startnodeselect">Start Node</label>
+    <div id="startnodeselect" class="input-group mb-3">
+        <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="tooltip" data-bs-placement="bottom"
+            title="Increase start node position" @onclick="e => StartNode++"><i class="bi bi-plus-lg"></i></button>
+        <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="tooltip" data-bs-placement="bottom"
+            title="Decrease start node position" @onclick="e => StartNode--"><i class="bi bi-dash-lg"></i></button>
         <div class="input-group-text">@StartNode</div>
-        <div class="input-group-append">
-            <button class="btn btn-primary btn-sm" type="button" @onclick="e => StartNode++">+</button>
-        </div>
     </div>
 </div>
 

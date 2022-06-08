@@ -3,8 +3,8 @@
     <label for="selectNeighbourType">Neighbour Function</label>
     <select class="form-control" name="neighbourType" id="selectNeighbourType" @bind="NeighbourEnum">
         <option value="TwoOpt" @onselect="e => NeighbourEnum = NeighbourType.TwoOpt">2-Opt</option>
-        <option disabled value="ThreeOpt" @onselect="e => NeighbourEnum = NeighbourType.ThreeOpt">3-Opt</option>
-        <option disabled value="FourOpt" @onselect="e => NeighbourEnum = NeighbourType.FourOpt">Double-bridge 4-Opt</option>
+        @*<option value="ThreeOpt" @onselect="e => NeighbourEnum = NeighbourType.ThreeOpt">3-Opt</option>
+        <option value="FourOpt" @onselect="e => NeighbourEnum = NeighbourType.FourOpt">Double-bridge 4-Opt</option>*@
         <option value="Swap" @onselect="e => NeighbourEnum = NeighbourType.Swap">Swap</option>
     </select>
 </div>

@@ -80,8 +80,9 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public LinkedList<GraphState> MultiStart(GraphProblem graph, bool shortest = true) {
             graph.Reset();
-            var history = new LinkedList<GraphState>();
+
             var state = new GraphState { Nodes = graph.Nodes };
+            var history = new LinkedList<GraphState>();
             var costs = double.MaxValue;
 
             history.AddLast(state);
