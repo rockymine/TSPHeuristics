@@ -34,7 +34,7 @@
 
 	public void UpdateFromGraphState(LinkedListNode<GraphState> node, AlgorithmEnum algorithmEnum, NeighbourType neighbourType) {
 		tableInfo.Header.Clear();
-		
+
 		if (algorithmEnum == AlgorithmEnum.NN) {
 			title = "Distance Matrix";
 			CreateDistanceMatrix(node);
@@ -46,7 +46,7 @@
 			title = "Tour History";
 			CreateIterationTable(node);
 		}
-		
+
 		StateHasChanged();
 	}
 
@@ -144,14 +144,20 @@
 	}
 
 	private bool InPath(List<Node> path, Node node1, Node node2) {
-		var i1 = path.IndexOf(node1);
-		if (i1 < 0)
-			return false;
+		//1-2-3-1 example: node1 = 1, node2 = 3
+		for (int i = 0; i < path.Count; i++) {
+			if (path[i] != node1)
+				continue;
 
-		var i2 = path.IndexOf(node2);
-		if (i2 < 0)
-			return false;
+			//check predecessor
+			if (i > 0 && path[i - 1] == node2)
+				return true;
 
-		return Math.Abs(i1 - i2) == 1;
+			//check successor
+			if (i < path.Count - 1 && path[i + 1] == node2)
+				return true;
+		}
+		
+		return false;
 	}
 }

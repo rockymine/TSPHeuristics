@@ -1,12 +1,14 @@
 ﻿@using Excubo.Blazor.Canvas
 @using Excubo.Blazor.Canvas.Contexts
 @using System.Diagnostics
+@using Newtonsoft.Json
 @using TravellingSalesmanProblem.Algorithms
 @using TravellingSalesmanProblem.Graph
 @using WebApplication.Utils
 @using WebApplication.Components
 @using StardustDL.RazorComponents.Markdown
 <div class="container-fluid">
+    <i class="bi bi-123"></i>
     <h2 class="font-weight-bold">Interactive visualization of different TSP heuristics</h2>
     <div class="row">
         <div class="col-md-2 p-0">
@@ -20,31 +22,29 @@
             <div class="bg-custom-light custom-input-group">
                 <h5 class="font-weight-bold">Heuristic Settings</h5>
                 <form>
-                    @if (AppState.GraphHistory != null) {
-                        @if (AppState.AlgorithmEnum == AlgorithmEnum.NN && !AppState.MultiStart) {
-                            <NearestNeighborSettings @bind-StartNode="@AppState.StartNode"/>
-                        }
-                        @if (AppState.AlgorithmEnum == AlgorithmEnum.SA) {
-                            <SimulatedAnnealingSettings @bind-AlphaSA="@AppState.AlphaSA"
-                                @bind-PhaseLength="@AppState.PhaseLength" 
-                                @bind-MinTemp="@AppState.MinTemp"
-                                @bind-StartTemp="@AppState.StartTemp"
-                                @bind-NeighbourEnum="@AppState.NeighbourEnum"
-                                @bind-CalculateTemperature="@AppState.CalculateTemperature"/>
-                        }
-                        @if (AppState.AlgorithmEnum == AlgorithmEnum.HC) {
-                            <HillClimbingSettings @bind-NeighbourEnum="@AppState.NeighbourEnum"
-                                @bind-DescentType="@AppState.DescentType"/>
-                        }
-                        @if (AppState.AlgorithmEnum == AlgorithmEnum.AS) {
-                            <AntSystemSettings @bind-Iterations="@AppState.Iterations"
-                                @bind-AlphaACS="@AppState.AlphaACS"
-                                @bind-AntCount="@AppState.AntCount" @bind-Beta="@AppState.Beta"
-                                @bind-BreakWhenPathsAreEqual="@AppState.BreakWhenPathsAreEqual"
-                                @bind-GlobalUpdatingRule="@AppState.GlobalUpdatingRule"/>
-                        }
-                        <button class="btn btn-danger" type="submit" @onclick="e => UpdateEnumerator()">Reset</button>
-                } 
+                    @if (AppState.AlgorithmEnum == AlgorithmEnum.NN && !AppState.MultiStart) {
+                        <NearestNeighborSettings @bind-StartNode="@AppState.StartNode"/>
+                    }
+                    @if (AppState.AlgorithmEnum == AlgorithmEnum.SA) {
+                        <SimulatedAnnealingSettings @bind-AlphaSA="@AppState.AlphaSA"
+                            @bind-PhaseLength="@AppState.PhaseLength" 
+                            @bind-MinTemp="@AppState.MinTemp"
+                            @bind-StartTemp="@AppState.StartTemp"
+                            @bind-NeighbourEnum="@AppState.NeighbourEnum"
+                            @bind-CalculateTemperature="@AppState.CalculateTemperature"/>
+                    }
+                    @if (AppState.AlgorithmEnum == AlgorithmEnum.HC) {
+                        <HillClimbingSettings @bind-NeighbourEnum="@AppState.NeighbourEnum"
+                            @bind-DescentType="@AppState.DescentType"/>
+                    }
+                    @if (AppState.AlgorithmEnum == AlgorithmEnum.AS) {
+                        <AntSystemSettings @bind-Iterations="@AppState.Iterations"
+                            @bind-AlphaACS="@AppState.AlphaACS"
+                            @bind-AntCount="@AppState.AntCount" @bind-Beta="@AppState.Beta"
+                            @bind-BreakWhenPathsAreEqual="@AppState.BreakWhenPathsAreEqual"
+                            @bind-GlobalUpdatingRule="@AppState.GlobalUpdatingRule"/>
+                    }
+                    <button class="btn btn-danger" type="submit" @onclick="e => UpdateEnumerator()">Reset</button>
                 </form>
             </div>
             <!-- Canvas Settings -->
@@ -258,7 +258,7 @@
     private async Task AdvanceHistory(bool automatic = false) {
         if (!automatic)
             AppState.AutoAdvance = false;
-        
+
         var canChange = await CanChangeHistory();
         if (!canChange)
             return;
