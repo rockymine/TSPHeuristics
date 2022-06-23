@@ -1,6 +1,6 @@
 ﻿@inject IJSRuntime JSRuntime
 
-<button @onclick="DownloadFileFromStream">Download</button>
+<button class="btn btn-primary" type="link" @onclick="DownloadFileFromStream"><i class="bi bi-download"></i> Download Source</button>
 
 @code {
     public string LoadedFile { get; set; }

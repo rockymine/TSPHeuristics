@@ -58,3 +58,19 @@ a, .btn-link {
     padding: 10px;
     border-radius: 8px;
 }
+
+.custom-column-style {
+    padding: 0;
+    height: 100%;
+    border-radius: 8px;
+}
+
+.custom-hr {
+    margin: 0 1rem 0 1rem;
+    height: 2px !important;
+}
+
+.modal-full-width {
+    margin: 1.75rem;
+    max-width: unset !important;
+}

@@ -7,182 +7,247 @@
 @using WebApplication.Utils
 @using WebApplication.Components
 @using StardustDL.RazorComponents.Markdown
-<div class="container-fluid">
-    <h2 class="font-weight-bold">Interactive visualization of different TSP heuristics</h2>
-    <div class="row">
-        <div class="col-md-2 p-0">
-            <!-- Algorithm Settings -->
-            <div class="bg-custom-light custom-input-group">
-                <h5 class="font-weight-bold">Algorithm Settings</h5>
-                <AlgorithmSettings @bind-AlgorithmEnum="@AppState.AlgorithmEnum"
-                    @bind-MultiStart="@AppState.MultiStart"/>
-            </div>
-            <!-- Heuristic Settings -->
-            <div class="bg-custom-light custom-input-group">
-                <h5 class="font-weight-bold">Heuristic Settings</h5>
-                <form>
-                    @if (AppState.AlgorithmEnum == AlgorithmEnum.NN && !AppState.MultiStart) {
-                        <NearestNeighborSettings @bind-StartNode="@AppState.StartNode"/>
-                    }
-                    @if (AppState.AlgorithmEnum == AlgorithmEnum.SA) {
-                        <SimulatedAnnealingSettings @bind-AlphaSA="@AppState.AlphaSA"
-                            @bind-PhaseLength="@AppState.PhaseLength" 
-                            @bind-MinTemp="@AppState.MinTemp"
-                            @bind-StartTemp="@AppState.StartTemp"
-                            @bind-NeighbourEnum="@AppState.NeighbourEnum"
-                            @bind-CalculateTemperature="@AppState.CalculateTemperature"/>
-                    }
-                    @if (AppState.AlgorithmEnum == AlgorithmEnum.HC) {
-                        <HillClimbingSettings @bind-NeighbourEnum="@AppState.NeighbourEnum"
-                            @bind-DescentType="@AppState.DescentType"/>
-                    }
-                    @if (AppState.AlgorithmEnum == AlgorithmEnum.AS) {
-                        <AntSystemSettings @bind-Iterations="@AppState.Iterations"
-                            @bind-AlphaACS="@AppState.AlphaACS"
-                            @bind-AntCount="@AppState.AntCount" @bind-Beta="@AppState.Beta"
-                            @bind-BreakWhenPathsAreEqual="@AppState.BreakWhenPathsAreEqual"
-                            @bind-GlobalUpdatingRule="@AppState.GlobalUpdatingRule"/>
-                    }
-                </form>
-            </div>
-            <!-- Canvas Settings -->
-            <div class="bg-custom-light custom-input-group">
-                <h5 class="font-weigth-bold">Canvas Settings</h5>
-                <CanvasDisplaySettings @bind-Scale="@AppState.Scale" @bind-NodeRadius="@AppState.NodeRadius"
-                    @bind-ShowGrid="@AppState.ShowGrid" @bind-AnnotateEdges="@AppState.AnnotateEdges" @bind-ColorizeChanges="@AppState.ColorizeChanges"
-                    @bind-AnimationDelay="@AppState.AnimationDelay"/>                
-            </div>
-            <!-- Graph Settings -->
-            <div class="bg-custom-light custom-input-group">
-                <h5 class="font-weight-bold">Graph Settings</h5>
-                <div class="form-group">
-                    <label for="selectGraphSource">Graph Source</label>
-                    <select class="form-control" name="graphSource" id="selectGraphSource" @bind="AppState.GraphSource">
-                        <option value="Text" @onselect="e => AppState.GraphSource = GraphSource.Text">Text</option>
-                        <option value="File" @onselect="e => AppState.GraphSource = GraphSource.File">File</option>
-                        <option value="Random" @onselect="e => AppState.GraphSource = GraphSource.Random">Random</option>
-                    </select>
-                </div>
-                @if (AppState.GraphSource == GraphSource.Text) {
-                    <div class="form-group">
-                        <textarea class="form-control" @bind="AppState.DefaultGraph" style="height: 200px;"></textarea>
-                    </div>
-                } else if (AppState.GraphSource == GraphSource.Random) {
-                    <RandomGraphSettings @bind-NodeCount="AppState.NodeCount" @bind-MaxX="AppState.MaxX" @bind-MaxY="AppState.MaxY"/>
-                } else if (AppState.GraphSource == GraphSource.File) {
-                    <FileInput @ref="@AppState.FileInput"/>
-                }
-                <div class="form-group">
-                    <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(AppState.GraphSource)">Execute Algorithm</button>
-                    
-                    @if (AppState.Instance != null) {
-                        <FileOutput @ref="@AppState.FileOutput"/>
-                    }                    
-                </div>
-                <p>@AppState.Error</p>
-            </div>
+<header>
+    <nav class="navbar">
+        <div class="container-fluid">
+            <h5>Interactive Visualization of Heuristics for the Traveling Salesman Problem</h5>
+            <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="offcanvas"
+                    data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions">
+                <i class="bi bi-question-lg"></i> Help
+            </button>
         </div>
-        <div class="col-md-4 p-0">
-            <!-- State -->
-            <div class="bg-custom-light custom-input-group">
-                <h5 class="font-weight-bold">Visualization Control</h5>
-                @if (AppState.GraphHistory != null) {
-                    <div class="input-group">
-                        <div class="btn-toolbar">
-                            <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
-                                class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump First"
-                                @onclick="e => JumpFirst()"><i class="bi bi-chevron-double-left"></i></button>
-                            <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
-                                class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse"
-                                @onclick="e => ReverseHistory()"><i class="bi bi-chevron-left"></i></button>
-                            @if (AppState.AutoAdvance) {
-                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top"
-                                    title="Pause" @onclick="e => AppState.AutoAdvance = false"><i class="bi bi-pause"></i></button>
-                            } else {
-                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top"
-                                    title="Play" @onclick="e => AppState.AutoAdvance = true"><i class="bi bi-play"></i></button>
+    </nav>
+</header>
+<div class="container-fluid">
+    <div class="row gx-3">
+        <div class="col-md-2">
+            <div class="bg-custom-light custom-column-style">
+                <!-- Algorithm Settings -->
+                <div class="custom-input-group">
+                    <h5 class="font-weight-bold">Algorithm Settings</h5>
+                    <AlgorithmSettings @bind-AlgorithmEnum="@AppState.AlgorithmEnum"
+                                       @bind-MultiStart="@AppState.MultiStart" />
+                </div>
+                <hr class="custom-hr" />
+                <!-- Heuristic Settings -->
+                <div class="custom-input-group">
+                    <h5 class="font-weight-bold">Heuristic Settings</h5>
+                    <form>
+                        @if (AppState.AlgorithmEnum == AlgorithmEnum.NN && !AppState.MultiStart) {
+                            <NearestNeighborSettings @bind-StartNode="@AppState.StartNode" />
+                        }
+                        @if (AppState.AlgorithmEnum == AlgorithmEnum.SA) {
+                            <SimulatedAnnealingSettings @bind-AlphaSA="@AppState.AlphaSA"
+                                                    @bind-PhaseLength="@AppState.PhaseLength"
+                                                    @bind-MinTemp="@AppState.MinTemp"
+                                                    @bind-StartTemp="@AppState.StartTemp"
+                                                    @bind-NeighbourEnum="@AppState.NeighbourEnum"
+                                                    @bind-CalculateTemperature="@AppState.CalculateTemperature" />
+                        }
+                        @if (AppState.AlgorithmEnum == AlgorithmEnum.HC) {
+                            <HillClimbingSettings @bind-NeighbourEnum="@AppState.NeighbourEnum"
+                                              @bind-DescentType="@AppState.DescentType" />
+                        }
+                        @if (AppState.AlgorithmEnum == AlgorithmEnum.AS) {
+                            <AntSystemSettings @bind-Iterations="@AppState.Iterations"
+                                           @bind-AlphaACS="@AppState.AlphaACS"
+                                           @bind-AntCount="@AppState.AntCount" @bind-Beta="@AppState.Beta"
+                                           @bind-BreakWhenPathsAreEqual="@AppState.BreakWhenPathsAreEqual"
+                                           @bind-GlobalUpdatingRule="@AppState.GlobalUpdatingRule" />
+                        }
+                    </form>
+                </div>
+                <hr class="custom-hr" />
+                <!-- Canvas Settings -->
+                <div class="custom-input-group">
+                    <h5 class="font-weigth-bold">Canvas Settings</h5>
+                    <CanvasDisplaySettings @bind-Scale="@AppState.Scale"
+                                           @bind-NodeRadius="@AppState.NodeRadius"
+                                           @bind-ShowGrid="@AppState.ShowGrid"
+                                           @bind-AnnotateEdges="@AppState.AnnotateEdges"
+                                           @bind-ColorizeChanges="@AppState.ColorizeChanges"
+                                           @bind-AnimationDelay="@AppState.AnimationDelay" />
+                </div>
+                <hr class="custom-hr" />
+                <!-- Graph Settings -->
+                <div class="custom-input-group">
+                    <h5 class="font-weight-bold">Graph Settings</h5>
+                    <div class="form-group">
+                        <label for="selectGraphSource">Graph Source</label>
+                        <select class="form-control" name="graphSource" id="selectGraphSource" @bind="AppState.GraphSource">
+                            <option value="Text" @onselect="e => AppState.GraphSource = GraphSource.Text">Text</option>
+                            <option value="File" @onselect="e => AppState.GraphSource = GraphSource.File">File</option>
+                            <option value="Random" @onselect="e => AppState.GraphSource = GraphSource.Random">Random</option>
+                        </select>
+                    </div>
+                    <div style="margin-top: 0.5rem;">
+                        @if (AppState.GraphSource == GraphSource.Text) {
+                            <div class="form-group">
+                                <textarea class="form-control" @bind="AppState.DefaultGraph" style="height: 200px;"></textarea>
+                            </div>
+                        } else if (AppState.GraphSource == GraphSource.Random) {
+                            <RandomGraphSettings @bind-NodeCount="AppState.NodeCount"
+                                             @bind-MaxX="AppState.MaxX"
+                                             @bind-MaxY="AppState.MaxY" />
+                        } else if (AppState.GraphSource == GraphSource.File) {
+                            <FileInput @ref="@AppState.FileInput" />
+                        }
+                        <div class="d-grid gap-2 mx-auto" style="margin-top: 0.5rem;">
+                            <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(AppState.GraphSource)">Execute Algorithm</button>
+                            @if (AppState.Instance != null) {
+                                <FileOutput @ref="@AppState.FileOutput" />
                             }
-                            <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
-                                class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Advance"
-                                @onclick="e => AdvanceHistory()"><i class="bi bi-chevron-right"></i></button>
-                            <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
-                                class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump Last"
-                                @onclick="e => JumpLast()"><i class="bi bi-chevron-double-right"></i></button>
                         </div>
                     </div>
+                </div>
+                <!-- Error -->
+                @if (!string.IsNullOrEmpty(AppState.Error)) {
+                    <hr class="custom-hr" />
+                    <div class="bg-danger custom-input-group" style="margin: 1rem;">
+                        <h5 class="font-weight-bold">Error</h5>
+                        <p>@AppState.Error</p>
+                    </div>
                 }
-                <span>Execution Time: @AppState.TimeSpan.Minutes m @AppState.TimeSpan.Seconds s @AppState.TimeSpan.Milliseconds ms (@Math.Round((double)AppState.Stopwatch.ElapsedMilliseconds / 1000, 3) s)</span><br/>
-                @if (AppState.CurrentHistoryNode != null) {
-                    @foreach (var kvp in AppState.CurrentHistoryNode.Value.Messages) {
-                        <span>@kvp.Key: @kvp.Value</span><br/>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="bg-custom-light custom-column-style">
+                <!-- State -->
+                <div class="custom-input-group">
+                    <h5 class="font-weight-bold">Visualization Control</h5>
+                    @if (AppState.GraphHistory != null) {
+                        <div class="input-group">
+                            <div class="btn-toolbar">
+                                <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
+                                    class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump First"
+                                    @onclick="e => JumpFirst()">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </button>
+                                <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
+                                    class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse"
+                                    @onclick="e => ReverseHistory()">
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
+                                @if (AppState.AutoAdvance) {
+                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="Pause" @onclick="e => AppState.AutoAdvance = false">
+                                        <i class="bi bi-pause"></i>
+                                    </button>
+                                } else {
+                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="Play" @onclick="e => AppState.AutoAdvance = true">
+                                        <i class="bi bi-play"></i>
+                                    </button>
+                                }
+                                <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
+                                    class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Advance"
+                                    @onclick="e => AdvanceHistory()">
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                                <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
+                                    class="btn btn-primary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump Last"
+                                    @onclick="e => JumpLast()">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <span>
+                            Execution Time: @AppState.TimeSpan.Minutes m @AppState.TimeSpan.Seconds s
+                            @AppState.TimeSpan.Milliseconds ms (@Math.Round((double)AppState.Stopwatch.ElapsedMilliseconds / 1000, 3) s)
+                        </span>
+
+                        <br />
+                        @if (AppState.CurrentHistoryNode != null) {
+                            @foreach (var kvp in AppState.CurrentHistoryNode.Value.Messages) {
+                                <span><strong>@kvp.Key</strong>: @kvp.Value</span>
+
+                                <br />
+                            }
+                        }
                     }
-                }
-            </div>
-            <!-- Graph View -->
-            <div class="bg-custom-light custom-input-group">
-                <h5 class="font-weight-bold">Graph View</h5>
-                @if (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
-                    <h6>Previous (Iteration Start)</h6>
-                    <Canvas @ref="@AppState.PreviousCanvas" width="@AppState.CanvasSettings.Width" height="@AppState.CanvasSettings.Height"/>
-                }
+                </div>
+                <hr class="custom-hr" />
+                <!-- Graph View -->
+                <div class="custom-input-group">
+                    <h5 class="font-weight-bold">Graph View</h5>
+                    @if (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
+                        <h6>Previous (Iteration Start)</h6>
+                        <div class="row">
+                            <Canvas @ref="@AppState.PreviousCanvas"
+                                    width="@AppState.CanvasSettings.Width"
+                                    height="@AppState.CanvasSettings.Height" />                            
+                        </div>
+                    }
                     <h6>Current (Iteration End)</h6>
-                    <Canvas @ref="@AppState.CurrentCanvas" width="@AppState.CanvasSettings.Width" height="@AppState.CanvasSettings.Height"/>
-            </div>
-            <!-- Calculations -->
-            @if (AppState.GraphHistory != null &&
+                    <div class="row">
+                        <Canvas @ref="@AppState.CurrentCanvas"
+                                width="@AppState.CanvasSettings.Width"
+                                height="@AppState.CanvasSettings.Height" />                    
+                    </div>
+                </div>
+                <!-- Calculations -->
+                @if (AppState.GraphHistory != null &&
                 AppState.CurrentHistoryNode.Value != null &&
                 AppState.CurrentHistoryNode.Value.Equations.Count != 0) {
-                <div class="bg-custom-light custom-input-group">
-                    <h5 class="font-weight-bold">Calculations</h5>
-                    @foreach (var kvp in AppState.CurrentHistoryNode.Value.Equations) {
-                        <span>@kvp.Key</span><br/>
-                        <MarkdownRenderer Value="@kvp.Value.Latex"/>
-                        <MarkdownRenderer Value="@kvp.Value.Generate()"/>
-                        <MarkdownRenderer Value="@kvp.Value.Result"/>
-                    }
-                </div>
-            }
+                    <hr class="custom-hr" />
+                    <div class="custom-input-group">
+                        <h5 class="font-weight-bold">Calculations</h5>
+                        @foreach (var kvp in AppState.CurrentHistoryNode.Value.Equations) {
+                            <span>@kvp.Key</span>
+
+                            <br />
+                            <MarkdownRenderer Value="@kvp.Value.Latex" />
+                            <MarkdownRenderer Value="@kvp.Value.Generate()" />
+                            <MarkdownRenderer Value="@kvp.Value.Result" />
+                        }
+                    </div>
+                }
+            </div>
         </div>
-        <div class="col-md-6 p-0">
-            <!-- Charts -->
-            @if (AppState.GraphHistory != null &&
+        <div class="col-md-6">
+            <div class="bg-custom-light custom-column-style">
+                <!-- Charts -->
+                @if (AppState.GraphHistory != null &&
                 AppState.CurrentHistoryNode.Value.ChartInfo.Count >= 1) {
-                <div class="bg-custom-light custom-input-group">
-                    @if (AppState.AlgorithmEnum is AlgorithmEnum.SA) {
-                        <div class="row">
-                            <div class="col-md-6">
-                                <ChartJS @ref="@AppState.ChartJS[0]"
-                                    Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[0]"
-                                    ChartID="sa_temperature">
-                                </ChartJS>
-                            </div>
-                            @if (AppState.CurrentHistoryNode.Value.ChartInfo.Count >= 2) {
+                    <div class="custom-input-group">
+                        @if (AppState.AlgorithmEnum is AlgorithmEnum.SA) {
+                            <div class="row">
                                 <div class="col-md-6">
-                                    <ChartJS @ref="@AppState.ChartJS[1]"
-                                        Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[1]"
-                                        ChartID="sa_distance">
+                                    <ChartJS @ref="@AppState.ChartJS[0]"
+                                     Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[0]"
+                                     ChartID="sa_temperature">
                                     </ChartJS>
                                 </div>
-                            }
-                        </div>
-                    }
-                    @if (AppState.AlgorithmEnum is AlgorithmEnum.HC) {
-                        <div class="col-md-12">
-                            <ChartJS @ref="@AppState.ChartJS[0]"
-                                Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[0]"
-                                ChartID="hc_distance">
-                            </ChartJS>
-                        </div>
-                    }    
+                                @if (AppState.CurrentHistoryNode.Value.ChartInfo.Count >= 2) {
+                                    <div class="col-md-6">
+                                        <ChartJS @ref="@AppState.ChartJS[1]"
+                                     Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[1]"
+                                     ChartID="sa_distance">
+                                        </ChartJS>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        @if (AppState.AlgorithmEnum is AlgorithmEnum.HC) {
+                            <div class="col-md-12">
+                                <ChartJS @ref="@AppState.ChartJS[0]"
+                                 Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[0]"
+                                 ChartID="hc_distance">
+                                </ChartJS>
+                            </div>
+                        }
+                    </div>
+                    <hr class="custom-hr" />
+                }
+                <!-- Tables -->
+                <div class="custom-input-group">
+                    <TableGenerator @ref="@AppState.TableGenerator" MaxCols="12" MaxRows="12" />
                 </div>
-            }
-            <!-- Tables -->
-            <div class="bg-custom-light custom-input-group">
-                <TableGenerator @ref="@AppState.TableGenerator"/>
             </div>
         </div>
     </div>
 </div>
+<Help />
 
 @code {
     private AppState AppState = new();
@@ -208,8 +273,9 @@
         switch (graphSource) {
             case GraphSource.Text:
                 try {
+                    //if (!string.IsNullOrEmpty(AppState.DefaultGraph) && !string.IsNullOrWhiteSpace(AppState.DefaultGraph))
                     AppState.Instance = GraphProblem.FromText(AppState.DefaultGraph);
-                } catch {
+                } catch (Exception) {
                     AppState.Error = "The specified text does not contain a valid graph definition.";
                     return;
                 }
@@ -220,13 +286,19 @@
             case GraphSource.File:
                 try {
                     AppState.Instance = GraphProblem.FromText(AppState.FileInput.LoadedFile);
-                } catch {
+                } catch (Exception) {
                     AppState.Error = "The specified file does not contain a valid graph definition.";
                     return;
                 }
                 break;
         }
 
+        if (AppState.Instance.Nodes.Count == 0) {
+            AppState.Error = "Could not load the specified graph.";
+            return;
+        }
+
+        AppState.Error = null;
         AppState.CanvasSettings.MinPos = AppState.Instance.FindMin();
         AppState.CanvasSettings.MaxPos = AppState.Instance.FindMax();
         AppState.CanvasSettings.Scale = AppState.Scale;
@@ -384,7 +456,7 @@
                 AppState.HillClimbing.NeighbourEnum = AppState.NeighbourEnum;
                 AppState.HillClimbing.DescentType = AppState.DescentType;
                 AppState.GraphHistory = AppState.MultiStart ?
-                    AppState.HillClimbing.MultiStart(AppState.Instance) : 
+                    AppState.HillClimbing.MultiStart(AppState.Instance) :
                     AppState.HillClimbing.FindPath(AppState.Instance);
                 break;
         }

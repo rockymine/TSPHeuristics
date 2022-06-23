@@ -16,6 +16,11 @@
       "provider": "jsdelivr",
       "library": "bootstrap-icons@1.8.3",
       "destination": "wwwroot/lib/bootstrap-icons/"
+    },
+    {
+      "provider": "cdnjs",
+      "library": "popper.js@2.11.5",
+      "destination": "wwwroot/lib/popper.js/"
     }
   ]
 }

@@ -2,35 +2,106 @@
 @using TravellingSalesmanProblem.Graph
 @using WebApplication.Utils
 @using StardustDL.RazorComponents.Markdown
+
 @if (tableInfo.HasData) {
+	var cols = Math.Min(tableInfo.Header.Count, MaxCols + 1);
+	var rows = Math.Min(tableInfo.Cells.GetLength(0), MaxRows);
+
 	<h5>@title</h5>
 	<div class="table-responsive">
 		<table class="table" style="text-align: center">
 			<thead>
 				<tr>
-					@foreach (var head in tableInfo.Header) {
-						<th><MarkdownRenderer Value=@head/></th>
+					@for (int i = 0; i < cols; i++) {
+						<th><MarkdownRenderer Value=@tableInfo.Header[i]/></th>
 					}
-				</tr>	  
+
+					@if (cols < tableInfo.Cells.GetLength(1)) {
+						<th>
+							<p><i class="bi bi-three-dots"></i></p>
+						</th>
+					}
+				</tr>
+				
 			</thead>
 			<tbody>
-				@for (int i = 0; i < tableInfo.Cells.GetLength(0); i++) {
+				@for (int i = 0; i < rows; i++) {
 					<tr>
-						@for (int j = 0; j < tableInfo.Cells.GetLength(1); j++) {
+						@for (int j = 0; j < cols; j++) {
 							<td class="@tableInfo.Cells[i,j].Class"><MarkdownRenderer Value="@tableInfo.Cells[i,j].Value"/></td>
+						}
+
+						@if (cols < tableInfo.Cells.GetLength(1)) {
+							<td>
+								<i class="bi bi-three-dots"></i>
+							</td>
+						}
+					</tr>
+				}
+
+				@if (rows < tableInfo.Cells.GetLength(0)) {
+					<tr>
+						@for (int j = 0; j < cols; j++) {
+							<td><i class="bi bi-three-dots-vertical"></i></td>
+						}
+
+						@if (cols < tableInfo.Cells.GetLength(1)) {
+							<td>
+								<div style="transform: rotate(45deg);">
+									<i class="bi bi-three-dots"></i>
+								</div>
+							</td>
 						}
 					</tr>
 				}
 			</tbody>
 		</table>
 	</div>
+
+	<!-- Table expansion through modal -->
+	@if (CanShowModal) {
+		@if (rows < tableInfo.Cells.GetLength(0) || cols < tableInfo.Cells.GetLength(1)) {
+			<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+				Show Full Table
+			</button>
+		}
+
+		<!-- Modal -->
+		<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-full-width">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<TableGenerator @ref=modalTable CanShowModal="false"/>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
 }
 
 @code {
+	[Parameter]
+	public bool CanShowModal { get; set; } = true;
+	[Parameter]
+	public int MaxCols { get; set; } = int.MaxValue - 1;
+	[Parameter]
+	public int MaxRows { get; set; } = int.MaxValue;
+
 	private TableInfo tableInfo = new();
 	private string title;
+	private TableGenerator modalTable;
 
-	public void Reset() => tableInfo = new TableInfo();
+	public void Reset() {
+		tableInfo = new TableInfo();
+		modalTable?.Reset();
+	}
 
 	public void UpdateFromGraphState(LinkedListNode<GraphState> node, AlgorithmEnum algorithmEnum, NeighbourType neighbourType) {
 		tableInfo.Header.Clear();
@@ -48,6 +119,7 @@
 		}
 
 		StateHasChanged();
+		modalTable?.UpdateFromGraphState(node, algorithmEnum, neighbourType);
 	}
 
 	private void CreateDistanceMatrix(LinkedListNode<GraphState> node) {
