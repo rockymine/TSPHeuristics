@@ -1,0 +1,32 @@
+{
+ "hc": {
+  "random10": 0.004,
+  "random20": 0.012,
+  "random30": 0.036,
+  "random40": 0.141,
+  "random50": 0.271,
+  "random60": 0.289,
+  "random70": 0.559,
+  "random80": 0.659
+ },
+ "sa": {
+  "random10": 2.322,
+  "random20": 3.344,
+  "random30": 4.975,
+  "random40": 6.805,
+  "random50": 8.881,
+  "random60": 13.006,
+  "random70": 15.146,
+  "random80": 18.661
+ },
+ "as": {
+  "random10": 0.026,
+  "random20": 0.531,
+  "random30": 3.647,
+  "random40": 14.403,
+  "random50": 44.276,
+  "random60": 109.583,
+  "random70": 235.14,
+  "random80": 454.076
+ }
+}

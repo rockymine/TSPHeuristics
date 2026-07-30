@@ -26,7 +26,27 @@ namespace TravellingSalesmanProblem.Graph {
 
         public double Value { get; set; }
         public double Pheromone { get; set; }
-        public double Distance => _distance >= 0 ? _distance : _distance = CalcDistance();
+        public double Distance => _distance >= 0 ? _distance : _distance = CalcMetricDistance();
+
+        /* CalcDistance2D and CalcGeoDistance implement the TSPLIB EUC_2D and GEO edge weights, but
+         * nothing ever called them - Distance was always the plain euclidean length. Reproducing
+         * TSPLIB results needs the matching metric, otherwise a GEO instance like burma14 is scored
+         * over raw degrees (a tour length near 30 instead of 3323) and the rounded instances land a
+         * few units off their published optimum.
+         *
+         * Process wide on purpose: an instance file fixes one metric for a whole run, and the
+         * intended use is for a CLI to set it once at startup before any graph is built. The
+         * default keeps the web application on the metric it has always used. Distances are cached
+         * per edge, so changing this after graphs exist leaves those edges on the old metric. */
+        public static DistanceMetric Metric { get; set; } = DistanceMetric.Euclidean;
+
+        private double CalcMetricDistance() {
+            return Metric switch {
+                DistanceMetric.Euclidean2D => CalcDistance2D(),
+                DistanceMetric.Geo => CalcGeoDistance(),
+                _ => CalcDistance()
+            };
+        }
 
         internal int Node1Id;
         internal int Node2Id;
@@ -199,5 +219,14 @@ namespace TravellingSalesmanProblem.Graph {
         }
 
         public Vector2 FindCenter() => Vector2.Add(Node1.Position, Node2.Position) / 2;
+    }
+
+    public enum DistanceMetric {
+        /* Plain euclidean length, what the application has always used. */
+        Euclidean,
+        /* TSPLIB EUC_2D: euclidean length rounded to the nearest integer. */
+        Euclidean2D,
+        /* TSPLIB GEO: great circle distance over coordinates read as degrees.minutes. */
+        Geo
     }
 }

@@ -1,0 +1,52 @@
+{
+ "script_timings": [
+  {
+   "instance": "random10",
+   "hc": 0.015,
+   "sa": 0.112,
+   "as": 0.026
+  },
+  {
+   "instance": "random20",
+   "hc": 0.025,
+   "sa": 0.16,
+   "as": 0.026
+  },
+  {
+   "instance": "random30",
+   "hc": 0.017,
+   "sa": 0.194,
+   "as": 0.028
+  },
+  {
+   "instance": "random40",
+   "hc": 0.021,
+   "sa": 0.271,
+   "as": 0.032
+  },
+  {
+   "instance": "random50",
+   "hc": 0.027,
+   "sa": 0.262,
+   "as": 0.036
+  },
+  {
+   "instance": "random60",
+   "hc": 0.029,
+   "sa": 0.303,
+   "as": 0.043
+  },
+  {
+   "instance": "random70",
+   "hc": 0.035,
+   "sa": 0.348,
+   "as": 0.048
+  },
+  {
+   "instance": "random80",
+   "hc": 0.038,
+   "sa": 0.419,
+   "as": 0.064
+  }
+ ]
+}

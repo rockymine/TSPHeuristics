@@ -37,12 +37,23 @@ namespace PerformanceAnalysis.cli {
         private static int Number { get; set; }
         [Argument('o', "iterations")]
         private static int Iterations { get; set; }
+        /* TSPLIB fixes an edge weight type per instance, and scoring a GEO instance with the
+         * euclidean default puts the tour length on a completely different scale. */
+        [Argument('t', "metric")]
+        private static string Metric { get; set; }
 
         private static LinkedList<GraphState> History { get; set; }
         private static GraphProblem Instance;
 
         private static void Main(string[] args) {
             Arguments.Populate();
+
+            if (string.IsNullOrWhiteSpace(Heuristic)) {
+                Console.Error.WriteLine("No heuristic given (-h annealing|antsystem|hillclimbing).");
+                Environment.Exit(2);
+            }
+
+            Edge.Metric = ParseMetric(Metric);
             Instance = GraphProblem.FromText(File.ReadAllText(Graph));
 
             var instance = System.IO.Path.GetFileNameWithoutExtension(Graph);
@@ -89,6 +100,10 @@ namespace PerformanceAnalysis.cli {
                     hc.DescentType = DescentType;
                     History = hc.FindPath(Instance);
                     break;
+                default:
+                    Console.Error.WriteLine($"Unknown heuristic '{Heuristic}'.");
+                    Environment.Exit(2);
+                    break;
             }
 
             var last = History.Last.Value;
@@ -115,7 +130,20 @@ namespace PerformanceAnalysis.cli {
                 FinalTemp = last.Temperature
             };
 
-            File.WriteAllText(Path + sb.ToString() + Number + ".json", JsonConvert.SerializeObject(result));
+            var target = Path + sb.ToString() + Number + ".json";
+            var directory = System.IO.Path.GetDirectoryName(target);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            File.WriteAllText(target, JsonConvert.SerializeObject(result));
+        }
+
+        private static DistanceMetric ParseMetric(string metric) {
+            return (metric ?? string.Empty).Trim().ToLower() switch {
+                "geo" => DistanceMetric.Geo,
+                "euc_2d" or "euc2d" => DistanceMetric.Euclidean2D,
+                _ => DistanceMetric.Euclidean
+            };
         }
     }
 }
