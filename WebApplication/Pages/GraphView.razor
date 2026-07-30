@@ -252,21 +252,49 @@
 @code {
     private AppState AppState = new();
 
+    private FileInput subscribedFileInput;
+
     protected override Task OnAfterRenderAsync(bool firstRender) {
-        if (firstRender) {
-            Task.Run(async () => {
-                while (true) {
-                    await Task.Delay(AppState.AnimationDelay);
+        if (firstRender)
+            _ = RunAnimationLoop();
 
-                    if (AppState.AutoAdvance)
-                        await AdvanceHistory(true);
-                }
-            });
+        /* AppState.FileInput starts as a placeholder instance and is only replaced by the real
+         * component once the File source is selected and @ref runs. Subscribing once on the first
+         * render therefore attached the handler to an object that never raises the event, so
+         * picking a file never refreshed the page. Re-subscribe whenever the instance changes. */
+        if (!ReferenceEquals(subscribedFileInput, AppState.FileInput)) {
+            if (subscribedFileInput != null)
+                subscribedFileInput.LoadedFileChanged -= OnLoadedFileChanged;
 
-            AppState.FileInput.LoadedFileChanged += StateHasChanged;
+            subscribedFileInput = AppState.FileInput;
+
+            if (subscribedFileInput != null)
+                subscribedFileInput.LoadedFileChanged += OnLoadedFileChanged;
         }
 
         return base.OnAfterRenderAsync(firstRender);
+    }
+
+    private void OnLoadedFileChanged() => InvokeAsync(StateHasChanged);
+
+    /* Ran on a raw Task.Run, so the redraw and StateHasChanged happened off the renderer's
+     * dispatcher. It also woke every AnimationDelay milliseconds - one millisecond by default -
+     * even while paused, burning a timer tick a thousand times a second for the life of the page. */
+    private async Task RunAnimationLoop() {
+        const int PausedPollDelay = 100;
+        const int MinimumFrameDelay = 16;
+
+        while (true) {
+            if (!AppState.AutoAdvance) {
+                await Task.Delay(PausedPollDelay);
+                continue;
+            }
+
+            await Task.Delay(Math.Max(AppState.AnimationDelay, MinimumFrameDelay));
+
+            if (AppState.AutoAdvance)
+                await InvokeAsync(() => AdvanceHistory(true));
+        }
     }
 
     public async Task InitiateGraph(GraphSource graphSource) {
@@ -385,36 +413,90 @@
     }
 
     private async Task FillCanvases() {
-        if (AppState.CurrentHistoryNode.Previous != null && (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
-            await ResetCanvas(await AppState.PreviousCanvas.GetContext2DAsync(), AppState.CanvasSettings);
-            await FillCanvas(AppState.PreviousCanvas, AppState.CurrentHistoryNode.Previous.Value);
+        if (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
+            /* Stepping back to the first state left the "Previous" canvas showing whatever frame
+             * was drawn last, because it was only ever painted when a previous state existed. */
+            if (AppState.CurrentHistoryNode.Previous != null)
+                await FillCanvas(AppState.PreviousCanvas, AppState.CurrentHistoryNode.Previous.Value);
+            else
+                await ResetCanvasOf(AppState.PreviousCanvas);
         }
 
-        await ResetCanvas(await AppState.CurrentCanvas.GetContext2DAsync(), AppState.CanvasSettings);
         await FillCanvas(AppState.CurrentCanvas, AppState.CurrentHistoryNode.Value);
     }
 
+    /* Clear, grid, edges and nodes all go into one Batch2D, which flushes as a single JS interop
+     * call. Previously each of them issued its own round trip per primitive - a 30 node instance
+     * with the grid on was several thousand calls per canvas, twice per animation frame. */
     private async Task FillCanvas(Canvas canvas, GraphState state) {
-        await using (var context = await canvas.GetContext2DAsync()) {
-            await CanvasRenderer.DrawEdges(context, state, AppState.CurrentHistoryNode, AppState.CanvasSettings);
-            await CanvasRenderer.DrawNodes(context, state, AppState.CurrentHistoryNode, AppState.CanvasSettings);
+        if (canvas == null)
+            return;
+
+        var settings = AppState.CanvasSettings;
+        await using var context = await canvas.GetContext2DAsync();
+
+        /* Text metrics need a value back from the browser, so they cannot be taken inside a
+         * batch; they are measured up front and only when annotations are actually drawn. */
+        var annotations = await MeasureAnnotations(context, state);
+
+        await using (var batch = context.CreateBatch()) {
+            await ResetCanvas(batch, settings);
+            await CanvasRenderer.DrawEdges(batch, state, AppState.CurrentHistoryNode, settings, annotations);
+            await CanvasRenderer.DrawNodes(batch, state, AppState.CurrentHistoryNode, settings);
         }
+    }
+
+    private async Task<List<TextMetric>> MeasureAnnotations(Context2D context, GraphState state) {
+        /* Ant runs put a pheromone level on every edge of the complete graph; annotating all of
+         * them is unreadable, which is why this is suppressed. The renderer used to do it by
+         * assigning to the shared CanvasSettings mid-draw. */
+        if (!AppState.CanvasSettings.Annotate || state.PathEdges.Any(e => e.Pheromone != 0))
+            return null;
+
+        var annotations = CanvasRenderer.BuildAnnotations(state);
+        var measured = new Dictionary<string, (double Width, double Height)>();
+
+        foreach (var annotation in annotations) {
+            if (!measured.TryGetValue(annotation.Text, out var size)) {
+                var metrics = await context.MeasureTextAsync(annotation.Text);
+                size = (metrics.Width, metrics.FontBoundingBoxAscent + metrics.FontBoundingBoxDescent);
+                measured[annotation.Text] = size;
+            }
+
+            annotation.Width = size.Width;
+            annotation.Height = size.Height;
+        }
+
+        return annotations;
     }
 
     private async Task ResetCanvases() {
-        if (AppState.PreviousCanvas != null && (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)) {
-            await ResetCanvas(await AppState.PreviousCanvas.GetContext2DAsync(), AppState.CanvasSettings);
-        }
+        /* The "Previous" canvas is only in the markup for SA and HC. After switching away from
+         * them AppState.PreviousCanvas still holds the removed component, and asking it for a
+         * context throws because its element is no longer in the document - so the algorithm has
+         * to be checked as well as the reference. */
+        if (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)
+            await ResetCanvasOf(AppState.PreviousCanvas);
 
-        if (AppState.CurrentCanvas != null) {
-            await ResetCanvas(await AppState.CurrentCanvas.GetContext2DAsync(), AppState.CanvasSettings);
-        }
+        await ResetCanvasOf(AppState.CurrentCanvas);
     }
 
-    private async Task ResetCanvas(Context2D context, CanvasSettings settings) {
-        await context.ClearRectAsync((int)settings.MinPos.X, (int)settings.MinPos.Y, settings.Width, settings.Height);
+    private async Task ResetCanvasOf(Canvas canvas) {
+        if (canvas == null)
+            return;
+
+        await using var context = await canvas.GetContext2DAsync();
+        await using var batch = context.CreateBatch();
+        await ResetCanvas(batch, AppState.CanvasSettings);
+    }
+
+    private async Task ResetCanvas(IContext2DWithoutGetters context, CanvasSettings settings) {
+        /* The cleared and repainted rectangle started at the graph's minimum coordinate rather
+         * than at the canvas origin, so with a graph whose smallest coordinate was not zero a
+         * strip along the top and left kept the previous frame's pixels. */
+        await context.ClearRectAsync(0, 0, settings.Width, settings.Height);
         await context.FillStyleAsync(settings.BackgroundColor);
-        await context.FillRectAsync((int)settings.MinPos.X, (int)settings.MinPos.Y, settings.Width, settings.Height);
+        await context.FillRectAsync(0, 0, settings.Width, settings.Height);
 
         if (settings.ShowGrid)
             await CanvasRenderer.DrawGrid(context, settings);
@@ -471,9 +553,25 @@
 
     private async Task UpdateVisualsFromGraphState() {
         AppState.TableGenerator.UpdateFromGraphState(AppState.CurrentHistoryNode, AppState.AlgorithmEnum, AppState.NeighbourEnum);
-        foreach (var chart in AppState.ChartJS) {
+
+        /* AppState.ChartJS keeps whatever @ref last put there, so after a run that rendered charts
+         * the entries survive a switch to an algorithm that renders none - and updating one of
+         * those calls into a canvas that is no longer in the document. Only the charts the current
+         * markup actually shows are refreshed, which mirrors the @if blocks above. */
+        for (int i = 0; i < ChartCount(); i++) {
+            var chart = AppState.ChartJS[i];
             if (chart != null)
                 await chart.UpdateFromGraphState();
         }
+    }
+
+    private int ChartCount() {
+        var available = AppState.CurrentHistoryNode?.Value.ChartInfo?.Count ?? 0;
+
+        return AppState.AlgorithmEnum switch {
+            AlgorithmEnum.SA => Math.Min(2, available),
+            AlgorithmEnum.HC => Math.Min(1, available),
+            _ => 0
+        };
     }
 }

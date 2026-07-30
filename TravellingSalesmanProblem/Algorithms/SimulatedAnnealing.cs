@@ -60,7 +60,7 @@ namespace TravellingSalesmanProblem.Algorithms {
                             XBest = X;
                             history.AddLast(AdvanceState(history.Last.Value, iteration, temperature));
                         }
-                    } else if (MetropolisRule(history.Last.Value)) {
+                    } else if (MetropolisRule(temperature)) {
                         X = Y;
                     }
                 }
@@ -88,11 +88,16 @@ namespace TravellingSalesmanProblem.Algorithms {
             return worst - best;
         }
 
-        private bool MetropolisRule(GraphState state) {
+        /* The acceptance probability has to use the temperature of the phase being run. It used to
+         * read history.Last.Value.Temperature, and a history entry is only appended when a new best
+         * tour is found - so the schedule cooled while the acceptance test stayed frozen at
+         * whatever the temperature was when the last improvement happened. With a long plateau the
+         * search kept accepting uphill moves at the initial temperature and never converged. */
+        private bool MetropolisRule(double temperature) {
             var r = Random.NextDouble();
-            bool condition = r < Math.Exp(-(Y.Costs - X.Costs) / state.Temperature);
+            bool condition = r < Math.Exp(-(Y.Costs - X.Costs) / temperature);
 
-            Equations["Metropolis Rule"] = MathString.MetropolisRule(X, Y, state, r, condition);
+            Equations["Metropolis Rule"] = MathString.MetropolisRule(X, Y, temperature, r, condition);
             return condition;
         }
 

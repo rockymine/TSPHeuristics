@@ -47,16 +47,16 @@ namespace TravellingSalesmanProblem.Algorithms {
             return mathString;
         }
 
-        public static MathString MetropolisRule(GraphProblem x, GraphProblem y, GraphState state, double random, bool condition) {
+        public static MathString MetropolisRule(GraphProblem x, GraphProblem y, double temperature, double random, bool condition) {
             var latex = "$\\text{exp}(\\frac{f(x) - f(y)}{T_{k}}) > \\text{rand}(0,1)$";
             var dummy = "$\\text{exp}(\\frac{?f(x)? - ?f(y)?}{?temp?}) > ?rand?$";
             var result = $"$\\text{{{condition}}}$";
-            
+
             var mathString = new MathString(latex, dummy, result);
             mathString.SetVar("f(x)", Math.Round(x.Costs, 3));
             mathString.SetVar("f(y)", Math.Round(y.Costs, 3));
-            mathString.SetVar("temp", Math.Round(state.Temperature, 3));
-            mathString.SetVar("rand", Math.Round(random, 3));   
+            mathString.SetVar("temp", Math.Round(temperature, 3));
+            mathString.SetVar("rand", Math.Round(random, 3));
 
             return mathString;
         }
@@ -112,8 +112,10 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public static MathString GlobalUpdatingRuleAS(Edge edge, double alpha, double delta) {
-            var latex = "$\tau(r,s) \\leftarrow (1 - \\alpha) \\cdot \\tau(r,s) + \\sum_{k=1}^{m}\\triangle\\tau_{k}(r,s)$";
-            var dummy = "$\tau(?r?,?s?) = (1 - ?alpha?) \\cdot ?tau? + ?triangle?$";
+            /* "\tau" in a non verbatim string is a TAB followed by "au", so the rendered formula
+             * lost its leading symbol. The backslash has to be escaped like every other one here. */
+            var latex = "$\\tau(r,s) \\leftarrow (1 - \\alpha) \\cdot \\tau(r,s) + \\sum_{k=1}^{m}\\triangle\\tau_{k}(r,s)$";
+            var dummy = "$\\tau(?r?,?s?) = (1 - ?alpha?) \\cdot ?tau? + ?triangle?$";
             var result = $"$\\tau({edge.Node1.Index},{edge.Node2.Index}) = {Math.Round(edge.Pheromone + delta, 3)}$";
 
             var mathString = new MathString(latex, dummy, result);

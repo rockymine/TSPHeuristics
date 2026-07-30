@@ -14,9 +14,12 @@ namespace TravellingSalesmanProblem.Algorithms {
         public double Beta { get; set; }
         public double StateTransition { get; set; }
         public double InitialPheromone { get; set; }
+        /* Was a hard coded 100, with no way for a caller to ask for a shorter or longer run. */
+        public int Iterations { get; set; } = 100;
         private static readonly Random Random = new();
         private GraphProblem GlobalBest = new();
         private GraphProblem DistributedMemory = new();
+        private Dictionary<(int, int), Edge> EdgeLookup = new();
         public override LinkedList<GraphState> FindPath(GraphProblem graph) {
             var history = new LinkedList<GraphState>();
             InitializeDistributedAntMemory(graph);
@@ -25,7 +28,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             int iteration = 0;
             history.AddLast(state);
 
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < Iterations; i++) {
                 ScatterAnts(graph);
                 BuildAntPaths(graph);
 
@@ -51,6 +54,10 @@ namespace TravellingSalesmanProblem.Algorithms {
             DistributedMemory = GraphProblem.ConnectedGraphProblem(graph);
 
             DistributedMemory.Edges.ForEach(e => e.Pheromone = InitialPheromone);
+
+            EdgeLookup = new Dictionary<(int, int), Edge>(DistributedMemory.Edges.Count);
+            foreach (var edge in DistributedMemory.Edges)
+                EdgeLookup[edge.Key] = edge;
         }
 
         private GraphState AdvanceState(GraphState state, int iteration) {
@@ -83,92 +90,152 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
         }
 
+        /* The normalising sum is over the same candidate set for every call within one step, so
+         * calling this per candidate made the selection O(u^2) in pheromone lookups. */
         private double RandomProportionalRule(Ant k, Node r, Node s) {
-            var sum = k.Unvisited.Sum(n => PheromoneClosenessProduct(r, n));
-            var edge = DistributedMemory.Edges.Find(e => e.IsBetween(r, s));
+            var sum = 0d;
+            foreach (var node in k.Unvisited)
+                sum += PheromoneClosenessProduct(r, node);
+
+            var edge = Lookup(r, s);
             var pcp = PheromoneClosenessProduct(r, s);
 
             Equations["Random Proportional Rule"] = MathString.RandomProportionalRule(Colony.IndexOf(k), edge, Beta, pcp, sum);
-            return pcp / sum;
+            return sum > 0 ? pcp / sum : 0;
         }
 
+        /* Kept free of side effects: it used to allocate a MathString on every call from the
+         * innermost selection loop, which dominated the running time. The displayed equation is
+         * recorded once per decision by RecordPheromoneClosenessProduct instead. */
         private double PheromoneClosenessProduct(Node r, Node s) {
-            var edge = DistributedMemory.Edges.Find(e => e.IsBetween(r, s));
-            var pcp = edge.Pheromone * Math.Pow(1 / edge.Distance, Beta);
-
-            Equations["Pheromone Closeness Product"] = MathString.PheromoneClosenessProduct(edge, Beta, pcp);
-            return pcp;
+            var edge = Lookup(r, s);
+            return edge.Pheromone * Math.Pow(1 / edge.Distance, Beta);
         }
+
+        private void RecordPheromoneClosenessProduct(Node r, Node s) {
+            var edge = Lookup(r, s);
+            Equations["Pheromone Closeness Product"] =
+                MathString.PheromoneClosenessProduct(edge, Beta, PheromoneClosenessProduct(r, s));
+        }
+
+        private Edge Lookup(Node r, Node s) => EdgeLookup[Edge.KeyOf(r, s)];
 
         private void GlobalUpdatingRule() {
+            var bestKeys = Edge.KeySet(GlobalBest.Edges);
+            var lgbInversed = Math.Pow(GlobalBest.Costs, -1);
+            Edge lastEdge = null;
+
             foreach (var edge in DistributedMemory.Edges) {
                 edge.Pheromone = (1 - Alpha) * edge.Pheromone;
 
-                if (edge.IsInside(GlobalBest.Edges)) {
-                    var lgbInversed = Math.Pow(GlobalBest.Costs, -1);
-                    Equations["Global Updating Rule"] = MathString.GlobalUpdatingRule(edge, Alpha, lgbInversed);
+                if (bestKeys.Contains(edge.Key)) {
+                    lastEdge = Snapshot(edge);
                     edge.Pheromone += Alpha * lgbInversed;
                 }
             }
+
+            if (lastEdge != null)
+                Equations["Global Updating Rule"] = MathString.GlobalUpdatingRule(lastEdge, Alpha, lgbInversed);
         }
 
+        /* Swept every edge of the complete graph, testing membership of the ant's tour with a
+         * linear scan, once per ant per step - O(E * n) work to touch n edges. Walk the tour. */
         private void LocalUpdatingRule(Ant k) {
-            foreach (var edge in DistributedMemory.Edges) {
-                if (edge.IsInside(k.Path.Edges)) {
-                    Equations["Local Updating Rule"] = MathString.LocalUpdatingRule(edge, Rho, InitialPheromone);
-                    edge.Pheromone = ((1 - Rho) * edge.Pheromone) + (Rho * InitialPheromone);
-                } 
+            Edge lastEdge = null;
+
+            foreach (var pathEdge in k.Path.Edges) {
+                if (!EdgeLookup.TryGetValue(pathEdge.Key, out var edge))
+                    continue;
+
+                lastEdge = Snapshot(edge);
+                edge.Pheromone = ((1 - Rho) * edge.Pheromone) + (Rho * InitialPheromone);
             }
+
+            if (lastEdge != null)
+                Equations["Local Updating Rule"] = MathString.LocalUpdatingRule(lastEdge, Rho, InitialPheromone);
+        }
+
+        private static Edge Snapshot(Edge edge) {
+            var copy = edge.Copy();
+            copy.Node1 = edge.Node1;
+            copy.Node2 = edge.Node2;
+            return copy;
         }
 
         private Node StateTransitionRule(Ant k) {
             return Random.NextDouble() <= StateTransition ? Exploitation(k) : BiasedExploration(k);
         }
 
+        /* Sorted the whole candidate list to take one element off the front. */
         private Node Exploitation(Ant k) {
-            return k.Unvisited
-                .OrderByDescending(node => PheromoneClosenessProduct(k.Current, node))
-                .FirstOrDefault();
+            Node best = null;
+            var bestWeight = double.NegativeInfinity;
+
+            foreach (var node in k.Unvisited) {
+                var weight = PheromoneClosenessProduct(k.Current, node);
+                if (weight > bestWeight) {
+                    bestWeight = weight;
+                    best = node;
+                }
+            }
+
+            if (best != null)
+                RecordPheromoneClosenessProduct(k.Current, best);
+
+            return best;
         }
 
+        /* Roulette wheel selection over the unvisited nodes.
+         *
+         * The previous implementation drew a fresh random number for every candidate and returned
+         * the first one that exceeded it. That is not a roulette wheel - it biases heavily towards
+         * the head of the collection - and when no candidate matched (which happens whenever the
+         * draws all land above the running cumulative, including the very common case of the last
+         * candidate) FirstOrDefault returned a default KeyValuePair whose Key is null, so .Key.Node2
+         * threw a NullReferenceException. One draw against the cumulative distribution, with the
+         * last candidate as the fallback for floating point drift, fixes both. */
         private Node BiasedExploration(Ant k) {
             k.MoveProbability.Clear();
             var r = k.Current;
 
-            //1. store RANDOMPROPORTIONALRULE for all unvisited nodes
+            //1. weight every unvisited node
+            var candidates = new List<(Node Node, double Weight)>(k.Unvisited.Count);
+            var sum = 0d;
             foreach (var node in k.Unvisited) {
-                var move = new Edge { Node1 = r, Node2 = node};
                 var probability = RandomProportionalRule(k, r, node);
-                if (!k.MoveProbability.ContainsKey(move))
-                    k.MoveProbability.Add(move, probability);
+                candidates.Add((node, probability));
+                sum += probability;
+                k.MoveProbability[Edge.Between(r, node, false)] = probability;
             }
 
-            //2. divide each element of the list by the sum of the list
-            var sum = k.MoveProbability.Values.Sum();
-            foreach (var mp in k.MoveProbability) {
-                k.MoveProbability[mp.Key] = mp.Value / sum;
-            }
+            if (candidates.Count == 0)
+                return null;
+            if (sum <= 0)
+                return candidates[Random.Next(candidates.Count)].Node;
 
-            //3. create a new list that contains the cumulative of those values
+            //2. one draw against the cumulative distribution
+            var target = Random.NextDouble() * sum;
             var cumulative = 0d;
-            foreach (var mp in k.MoveProbability) {
-                cumulative += mp.Value;
-                k.MoveProbability[mp.Key] = cumulative;
+            foreach (var candidate in candidates) {
+                cumulative += candidate.Weight;
+                if (target < cumulative)
+                    return candidate.Node;
             }
 
-            //4. find the first node where a random number is greater than the element
-            return k.MoveProbability
-                .FirstOrDefault(mp => Random.NextDouble() < mp.Value).Key.Node2;
+            return candidates[^1].Node;
         }
 
         public void ScatterAnts(GraphProblem graph) {
-            var nodes = graph.Nodes;
+            /* Shuffling graph.Nodes in place reordered the caller's instance, which the rest of
+             * the application still renders and serializes. Shuffle a copy. */
+            var nodes = new List<Node>(graph.Nodes);
             nodes.Shuffle();
 
             for (int i = 0; i < AntCount; i++) {
+                var start = nodes[i % nodes.Count];
                 Colony[i].Reset();
-                Colony[i].Path = new GraphProblem { Nodes = new List<Node> { nodes[i] } };
-                Colony[i].Unvisited = nodes.Where(n => n != nodes[i]).ToList();
+                Colony[i].Path = new GraphProblem { Nodes = new List<Node> { start } };
+                Colony[i].Unvisited = nodes.Where(n => n != start).ToList();
             }
         }
     }
@@ -190,7 +257,9 @@ namespace TravellingSalesmanProblem.Algorithms {
         
         public void UpdatePath(Node from, Node to) {
             Path.Nodes.Add(to);
-            Path.Edges.Add(Edge.Between(from, to));
+            /* An ant's tour edges live in its own Path; registering each of them in the shared
+             * Node.Edges adjacency cost two O(degree) scans per step and changed nothing. */
+            Path.Edges.Add(Edge.Between(from, to, false));
             Unvisited.Remove(to);
         }
 

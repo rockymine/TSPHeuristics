@@ -17,14 +17,14 @@ namespace TravellingSalesmanProblem.Algorithms {
         private Node JPrev => Graph.Nodes[J - 1];
         private Node INext => Graph.Nodes[I + 1];
         private Node JNext => Graph.Nodes[J + 1];
-        private double I_INext => Edge.GetDistanceRounded(NodeI, INext);
-        private double I_JNext => Edge.GetDistanceRounded(NodeI, JNext);
-        private double J_INext => Edge.GetDistanceRounded(NodeJ, INext);
-        private double J_JNext => Edge.GetDistanceRounded(NodeJ, JNext);
-        private double IPrev_I => Edge.GetDistanceRounded(IPrev, NodeI);
-        private double IPrev_J => Edge.GetDistanceRounded(IPrev, NodeJ);
-        private double JPrev_I => Edge.GetDistanceRounded(JPrev, NodeI);
-        private double JPrev_J => Edge.GetDistanceRounded(JPrev, NodeJ);
+        private double I_INext => Edge.GetDistance(NodeI, INext);
+        private double I_JNext => Edge.GetDistance(NodeI, JNext);
+        private double J_INext => Edge.GetDistance(NodeJ, INext);
+        private double J_JNext => Edge.GetDistance(NodeJ, JNext);
+        private double IPrev_I => Edge.GetDistance(IPrev, NodeI);
+        private double IPrev_J => Edge.GetDistance(IPrev, NodeJ);
+        private double JPrev_I => Edge.GetDistance(JPrev, NodeI);
+        private double JPrev_J => Edge.GetDistance(JPrev, NodeJ);
         public double Costs => CalcCosts();
         public SwapMove(GraphProblem graph, int i, int j) {
             Graph = graph;
@@ -32,30 +32,34 @@ namespace TravellingSalesmanProblem.Algorithms {
             J = j;
         }
 
+        /* Measured exactly so the sign of the delta agrees with the tour costs the search compares
+         * it against; only the displayed calculation is rounded. */
         public double CalcCosts() {
             if (NodeI == JPrev || JPrev == INext) {
-                return Math.Round(IPrev_J + I_JNext - IPrev_I - J_JNext, 1);
+                return IPrev_J + I_JNext - IPrev_I - J_JNext;
             } else if (NodeI == JNext || JNext == IPrev) {
-                return Math.Round(JPrev_I + J_INext - JPrev_J - I_INext, 1);
+                return JPrev_I + J_INext - JPrev_J - I_INext;
             } else {
-                return Math.Round(IPrev_J + J_INext + JPrev_I + I_JNext - IPrev_I - I_INext - JPrev_J - J_JNext, 1);
+                return IPrev_J + J_INext + JPrev_I + I_JNext - IPrev_I - I_INext - JPrev_J - J_JNext;
             }
         }
 
         public SwapInfo GenerateSwapInfo() {
             var nodes = new List<Node> { NodeI, NodeJ };
             string calculation;
-            
+
             if (NodeI == JPrev || JPrev == INext) {
-                calculation = $"${IPrev_J}+{I_JNext}-{IPrev_I}-{J_JNext}={Costs}$";
+                calculation = $"${Round(IPrev_J)}+{Round(I_JNext)}-{Round(IPrev_I)}-{Round(J_JNext)}={Round(Costs)}$";
             } else if (NodeI == JNext || JNext == IPrev) {
-                calculation = $"${JPrev_I}+{J_INext}-{JPrev_J}-{I_INext}={Costs}$";
+                calculation = $"${Round(JPrev_I)}+{Round(J_INext)}-{Round(JPrev_J)}-{Round(I_INext)}={Round(Costs)}$";
             } else {
-                calculation = $"${IPrev_J}+{J_INext}+{JPrev_I}+{I_JNext}-{IPrev_I}-{I_INext}-{JPrev_J}-{J_JNext}={Costs}$";
+                calculation = $"${Round(IPrev_J)}+{Round(J_INext)}+{Round(JPrev_I)}+{Round(I_JNext)}-{Round(IPrev_I)}-{Round(I_INext)}-{Round(JPrev_J)}-{Round(J_JNext)}={Round(Costs)}$";
             }
 
             return new SwapInfo(nodes, calculation);
         }
+
+        private static double Round(double value) => Math.Round(value, 1);
 
         public GraphProblem SwapNodes() {
             var nodes = Graph.Nodes.ToArray();

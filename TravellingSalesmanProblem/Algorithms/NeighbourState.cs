@@ -34,6 +34,9 @@ namespace TravellingSalesmanProblem.Algorithms {
             TwoOptMove move;
             if (descent == DescentType.Random) {
                 var n = graph.Nodes.Count;
+                if (n < 4)
+                    return graph;
+
                 var pos1 = Random.Next(0, n - 2);
                 var pos2 = Random.Next(pos1 + 1, n - 1);
                 move = new TwoOptMove(graph, pos1, pos2);
@@ -50,12 +53,15 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
 
+        /* i started at 1, so the edge leaving the first tour node was never a candidate for
+         * removal and steepest/next descent explored a strictly smaller neighbourhood than the
+         * random variant (which draws pos1 from 0). Closed tours have no privileged first edge. */
         private static TwoOptMove TwoOptLoop(GraphProblem graph, DescentType descent) {
             var n = graph.Nodes.Count;
             var savings = 0d;
             TwoOptMove move = null;
 
-            for (int i = 1; i <= n - 3; i++) {
+            for (int i = 0; i <= n - 3; i++) {
                 for (int j = i + 1; j <= n - 2; j++) {
                     var temp = new TwoOptMove(graph, i, j);
                     if (temp.Costs < savings) {
@@ -75,6 +81,13 @@ namespace TravellingSalesmanProblem.Algorithms {
             SwapMove move;
             if (descent == DescentType.Random) {
                 var n = graph.Nodes.Count;
+
+                /* SwapMove reads Nodes[I-1] and Nodes[J+1], so it needs an interior i < j with a
+                 * predecessor and a successor. Below five tour entries no such pair exists and the
+                 * old bounds threw ArgumentOutOfRangeException out of Random.Next. */
+                if (n < 5)
+                    return graph;
+
                 var pos1 = Random.Next(1, n - 2);
                 var pos2 = Random.Next(pos1 + 1, n - 1);
                 move = new SwapMove(graph, pos1, pos2);
@@ -115,6 +128,11 @@ namespace TravellingSalesmanProblem.Algorithms {
             var tour = graph.Nodes.ToArray();
             var n = tour.Length;
 
+            /* Needs three cut points with a node before the first and at the last, so the smallest
+             * workable tour has four entries. Below that Random.Next threw. */
+            if (n < 4)
+                return graph;
+
             //random indexes for split
             var i = Random.Next(1, n - 3);
             var j = Random.Next(i + 1, n - 2);
@@ -123,77 +141,59 @@ namespace TravellingSalesmanProblem.Algorithms {
             //tour segments
             var start = tour[0..i];
             var BC = tour[i..j];
-            var CB = BC.Reverse();
+            var CB = BC.Reverse().ToArray();
             var DE = tour[j..k];
-            var ED = DE.Reverse();
+            var ED = DE.Reverse().ToArray();
             var end = tour[k..n];
 
-            //relevant nodes
-            var A = tour[i];
-            var B = tour[i + 1];
-            var C = tour[j];
-            var D = tour[j + 1];
-            var E = tour[k];
-            var F = tour[k + 1];
+            /* The six endpoints have to be the actual boundaries of the segments above: A is the
+             * last node of start, B/C the first/last of BC, D/E the first/last of DE and F the
+             * first of end. They were each read one position too far, so all seven candidate
+             * lengths described a different reconnection than the one that was applied - the
+             * "minimum" perturbation lengthened the tour in about a third of all draws, and
+             * reading tour[k + 1] overran the array on short tours. */
+            var A = tour[i - 1];
+            var B = BC[0];
+            var C = BC[^1];
+            var D = DE[0];
+            var E = DE[^1];
+            var F = end[0];
 
             //edge distances
-            var dAB = Edge.GetDistanceRounded(A, B);
-            var dAC = Edge.GetDistanceRounded(A, C);
-            var dAD = Edge.GetDistanceRounded(A, D);
-            var dCD = Edge.GetDistanceRounded(C, D);
-            var dEF = Edge.GetDistanceRounded(E, F);
-            var dBD = Edge.GetDistanceRounded(B, D);
-            var dCE = Edge.GetDistanceRounded(C, E);
-            var dDF = Edge.GetDistanceRounded(D, F);
-            var dEB = Edge.GetDistanceRounded(E, B);
-            var dCF = Edge.GetDistanceRounded(C, F);
-            var dFB = Edge.GetDistanceRounded(F, B);
-            var dAE = Edge.GetDistanceRounded(A, E);
+            var dAB = Edge.GetDistance(A, B);
+            var dAC = Edge.GetDistance(A, C);
+            var dAD = Edge.GetDistance(A, D);
+            var dCD = Edge.GetDistance(C, D);
+            var dEF = Edge.GetDistance(E, F);
+            var dBD = Edge.GetDistance(B, D);
+            var dCE = Edge.GetDistance(C, E);
+            var dDF = Edge.GetDistance(D, F);
+            var dEB = Edge.GetDistance(E, B);
+            var dCF = Edge.GetDistance(C, F);
+            var dFB = Edge.GetDistance(F, B);
+            var dAE = Edge.GetDistance(A, E);
 
-            IEnumerable<Node> final = null;
-            var distances = new List<double>();
+            /* Reconnections paired with their length, so the applied one is always the scored one.
+             * The old chain of independent "if (min == dN)" tests could assign twice on ties and
+             * relied on exact floating point equality to recover the winner. */
+            var candidates = new (double Length, Node[] First, Node[] Second)[] {
+                (dAC + dBD + dEF, CB, DE), //A CB DE F
+                (dAB + dCE + dDF, BC, ED), //A BC ED F
+                (dAD + dCE + dFB, DE, CB), //A DE CB F
+                (dAD + dEB + dCF, DE, BC), //A DE BC F
+                (dAE + dCD + dFB, ED, CB), //A ED CB F
+                (dAE + dBD + dCF, ED, BC), //A ED BC F
+                (dAC + dEB + dDF, CB, ED)  //A CB ED F
+            };
 
-            //var d0 = dAB + dCD + dEF; //A BC DE F
-            //pertubations
-            var d1 = dAC + dBD + dEF; //A CB DE F
-            distances.Add(d1);
-            var d2 = dAB + dCE + dDF; //A BC ED F
-            distances.Add(d2);
-            var d3 = dAD + dCE + dFB; //A DE CB F
-            distances.Add(d3);
-            var d4 = dAD + dEB + dCF; //A DE BC F
-            distances.Add(d4);
-            var d5 = dAE + dCD + dFB; //A ED CB F
-            distances.Add(d5);
-            var d6 = dAE + dBD + dCF; //A ED BC F
-            distances.Add(d6);
-            var d7 = dAC + dEB + dDF; //A CB ED F
-            distances.Add(d7);
+            var bestIndex = 0;
+            for (int c = 1; c < candidates.Length; c++) {
+                if (candidates[c].Length < candidates[bestIndex].Length)
+                    bestIndex = c;
+            }
 
-            var min = distances.Min();
-
-            if (min == d1)
-                final = start.Concat(CB).Concat(DE);
-
-            if (min == d2)
-                final = start.Concat(BC).Concat(ED);
-
-            if (min == d3)
-                final = start.Concat(DE).Concat(CB);
-
-            if (min == d4)
-                final = start.Concat(DE).Concat(BC);
-
-            if (min == d5)
-                final = start.Concat(ED).Concat(CB);
-
-            if (min == d6)
-                final = start.Concat(ED).Concat(BC);
-
-            if (min == d7)
-                final = start.Concat(CB).Concat(ED);
-
-            final = final.Concat(end);
+            var best = candidates[bestIndex];
+            var final = start.Concat(best.First).Concat(best.Second).Concat(end);
 
             var swapped = new GraphProblem {
                 Nodes = final.ToList()
@@ -205,6 +205,10 @@ namespace TravellingSalesmanProblem.Algorithms {
         public static GraphProblem DoubleBridgeFourOpt(GraphProblem graph) {
             var tour = graph.Nodes.ToArray();
             var n = tour.Length;
+
+            /* Four cut points need at least five tour entries; Random.Next threw below that. */
+            if (n < 5)
+                return graph;
 
             var i = Random.Next(1, n - 4);
             var j = Random.Next(i + 1, n - 3);

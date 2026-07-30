@@ -1,4 +1,4 @@
-﻿using Excubo.Blazor.Canvas.Contexts;
+using Excubo.Blazor.Canvas.Contexts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,99 +22,171 @@ namespace WebApplication.Utils {
             Color = "#999999", Width = 0.75
         };
 
-        public static async Task DrawGrid(Context2D context, CanvasSettings settings) {
+        /* One grid line used to be one DrawLine, i.e. seven interop calls each. A 90x90 instance
+         * meant well over a thousand round trips per canvas clear, and the canvas is cleared on
+         * every animation frame. The whole grid is one path with one stroke now. */
+        public static async Task DrawGrid(IContext2DWithoutGetters context, CanvasSettings settings) {
+            var segments = new List<(Vector2, Vector2)>();
+
             for (int i = (int)settings.MinPos.Y; i <= settings.MaxPos.Y; i++) {
-                await context.DrawLine(GridBrush,
+                segments.Add((
                     Manipulate(new Vector2((int)settings.MinPos.X, i), settings),
-                    Manipulate(new Vector2(settings.MaxPos.X, i), settings));
+                    Manipulate(new Vector2(settings.MaxPos.X, i), settings)));
             }
             for (int i = (int)settings.MinPos.X; i <= settings.MaxPos.X; i++) {
-                await context.DrawLine(GridBrush,
+                segments.Add((
                     Manipulate(new Vector2(i, (int)settings.MinPos.Y), settings),
-                    Manipulate(new Vector2(i, settings.MaxPos.Y), settings));
+                    Manipulate(new Vector2(i, settings.MaxPos.Y), settings)));
             }
+
+            await context.DrawLines(GridBrush, segments);
         }
 
-        public static async Task DrawNodes(Context2D context, GraphState state, LinkedListNode<GraphState> currentStateNode, CanvasSettings settings) {
+        /* Nodes are grouped by fill colour so each colour is a single path, and all the index
+         * labels share one font/style setup instead of re-sending it per node. */
+        public static async Task DrawNodes(IContext2DWithoutGetters context, GraphState state,
+            LinkedListNode<GraphState> currentStateNode, CanvasSettings settings) {
             var nodes = state.Nodes;
             var brush = NodeBrush.Copy();
+            var swapInfo = currentStateNode.Value.SwapInfo;
+
+            var byColor = new Dictionary<string, List<Vector2>>();
+            var labels = new List<(string, Vector2)>(nodes.Count);
 
             foreach (var node in nodes) {
-                UpdateNodeBrushColor(currentStateNode.Value.SwapInfo, node, brush);
+                var position = Manipulate(node.Position, settings);
+                var color = NodeColor(swapInfo, node);
 
-                await context.DrawCircle(brush, settings.NodeRadius,
-                    Manipulate(node.Position, settings));
-
-                await context.WriteText(brush.TextFont, brush.TextStyle, node.Index.ToString(),
-                    Manipulate(node.Position, settings));
-            }
-        }
-
-        private static void UpdateNodeBrushColor(SwapInfo swapInfo, Node node, Brush brush) {
-            if (swapInfo != null) {
-                if (node.Index == swapInfo.Nodes[0].Index) {
-                    brush.Color = "purple";
-                } else if (node.Index == swapInfo.Nodes[1].Index) {
-                    brush.Color = "orange";
-                } else {
-                    brush.Color = NodeBrush.Color;
+                if (!byColor.TryGetValue(color, out var group)) {
+                    group = new List<Vector2>();
+                    byColor[color] = group;
                 }
+
+                group.Add(position);
+                labels.Add((node.Index.ToString(), position));
             }
+
+            foreach (var group in byColor) {
+                brush.Color = group.Key;
+                await context.DrawCircles(brush, settings.NodeRadius, group.Value);
+            }
+
+            await context.WriteTexts(NodeBrush.TextFont, NodeBrush.TextStyle, labels);
         }
 
-        public static async Task DrawEdges(Context2D context, GraphState state, LinkedListNode<GraphState> stateNode, CanvasSettings settings) {
+        private static string NodeColor(SwapInfo swapInfo, Node node) {
+            if (swapInfo == null || swapInfo.Nodes.Count < 2)
+                return NodeBrush.Color;
+            if (node.Index == swapInfo.Nodes[0].Index)
+                return "purple";
+            if (node.Index == swapInfo.Nodes[1].Index)
+                return "orange";
+
+            return NodeBrush.Color;
+        }
+
+        public static async Task DrawEdges(IContext2DWithoutGetters context, GraphState state,
+            LinkedListNode<GraphState> stateNode, CanvasSettings settings, IReadOnlyList<TextMetric> annotations) {
             var edges = state.PathEdges;
+
+            /* Pheromone weighted edges each need their own width, so they cannot share a path;
+             * everything else is grouped by (colour, width). The old loop also never restored
+             * brush.Width after a pheromone edge, so once one edge carried pheromone every
+             * following edge inherited its width. */
+            var groups = new Dictionary<(string Color, double Width), List<(Vector2, Vector2)>>();
+
+            var compare = state == stateNode.Value ? stateNode.Previous?.Value.PathEdges : stateNode.Value.PathEdges;
+            var changeColor = state == stateNode.Value ? "green" : "red";
+            var compareKeys = compare == null ? null : PathKeys(compare);
+
+            foreach (var edge in edges) {
+                var color = EdgeBrush.Color;
+                if (compareKeys != null && !compareKeys.Contains(EdgeKey(edge)))
+                    color = changeColor;
+
+                var width = edge.Pheromone != 0 ? edge.Pheromone * 500 : EdgeBrush.Width;
+                var key = (color, width);
+
+                if (!groups.TryGetValue(key, out var group)) {
+                    group = new List<(Vector2, Vector2)>();
+                    groups[key] = group;
+                }
+
+                group.Add((Manipulate(edge.Node1.Position, settings), Manipulate(edge.Node2.Position, settings)));
+            }
+
             var brush = EdgeBrush.Copy();
-
-            foreach (var edge in edges) {
-                if (state == stateNode.Value) {
-                    if (stateNode.Previous != null)
-                        UpdateEdgeBrushColor(stateNode.Previous.Value.PathEdges, edge, brush, "green");
-                } else {
-                    UpdateEdgeBrushColor(stateNode.Value.PathEdges, edge, brush, "red");
-                }
-
-                if (edge.Pheromone != 0) {
-                    brush.Width = edge.Pheromone * 500;
-                    settings.Annotate = false;
-                }
-
-                await context.DrawLine(brush,
-                    Manipulate(edge.Node1.Position, settings),
-                    Manipulate(edge.Node2.Position, settings));
+            foreach (var group in groups) {
+                brush.Color = group.Key.Color;
+                brush.Width = group.Key.Width;
+                await context.DrawLines(brush, group.Value);
             }
 
-            if (settings.Annotate)
-                await DrawEdgeTextBox(context, edges, brush, settings);
+            if (annotations != null)
+                await DrawEdgeTextBoxes(context, annotations, settings);
         }
 
-        private static void UpdateEdgeBrushColor(List<Edge> compare, Edge edge, Brush brush, string color) {
-            if (compare.Find(e => e.IsEqual(edge)) != null) {
-                brush.Color = EdgeBrush.Color;
-            } else {
-                brush.Color = color;
-            }
+        /* Membership was tested with compare.Find(e => e.IsEqual(edge)) - a linear scan of the
+         * comparison tour for every edge drawn, so O(E^2) per frame on a complete graph. */
+        private static HashSet<(int, int)> PathKeys(List<Edge> edges) {
+            var keys = new HashSet<(int, int)>();
+            foreach (var edge in edges)
+                keys.Add(EdgeKey(edge));
+
+            return keys;
         }
 
-        public static async Task DrawEdgeTextBox(Context2D context, List<Edge> edges, Brush brush, CanvasSettings settings) {
-            var positions = new List<Vector2>();
-            foreach (var edge in edges) {
+        private static (int, int) EdgeKey(Edge edge) {
+            var a = edge.Node1.Index;
+            var b = edge.Node2.Index;
+            return a < b ? (a, b) : (b, a);
+        }
+
+        /* Label placement and the text measurements are computed by the caller, which still has an
+         * unbatched context; only the drawing happens here. */
+        public static List<TextMetric> BuildAnnotations(GraphState state) {
+            var positions = new HashSet<Vector2>();
+            var annotations = new List<TextMetric>(state.PathEdges.Count);
+
+            foreach (var edge in state.PathEdges) {
                 var center = edge.FindCenter();
+
                 //TODO: include small offsets
                 if (positions.Contains(center)) {
                     center = (edge.Node1.Position + edge.FindCenter()) / 2;
-                    if (positions.Contains(center)) {
+                    if (positions.Contains(center))
                         center = (edge.Node2.Position + edge.FindCenter()) / 2;
-                    }
                 }
 
-                await context.DrawTextBox(brush, Manipulate(center, settings), Math.Round(edge.Distance, 1).ToString());
                 positions.Add(center);
+                annotations.Add(new TextMetric {
+                    Text = Math.Round(edge.Distance, 1).ToString(),
+                    Position = center
+                });
+            }
+
+            return annotations;
+        }
+
+        private static async Task DrawEdgeTextBoxes(IContext2DWithoutGetters context,
+            IReadOnlyList<TextMetric> annotations, CanvasSettings settings) {
+            var brush = EdgeBrush.Copy();
+
+            foreach (var annotation in annotations) {
+                await context.DrawTextBox(brush, Manipulate(annotation.Position, settings),
+                    annotation.Text, annotation.Width, annotation.Height);
             }
         }
 
         private static Vector2 Manipulate(Vector2 vector, CanvasSettings settings) {
             return ((vector - settings.MinPos) * settings.Scale + settings.Offset).InverseY(settings.Height);
         }
+    }
+
+    public class TextMetric {
+        public string Text { get; set; }
+        public Vector2 Position { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
     }
 }

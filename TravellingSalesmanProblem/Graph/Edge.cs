@@ -6,11 +6,27 @@ using System.Numerics;
 
 namespace TravellingSalesmanProblem.Graph {
     public class Edge {
-        public Node Node1 { get; set; }
-        public Node Node2 { get; set; }
+        private Node _node1;
+        private Node _node2;
+        private double _distance = -1;
+
+        /* Distance is read in the innermost loops of every heuristic (GraphProblem.Costs alone
+         * re-summed it thousands of times per run). Node positions never change once a graph is
+         * built, so the euclidean length is computed once and cached until an endpoint is
+         * reassigned - PostProcess and the ant colonies relink copied edges to their nodes. */
+        public Node Node1 {
+            get => _node1;
+            set { _node1 = value; _distance = -1; }
+        }
+
+        public Node Node2 {
+            get => _node2;
+            set { _node2 = value; _distance = -1; }
+        }
+
         public double Value { get; set; }
         public double Pheromone { get; set; }
-        public double Distance => CalcDistance();
+        public double Distance => _distance >= 0 ? _distance : _distance = CalcDistance();
 
         internal int Node1Id;
         internal int Node2Id;
@@ -89,6 +105,21 @@ namespace TravellingSalesmanProblem.Graph {
             return edges.Any(edge => IsEqual(edge));
         }
 
+        /* Order independent identity of an edge, for dictionary/set lookups. Scanning a list with
+         * IsEqual turned the pheromone updates into an O(E * tour) sweep per ant per iteration. */
+        internal (int, int) Key => Node1Id < Node2Id ? (Node1Id, Node2Id) : (Node2Id, Node1Id);
+
+        internal static (int, int) KeyOf(Node node1, Node node2) =>
+            node1.Index < node2.Index ? (node1.Index, node2.Index) : (node2.Index, node1.Index);
+
+        internal static HashSet<(int, int)> KeySet(IEnumerable<Edge> edges) {
+            var set = new HashSet<(int, int)>();
+            foreach (var edge in edges)
+                set.Add(edge.Key);
+
+            return set;
+        }
+
         public Node Opposite(Node node) {
             if (node == Node1)
                 return Node2;
@@ -98,11 +129,19 @@ namespace TravellingSalesmanProblem.Graph {
             throw new ArgumentException("No opposite node.");
         }
 
-        public static Edge Between(Node node1, Node node2) {
-            var edge = new Edge { 
-                Node1 = node1, Node2 = node2 , 
+        public static Edge Between(Node node1, Node node2) => Between(node1, node2, true);
+
+        /* register=false skips the adjacency bookkeeping. Only NearestNeighbour walks Node.Edges,
+         * and it does so on the complete graph; tours and ant paths keep their edges in the
+         * GraphProblem itself, so registering them cost two O(degree) scans per edge for nothing. */
+        public static Edge Between(Node node1, Node node2, bool register) {
+            var edge = new Edge {
+                Node1 = node1, Node2 = node2 ,
                 Node1Id = node1.Index, Node2Id = node2.Index
             };
+
+            if (!register)
+                return edge;
 
             if (!node1.Edges.Any(e => e.IsEqual(edge)))
                 node1.Edges.Add(edge);
@@ -110,6 +149,15 @@ namespace TravellingSalesmanProblem.Graph {
                 node2.Edges.Add(edge);
 
             return edge;
+        }
+
+        /* Tour cost is the exact euclidean length, so move deltas have to be measured the same way.
+         * Evaluating them with GetDistanceRounded disagreed with the acceptance test on the sign of
+         * the delta often enough to matter: hill climbing would generate a move that looked like an
+         * improvement at one decimal, find it was not an improvement exactly, and stop the descent.
+         * GetDistanceRounded is kept for the numbers shown in the UI. */
+        public static double GetDistance(Node n1, Node n2) {
+            return Vector2.Distance(n1.Position, n2.Position);
         }
 
         public static double GetDistanceRounded(Node n1, Node n2) {

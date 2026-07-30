@@ -18,7 +18,9 @@ namespace WebApplication.Utils {
             set {
                 if (value == _scale)
                     return;
-                if (value < 0 || value > 40)
+                /* Scale 0 collapses CanvasSettings.Width/Height to zero, leaving an invisible
+                 * canvas that cannot be recovered from without reloading. */
+                if (value < 1 || value > 40)
                     return;
 
                 _scale = value;
@@ -90,13 +92,25 @@ namespace WebApplication.Utils {
             }
         }
 
+        private int NodeCountOfInstance => Instance?.Nodes.Count ?? 0;
+
         private int _startNode;
+        /* The setter dereferenced Instance, which is null until a graph has been executed - and
+         * the Nearest Neighbour panel holding this control is what the app shows on load, so
+         * touching the start node first thing threw NullReferenceException. The getter clamps as
+         * well, because a start node picked for a large graph stayed behind when a smaller graph
+         * was loaded afterwards and then indexed Instance.Nodes out of range. */
         public int StartNode {
-            get => _startNode;
+            get {
+                var count = NodeCountOfInstance;
+                return count == 0 ? 0 : Math.Clamp(_startNode, 0, count - 1);
+            }
             set {
-                if (value == _startNode)
+                if (value < 0)
                     return;
-                if (value < 0 || value > Instance.Nodes.Count - 1)
+
+                var count = NodeCountOfInstance;
+                if (count > 0 && value > count - 1)
                     return;
 
                 _startNode = value;
@@ -196,12 +210,21 @@ namespace WebApplication.Utils {
         }
 
         private int _antCount = 10;
+        /* Same two problems as StartNode, and one more: the default of ten ants exceeds the node
+         * count of every graph smaller than ten, and that combination used to crash the run before
+         * the setter was ever involved. AntSystem now wraps its starts, and the value is clamped
+         * here so the panel cannot ask for more ants than there are nodes. */
         public int AntCount {
-            get => _antCount;
+            get {
+                var count = NodeCountOfInstance;
+                return count == 0 ? _antCount : Math.Clamp(_antCount, 1, count);
+            }
             set {
-                if (value == _antCount)
+                if (value < 1)
                     return;
-                if (value < 1 || value > Instance.Nodes.Count)
+
+                var count = NodeCountOfInstance;
+                if (count > 0 && value > count)
                     return;
 
                 _antCount = value;

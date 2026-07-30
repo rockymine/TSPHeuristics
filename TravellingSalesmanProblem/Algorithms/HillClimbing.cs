@@ -16,9 +16,13 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         private GraphState XState = new();
         private GraphState XBestState = new();
-        public override LinkedList<GraphState> FindPath(GraphProblem graph) {
+        private static readonly Random Random = new();
+
+        public override LinkedList<GraphState> FindPath(GraphProblem graph) => FindPath(graph, false);
+
+        private LinkedList<GraphState> FindPath(GraphProblem graph, bool randomizeStart) {
             var history = new LinkedList<GraphState>();
-            X = GraphProblem.OrderedGraphProblem(graph);
+            X = GraphProblem.OrderedGraphProblem(randomizeStart ? Shuffled(graph) : graph);
 
             var chartInfo = new ChartInfo {
                 Title = "Distance Progress",
@@ -57,9 +61,13 @@ namespace TravellingSalesmanProblem.Algorithms {
             return history;
         }
 
+        /* Every restart called FindPath(graph), which always builds its initial tour from the same
+         * node ordering. A deterministic descent from a fixed start is a deterministic descent, so
+         * all n restarts produced the identical local optimum and multi start was a plain single
+         * run repeated n times. Each restart now begins from its own random permutation. */
         public LinkedList<GraphState> MultiStart(GraphProblem graph) {
             graph.Reset();
-            
+
             var state = new GraphState { Nodes = graph.Nodes };
             var history = new LinkedList<GraphState>();
             var costs = double.MaxValue;
@@ -67,7 +75,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             history.AddLast(state);
 
             for (int i = 0; i < graph.Nodes.Count; i++) {
-                XState = FindPath(graph).Last();
+                XState = FindPath(graph, true).Last();
 
                 if (XState.Distance < costs) {
                     costs = XState.Distance;
@@ -78,6 +86,17 @@ namespace TravellingSalesmanProblem.Algorithms {
             }
 
             return history;
+        }
+
+        private static GraphProblem Shuffled(GraphProblem graph) {
+            /* Copies the node list: shuffling graph.Nodes in place would reorder the instance the
+             * rest of the application (distance matrix, serialization) is still displaying. */
+            var nodes = new List<Node>(graph.Nodes);
+            if (nodes.Count > 1 && nodes[0] == nodes[^1])
+                nodes.RemoveAt(nodes.Count - 1);
+
+            nodes.Shuffle();
+            return new GraphProblem { Nodes = nodes, Edges = graph.Edges };
         }
 
         public override void UpdateStateMessages(GraphState state) {

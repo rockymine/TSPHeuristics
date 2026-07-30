@@ -1,4 +1,4 @@
-﻿using Excubo.Blazor.Canvas;
+using Excubo.Blazor.Canvas;
 using Excubo.Blazor.Canvas.Contexts;
 using System;
 using System.Collections.Generic;
@@ -9,14 +9,16 @@ using WebApplication.Utils;
 using System.Drawing;
 
 namespace WebApplication.Extensions {
+    /* Every method here takes IContext2DWithoutGetters, which both Context2D and Batch2D
+     * implement. Context2D issues one JS interop round trip per call, so a single redraw of a
+     * 30 node instance cost thousands of them; drawing through a Batch2D buffers the whole frame
+     * and flushes it in one call instead. The callers decide which to hand in. */
     public static class Context2DExtensions {
-        public static async Task DrawLine(this Context2D context, Brush brush, Vector2 pos1, Vector2 pos2) {
-            if (brush.Color == "red") {
-                await context.SetLineDashAsync(new double[] { 5 });
-            } else {
-                await context.SetLineDashAsync(new double[] { });
-            }                
+        private static readonly double[] Dashed = { 5 };
+        private static readonly double[] Solid = { };
 
+        public static async Task DrawLine(this IContext2DWithoutGetters context, Brush brush, Vector2 pos1, Vector2 pos2) {
+            await context.SetLineDashAsync(brush.Color == "red" ? Dashed : Solid);
             await context.StrokeStyleAsync(brush.Color);
             await context.LineWidthAsync(brush.Width);
             await context.BeginPathAsync();
@@ -25,46 +27,91 @@ namespace WebApplication.Extensions {
             await context.StrokeAsync();
         }
 
-        public static async Task DrawCircle(this Context2D context, Brush brush, double radius, Vector2 pos) {
+        /* Draws many segments that share one style as a single path. Stroke state is set once and
+         * one Stroke call covers the whole batch, instead of seven calls per individual segment. */
+        public static async Task DrawLines(this IContext2DWithoutGetters context, Brush brush,
+            IReadOnlyList<(Vector2 From, Vector2 To)> segments) {
+            if (segments.Count == 0)
+                return;
+
+            await context.SetLineDashAsync(brush.Color == "red" ? Dashed : Solid);
+            await context.StrokeStyleAsync(brush.Color);
+            await context.LineWidthAsync(brush.Width);
+            await context.BeginPathAsync();
+
+            foreach (var (from, to) in segments) {
+                await context.MoveToAsync(from.X, from.Y);
+                await context.LineToAsync(to.X, to.Y);
+            }
+
+            await context.StrokeAsync();
+        }
+
+        public static async Task DrawCircle(this IContext2DWithoutGetters context, Brush brush, double radius, Vector2 pos) {
             await context.FillStyleAsync(brush.Color);
             await context.LineWidthAsync(brush.Width);
             await context.BeginPathAsync();
             await context.MoveToAsync(pos.X, pos.Y);
             await context.EllipseAsync(pos.X, pos.Y, radius, radius, 0, 0, 360);
             await context.FillAsync(FillRule.EvenOdd);
-            //if (brush.Style == FillStyle.Fill)
-            //    await context.FillAsync(FillRule.EvenOdd);
-            //else if (brush.Style == FillStyle.Stroke)
-            //    await context.StrokeAsync();
         }
 
-        public static async Task DrawTextBox(this Context2D context, Brush brush, Vector2 pos, string text) {
-            var metrics = await context.MeasureTextAsync(text);
-            var width = metrics.Width;
-            var height = metrics.FontBoundingBoxAscent + metrics.FontBoundingBoxDescent;
-            var x = pos.X;
-            var y = pos.Y;
-            var startX = x - (width / 2);
-            var startY = y - (height / 2);
-            
+        /* Circles that share a fill colour go into one path and one Fill call. */
+        public static async Task DrawCircles(this IContext2DWithoutGetters context, Brush brush,
+            double radius, IReadOnlyList<Vector2> positions) {
+            if (positions.Count == 0)
+                return;
+
+            await context.FillStyleAsync(brush.Color);
+            await context.LineWidthAsync(brush.Width);
+            await context.BeginPathAsync();
+
+            foreach (var pos in positions) {
+                await context.MoveToAsync(pos.X + radius, pos.Y);
+                await context.EllipseAsync(pos.X, pos.Y, radius, radius, 0, 0, 360);
+            }
+
+            await context.FillAsync(FillRule.EvenOdd);
+        }
+
+        /* Width comes from the caller because MeasureTextAsync needs a round trip and so is not
+         * available on a batch; GraphView measures the labels before opening one. */
+        public static async Task DrawTextBox(this IContext2DWithoutGetters context, Brush brush,
+            Vector2 pos, string text, double width, double height) {
+            var startX = pos.X - (width / 2);
+            var startY = pos.Y - (height / 2);
+
             await context.FillStyleAsync("#3f74a8");
             await context.LineWidthAsync(2);
-            await context.BeginPathAsync();
-            await context.MoveToAsync(x, y);
             await context.FillRectAsync(startX, startY, width, height);
             await WriteText(context, brush.TextFont, "white", text, pos);
         }
 
-        public static async Task FillTextAsyncVector(this Context2D context, string text, Vector2 pos) {
+        public static async Task FillTextAsyncVector(this IContext2DWithoutGetters context, string text, Vector2 pos) {
             await context.FillTextAsync(text, pos.X, pos.Y);
         }
 
-        public static async Task WriteText(this Context2D context, string font, string style, string text, Vector2 v2) {
+        public static async Task WriteText(this IContext2DWithoutGetters context, string font, string style, string text, Vector2 v2) {
             await context.FontAsync(font);
             await context.FillStyleAsync(style);
             await context.TextBaseLineAsync(TextBaseLine.Middle);
             await context.TextAlignAsync(TextAlign.Center);
             await context.FillTextAsyncVector(text, v2);
+        }
+
+        /* Sets the shared text state once, then emits only the per label draw calls. */
+        public static async Task WriteTexts(this IContext2DWithoutGetters context, string font, string style,
+            IReadOnlyList<(string Text, Vector2 Position)> labels) {
+            if (labels.Count == 0)
+                return;
+
+            await context.FontAsync(font);
+            await context.FillStyleAsync(style);
+            await context.TextBaseLineAsync(TextBaseLine.Middle);
+            await context.TextAlignAsync(TextAlign.Center);
+
+            foreach (var (text, position) in labels)
+                await context.FillTextAsync(text, position.X, position.Y);
         }
     }
 }

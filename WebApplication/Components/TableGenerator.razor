@@ -129,6 +129,11 @@
 		var size = state.Nodes.Count + 1;
 		tableInfo.Cells = new TableCellInfo[size - 1, size];
 
+		/* InPath scanned the whole tour for every cell, so the matrix cost O(n^3) to build and it
+		 * was rebuilt on every animation frame - roughly 700k comparisons per frame at the 90 node
+		 * maximum. The tour's adjacent pairs are collected once instead. */
+		var adjacent = PathPairs(state.Path);
+
 		for (int i = 0; i < size - 1; i++) {
 			for (int j = 0; j < size; j++) {
 				var node1 = state.Nodes[i];
@@ -150,33 +155,68 @@
 				var distance = Math.Round(Edge.GetDistanceRounded(node1, node2), 1);
 
 				tableInfo.Cells[i, j] = new TableCellInfo(distance.ToString(),
-					InPath(state.Path, node1, node2) ? "table-light" : null);
+					adjacent.Contains(Pair(node1, node2)) ? "table-light" : null);
 			}
 		}
 	}
 
-	private void CreateIterationTable(LinkedListNode<GraphState> node) {
-		var state = node.Value;
+	private static HashSet<(int, int)> PathPairs(List<Node> path) {
+		var pairs = new HashSet<(int, int)>();
+		for (int i = 0; i < path.Count - 1; i++)
+			pairs.Add(Pair(path[i], path[i + 1]));
 
+		return pairs;
+	}
+
+	private static (int, int) Pair(Node a, Node b) =>
+		a.Index < b.Index ? (a.Index, b.Index) : (b.Index, a.Index);
+
+	/* Both history tables used to append one row per call, and this component is updated on every
+	 * redraw. Stepping backwards - or replaying - therefore appended rows that were already there,
+	 * so the table filled up with duplicates and disagreed with the visualization. Each table is
+	 * now derived from the history up to the selected state, which makes it idempotent.
+	 * TableInfo.AddRow also reallocated and copied the whole array per row, making the build
+	 * quadratic in the number of iterations; rows are collected in a list and converted once. */
+	private void CreateIterationTable(LinkedListNode<GraphState> node) {
 		tableInfo.Header = new List<string> { "Iteration", "Tour", "Distance" };
 
-		if (tableInfo.Cells is null)
-			tableInfo.Cells = new TableCellInfo[0, tableInfo.Header.Count];
+		var rows = new List<TableCellInfo[]>();
+		foreach (var state in HistoryUpTo(node)) {
+			if (state.Path.Count == 0)
+				continue;
 
-		if (state.Path.Count > 0) {
-			var temp = TableInfo.AddRow(tableInfo.Cells);
-			var lastRow = temp.GetLength(0) - 1;
-
-			temp[lastRow, 0] = new TableCellInfo(state.Iteration.ToString(), null);
-			temp[lastRow, 1] = new TableCellInfo("(" + string.Join('-', state.Path.Select(n => n.Index)) + ")", null);
-			temp[lastRow, 2] = new TableCellInfo(state.Distance.ToString(), null);
-
-			tableInfo.Cells = temp;
+			rows.Add(new[] {
+				new TableCellInfo(state.Iteration.ToString(), null),
+				new TableCellInfo("(" + string.Join('-', state.Path.Select(n => n.Index)) + ")", null),
+				new TableCellInfo(state.Distance.ToString(), null)
+			});
 		}
+
+		tableInfo.Cells = ToGrid(rows, tableInfo.Header.Count);
+	}
+
+	private static IEnumerable<GraphState> HistoryUpTo(LinkedListNode<GraphState> node) {
+		var states = new List<GraphState>();
+		for (var current = node.List?.First; current != null; current = current.Next) {
+			states.Add(current.Value);
+			if (current == node)
+				break;
+		}
+
+		return states;
+	}
+
+	private static TableCellInfo[,] ToGrid(List<TableCellInfo[]> rows, int columns) {
+		var grid = new TableCellInfo[rows.Count, columns];
+		for (int i = 0; i < rows.Count; i++) {
+			for (int j = 0; j < columns && j < rows[i].Length; j++)
+				grid[i, j] = rows[i][j];
+		}
+
+		return grid;
 	}
 
 	private void CreateSwapSummary(LinkedListNode<GraphState> node, NeighbourType neighbourType) {
-		var state = node.Value;
 		var formula = "$\\triangle=d_{i,j}+d_{i+1,j+1}-d_{i,i+1}-d_{j,j+1}$";
 
 		if (neighbourType == NeighbourType.Swap)
@@ -184,52 +224,46 @@
 
 		tableInfo.Header = new List<string> { "It.", "$i$", "$j$", "x", formula, "y" , "f(y)"};
 
-		if (tableInfo.Cells is null)
-			tableInfo.Cells = new TableCellInfo[0, tableInfo.Header.Count];
+		var rows = new List<TableCellInfo[]>();
+		GraphState previous = null;
 
-		if (state.SwapInfo != null) {
-			var temp = TableInfo.AddRow(tableInfo.Cells);
-			var lastRow = temp.GetLength(0) - 1;
+		foreach (var state in HistoryUpTo(node)) {
+			if (state.SwapInfo == null || state.SwapInfo.Nodes.Count < 2) {
+				previous = state;
+				continue;
+			}
 
 			var i = state.SwapInfo.Nodes[0];
 			var j = state.SwapInfo.Nodes[1];
 
-			temp[lastRow, 0] = new TableCellInfo($"${state.Iteration}$", null);
-			temp[lastRow, 1] = new TableCellInfo($"${state.SwapInfo.Nodes[0].Index}$", null);
-			temp[lastRow, 2] = new TableCellInfo($"${state.SwapInfo.Nodes[1].Index}$", null);
-			temp[lastRow, 3] = IndexedTourSummary(node.Previous?.Value, state, i, j);
-			temp[lastRow, 4] = new TableCellInfo(state.SwapInfo.Calculation, null);
-			temp[lastRow, 5] = IndexedTourSummary(state, state, i, j);
-			temp[lastRow, 6] = new TableCellInfo(Math.Round(state.Distance, 1).ToString(), null);
+			rows.Add(new[] {
+				new TableCellInfo($"${state.Iteration}$", null),
+				new TableCellInfo($"${i.Index}$", null),
+				new TableCellInfo($"${j.Index}$", null),
+				IndexedTourSummary(previous, i, j),
+				new TableCellInfo(state.SwapInfo.Calculation, null),
+				IndexedTourSummary(state, i, j),
+				new TableCellInfo(Math.Round(state.Distance, 1).ToString(), null)
+			});
 
-			tableInfo.Cells = temp;
+			previous = state;
 		}
+
+		tableInfo.Cells = ToGrid(rows, tableInfo.Header.Count);
 	}
 
-	private TableCellInfo IndexedTourSummary(GraphState a, GraphState b, Node i, Node j) {
-		var content = string.Join(',', a.Path.Select(n =>
-				n == i ? "\\underset{i}{\\text{" + n.Index + "}}" : 
-				n == j ? "\\underset{j}{\\text{" + n.Index + "}}" : 
+	/* Took the "before" state as an argument that could be null (node.Previous?.Value on the very
+	 * first entry) and dereferenced it unguarded. */
+	private TableCellInfo IndexedTourSummary(GraphState state, Node i, Node j) {
+		if (state == null)
+			return new TableCellInfo("", null);
+
+		var content = string.Join(',', state.Path.Select(n =>
+				n == i ? "\\underset{i}{\\text{" + n.Index + "}}" :
+				n == j ? "\\underset{j}{\\text{" + n.Index + "}}" :
 				n.Index.ToString()));
 
 		return new TableCellInfo("$("+ $"{content}" + ")$", null);
 	}
 
-	private bool InPath(List<Node> path, Node node1, Node node2) {
-		//1-2-3-1 example: node1 = 1, node2 = 3
-		for (int i = 0; i < path.Count; i++) {
-			if (path[i] != node1)
-				continue;
-
-			//check predecessor
-			if (i > 0 && path[i - 1] == node2)
-				return true;
-
-			//check successor
-			if (i < path.Count - 1 && path[i + 1] == node2)
-				return true;
-		}
-		
-		return false;
-	}
 }
