@@ -7,6 +7,7 @@
 @using WebApplication.Utils
 @using WebApplication.Components
 @using StardustDL.RazorComponents.Markdown
+@inject IJSRuntime JSRuntime
 @{
     /* Which result views have anything to show depends on the heuristic: Nearest Neighbour and
        Ant System produce no charts, and only some states carry equations. The dock needs to know
@@ -178,9 +179,12 @@
                         <h3 class="canvas-pane-label">
                             @(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Previous (before the move)" : "Previous (iteration start)")
                         </h3>
+                        @* The attributes are the buffer, in device pixels; the style is the box it
+                           occupies, in CSS pixels. They differ by the pixel ratio. *@
                         <Canvas @ref="@AppState.PreviousCanvas"
-                                width="@AppState.CanvasSettings.Width"
-                                height="@AppState.CanvasSettings.Height" />
+                                width="@AppState.CanvasSettings.BufferWidth"
+                                height="@AppState.CanvasSettings.BufferHeight"
+                                style="@CanvasBoxStyle()" />
                     </div>
                 }
                 <div class="canvas-pane">
@@ -188,8 +192,9 @@
                         @(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Current (after the move)" : "Current (iteration end)")
                     </h3>
                     <Canvas @ref="@AppState.CurrentCanvas"
-                            width="@AppState.CanvasSettings.Width"
-                            height="@AppState.CanvasSettings.Height" />
+                            width="@AppState.CanvasSettings.BufferWidth"
+                            height="@AppState.CanvasSettings.BufferHeight"
+                            style="@CanvasBoxStyle()" />
                 </div>
             </div>
         </div>
@@ -265,9 +270,17 @@
 
     private FileInput subscribedFileInput;
 
+    /* The CSS box the canvas occupies. The width/height attributes carry the buffer, which is this
+     * box times the pixel ratio; without pinning the box in CSS the element would take its size
+     * from the buffer and the drawing would come out twice as large on a HiDPI screen. */
+    private string CanvasBoxStyle() =>
+        $"width: {AppState.CanvasSettings.Width}px; height: {AppState.CanvasSettings.Height}px;";
+
     protected override Task OnAfterRenderAsync(bool firstRender) {
-        if (firstRender)
+        if (firstRender) {
             _ = RunAnimationLoop();
+            _ = ReadDevicePixelRatio();
+        }
 
         /* AppState.FileInput starts as a placeholder instance and is only replaced by the real
          * component once the File source is selected and @ref runs. Subscribing once on the first
@@ -295,6 +308,23 @@
     }
 
     private void OnLoadedFileChanged() => InvokeAsync(StateHasChanged);
+
+    /* Read once: the ratio only changes if the window moves to a display with a different density,
+     * which is not worth watching for here. A failure leaves it at 1, which is what the canvas did
+     * before this existed. */
+    private async Task ReadDevicePixelRatio() {
+        try {
+            var ratio = await JSRuntime.InvokeAsync<float>("GetDevicePixelRatio");
+
+            if (ratio > 0 && ratio != AppState.CanvasSettings.RawDevicePixelRatio) {
+                AppState.CanvasSettings.RawDevicePixelRatio = ratio;
+                await InvokeAsync(StateHasChanged);
+                await Redraw();
+            }
+        } catch (JSException) {
+            /* Nothing to do: the default of 1 is the previous behaviour. */
+        }
+    }
 
     /* Ran on a raw Task.Run, so the redraw and StateHasChanged happened off the renderer's
      * dispatcher. It also woke every AnimationDelay milliseconds - one millisecond by default -
@@ -523,6 +553,14 @@
     }
 
     private async Task ResetCanvas(IContext2DWithoutGetters context, CanvasSettings settings) {
+        /* Pre-multiply by the pixel ratio, so every draw call after this one is in CSS pixels while
+         * the buffer underneath is in device pixels. This is the whole reason the renderer needed
+         * no changes. It has to be re-applied per frame rather than set once, because assigning the
+         * canvas width/height attributes - which happens whenever the instance or the ratio changes
+         * - resets the context state, transform included. */
+        var ratio = settings.DevicePixelRatio;
+        await context.Transformations.SetTransformAsync(ratio, 0, 0, ratio, 0, 0);
+
         /* The cleared and repainted rectangle started at the graph's minimum coordinate rather
          * than at the canvas origin, so with a graph whose smallest coordinate was not zero a
          * strip along the top and left kept the previous frame's pixels. */
