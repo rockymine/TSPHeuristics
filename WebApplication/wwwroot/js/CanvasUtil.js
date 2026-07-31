@@ -19,3 +19,37 @@ function UpdateCanvases() {
 function GetDevicePixelRatio() {
     return window.devicePixelRatio || 1;
 }
+
+/* The canvas fits itself to the stage, so the stage has to be measured - a Blazor component cannot
+   read a layout box on its own. A ResizeObserver covers everything that changes it: the window,
+   the dock being collapsed or resized, the sidebar's scrollbar appearing.
+
+   Observing .canvas-area rather than the canvas itself is deliberate. The area is flex: 1 inside
+   the workspace, so its size comes from the topbar, run bar, toolbar and dock - never from the
+   canvas it contains. Observing the canvas would be a feedback loop. */
+let canvasStageObserver = null;
+
+function MeasureCanvasStage(el) {
+    const cs = getComputedStyle(el);
+    return {
+        width: el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight),
+        height: el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)
+    };
+}
+
+function ObserveCanvasStage(dotNetRef) {
+    const el = document.querySelector(".canvas-area");
+    if (!el)
+        return null;
+
+    if (canvasStageObserver)
+        canvasStageObserver.disconnect();
+
+    canvasStageObserver = new ResizeObserver(function () {
+        const size = MeasureCanvasStage(el);
+        dotNetRef.invokeMethodAsync("OnCanvasStageResized", size.width, size.height);
+    });
+    canvasStageObserver.observe(el);
+
+    return MeasureCanvasStage(el);
+}

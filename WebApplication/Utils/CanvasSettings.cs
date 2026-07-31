@@ -20,14 +20,34 @@ namespace WebApplication.Utils {
         /* Beyond 2 the extra samples are not visible at these line widths and only cost memory. */
         private const float MaxDevicePixelRatio = 2;
 
-        private float _scale;
+        /* What the canvas falls back to before the stage has been measured, and what the drawing
+         * used to be fixed at: pixels per coordinate unit. */
+        private const float FallbackScale = 30;
 
         public Vector2 MinPos { get; set; }
         public Vector2 MaxPos { get; set; }
-        public float Scale {
-            get => Math.Min(_scale, MaxEdgePixels / Math.Max(SpanX, SpanY));
-            set => _scale = value;
-        }
+
+        /* The box one canvas may occupy, in CSS pixels, set from the measured stage. GraphView
+         * subtracts the stage padding, the gap between two panes and the pane label before setting
+         * it, so this is already the budget for the drawing itself. */
+        public float AvailableWidth { get; set; }
+        public float AvailableHeight { get; set; }
+
+        /* 1 fits the graph to that box. Above 1 the drawing is larger than the stage and the stage
+         * scrolls; below 1 it is smaller and stays centred. */
+        public float Zoom { get; set; } = 1;
+
+        /* Scale used to be an input: a fixed number of pixels per coordinate unit, which decided
+         * both how large the drawing was and how much memory the canvas allocated. It made the
+         * canvas a fixed box marooned in the stage - a wider window only bought more empty space -
+         * and it meant the two jobs could not be adjusted independently. It is derived now: fit the
+         * graph to the available box, then apply the zoom. */
+        private float FitScale =>
+            AvailableWidth > 0 && AvailableHeight > 0
+                ? Math.Min(AvailableWidth / SpanX, AvailableHeight / SpanY)
+                : FallbackScale;
+
+        public float Scale => Math.Min(FitScale * Zoom, MaxEdgePixels / Math.Max(SpanX, SpanY));
 
         private float SpanX => Math.Max(1, MaxPos.X - MinPos.X + 1);
         private float SpanY => Math.Max(1, MaxPos.Y - MinPos.Y + 1);

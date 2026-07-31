@@ -12,18 +12,21 @@ namespace WebApplication.Utils {
     public class AppState {
         public GraphProblem Instance { get; set; }
 
-        private float _scale = 30;
-        public float Scale {
-            get => _scale;
+        /* Was a fixed Scale in pixels per coordinate unit. The canvas fits itself to the stage now,
+         * so what is left for the user to say is how much larger or smaller than that fit they
+         * want it - a percentage, where 100 is the fit. */
+        private float _zoom = 100;
+        public float Zoom {
+            get => _zoom;
             set {
-                if (value == _scale)
+                if (value == _zoom)
                     return;
-                /* Scale 0 collapses CanvasSettings.Width/Height to zero, leaving an invisible
-                 * canvas that cannot be recovered from without reloading. */
-                if (value < 1 || value > 40)
+                /* Zoom 0 collapses the canvas to nothing, which cannot be recovered from without
+                 * reloading. The upper bound keeps the buffer inside its memory ceiling. */
+                if (value < 25 || value > 400)
                     return;
 
-                _scale = value;
+                _zoom = value;
             }
         }
 

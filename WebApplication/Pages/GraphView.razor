@@ -8,6 +8,7 @@
 @using WebApplication.Components
 @using StardustDL.RazorComponents.Markdown
 @inject IJSRuntime JSRuntime
+@implements IDisposable
 @{
     /* Which result views have anything to show depends on the heuristic: Nearest Neighbour and
        Ant System produce no charts, and only some states carry equations. The dock needs to know
@@ -200,7 +201,7 @@
         </div>
 
         <div class="canvas-toolbar">
-            <CanvasDisplaySettings @bind-Scale="@AppState.Scale"
+            <CanvasDisplaySettings @bind-Zoom="@AppState.Zoom"
                                    @bind-NodeRadius="@AppState.NodeRadius"
                                    @bind-ShowGrid="@AppState.ShowGrid"
                                    @bind-AnnotateEdges="@AppState.AnnotateEdges"
@@ -280,6 +281,7 @@
         if (firstRender) {
             _ = RunAnimationLoop();
             _ = ReadDevicePixelRatio();
+            _ = ObserveCanvasStage();
         }
 
         /* AppState.FileInput starts as a placeholder instance and is only replaced by the real
@@ -308,6 +310,71 @@
     }
 
     private void OnLoadedFileChanged() => InvokeAsync(StateHasChanged);
+
+    /* These mirror shell.css: .canvas-area's padding is already taken out by the measurement, but
+     * the gap between two panes and the pane's label sit inside the measured box and have to come
+     * off the budget here. Kept as constants so the two places that have to agree are visible. */
+    private const float CanvasPaneGap = 16;
+    private const float CanvasPaneLabel = 30;
+
+    private DotNetObjectReference<GraphView> selfReference;
+    private float stageWidth;
+    private float stageHeight;
+
+    private async Task ObserveCanvasStage() {
+        selfReference ??= DotNetObjectReference.Create(this);
+
+        try {
+            var size = await JSRuntime.InvokeAsync<StageSize>("ObserveCanvasStage", selfReference);
+
+            if (size != null)
+                await ApplyStageSize(size.Width, size.Height);
+        } catch (JSException) {
+            /* Without a measurement the canvas keeps its fallback scale, which is what it drew at
+             * before it could fit itself. */
+        }
+    }
+
+    /* Called by the ResizeObserver: the window, the dock being collapsed, the sidebar's scrollbar
+     * appearing - anything that changes how much room the stage has. */
+    [JSInvokable]
+    public async Task OnCanvasStageResized(double width, double height) =>
+        await InvokeAsync(() => ApplyStageSize((float)width, (float)height));
+
+    private async Task ApplyStageSize(float width, float height) {
+        /* Ignore sub-pixel churn. The observer can otherwise oscillate: a slightly larger canvas
+         * brings out a scrollbar, which narrows the stage, which shrinks the canvas again. */
+        if (Math.Abs(width - stageWidth) < 2 && Math.Abs(height - stageHeight) < 2)
+            return;
+
+        stageWidth = width;
+        stageHeight = height;
+        ApplyStageToSettings();
+        StateHasChanged();
+
+        if (AppState.GraphHistory != null)
+            await Redraw();
+    }
+
+    /* Two canvases share the stage side by side, so each gets half of it less the gap. */
+    private void ApplyStageToSettings() {
+        if (stageWidth <= 0 || stageHeight <= 0)
+            return;
+
+        var panes = ShowsPreviousCanvas ? 2 : 1;
+
+        AppState.CanvasSettings.AvailableWidth =
+            Math.Max(1, (stageWidth - CanvasPaneGap * (panes - 1)) / panes);
+        AppState.CanvasSettings.AvailableHeight =
+            Math.Max(1, stageHeight - CanvasPaneLabel);
+    }
+
+    public void Dispose() => selfReference?.Dispose();
+
+    private class StageSize {
+        public float Width { get; set; }
+        public float Height { get; set; }
+    }
 
     /* Read once: the ratio only changes if the window moves to a display with a different density,
      * which is not worth watching for here. A failure leaves it at 1, which is what the canvas did
@@ -387,7 +454,10 @@
         AppState.Error = null;
         AppState.CanvasSettings.MinPos = AppState.Instance.FindMin();
         AppState.CanvasSettings.MaxPos = AppState.Instance.FindMax();
-        AppState.CanvasSettings.Scale = AppState.Scale;
+        AppState.CanvasSettings.Zoom = AppState.Zoom / 100f;
+        /* The budget depends on how many canvases share the stage, and that follows the heuristic
+         * being run - so it is recomputed here rather than only when the stage itself changes. */
+        ApplyStageToSettings();
         AppState.CanvasSettings.NodeRadius = AppState.NodeRadius;
         AppState.CanvasSettings.ShowGrid = AppState.ShowGrid;
         AppState.CanvasSettings.BackgroundColor = AppState.BackgroundColor;

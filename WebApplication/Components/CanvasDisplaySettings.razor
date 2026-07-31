@@ -2,8 +2,8 @@
    groups are emitted without a wrapper element so the toolbar's flex row lays them out directly. *@
 
 <div class="canvas-toolbar-group">
-    <label for="scale">Scale</label>
-    <input type="number" id="scale" class="form-control form-control-sm" @bind="Scale">
+    <label for="zoom">Zoom %</label>
+    <input type="number" id="zoom" step="25" class="form-control form-control-sm" @bind="Zoom">
 </div>
 <div class="canvas-toolbar-group">
     <label for="nodeSize">Node size</label>
@@ -28,20 +28,20 @@
 </div>
 
 @code {
-	private float _scale;
+	private float _zoom;
     [Parameter]
-    public float Scale {
-        get => _scale;
+    public float Zoom {
+        get => _zoom;
         set {
-            if (value == _scale)
+            if (value == _zoom)
                 return;
 
-            _scale = value;
-            ScaleChanged.InvokeAsync(value);
+            _zoom = value;
+            ZoomChanged.InvokeAsync(value);
         }
     }
     [Parameter]
-    public EventCallback<float> ScaleChanged { get; set; }
+    public EventCallback<float> ZoomChanged { get; set; }
 
     private float _nodeRadius;
     [Parameter]
