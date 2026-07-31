@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Per-run SimulationResult files; the aggregates next to them are what is kept.
+analysis/results/*/raw/

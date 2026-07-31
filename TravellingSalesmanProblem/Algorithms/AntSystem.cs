@@ -14,6 +14,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         public int Iterations { get; set; }
         public bool BreakWhenPathsAreEqual { get; set; }
         public GlobalUpdatingRule GlobalUpdatingRule { get; set; }
+        public SelectionRule SelectionRule { get; set; } = SelectionRule.Proportional;
         public double InitialPheromone { get; set; }
         private static readonly Random Random = new();
         private GraphProblem XBest = new();
@@ -180,31 +181,71 @@ namespace TravellingSalesmanProblem.Algorithms {
             }
         }
 
-        /* Picks the most attractive unvisited node. OrderByDescending sorted the candidates and
-         * discarded all but the first, and the key selector recomputed the normalising sum over
-         * every unvisited node for each candidate - an O(u^2) scan behind an O(u log u) sort.
-         * That denominator is the same for all candidates of a step, so it cannot change the
-         * ranking; comparing the unnormalised weights in a single pass gives the same node. */
+        /* Scratch buffer for the candidate weights, grown as needed and reused across steps so
+         * the selection does not allocate once per ant per step. */
+        private double[] Weights = new double[0];
+
+        /* Picks the next node for an ant.
+         *
+         * Proportional is the random proportional rule that defines the Ant System: a candidate is
+         * drawn with a probability proportional to its pheromone-visibility weight. Greedy always
+         * takes the largest weight - that is what this implementation did originally, and it is
+         * kept so the results published in the thesis stay reproducible from this code.
+         *
+         * Under Greedy an ant's tour is fully determined by its starting node, so a colony of m
+         * ants explores exactly m tours per iteration and further iterations only shift the
+         * pheromone. That is why doubling the colony helped so little in table 7.8.
+         *
+         * Note on exponents: Beta weights the visibility, as usual. Alpha is used by this project
+         * as the evaporation parameter (rho in most of the literature), not as the pheromone
+         * exponent, so the pheromone enters with exponent one. That convention is unchanged. */
         private Node StateTransitionRule(Ant ant) {
-            Node best = null;
-            var bestWeight = double.NegativeInfinity;
+            var candidates = ant.Unvisited;
+            if (candidates.Count == 0)
+                return null;
+
             var current = ant.Current;
 
-            foreach (var node in ant.Unvisited) {
-                var weight = PheromoneVisibility(current, node);
-                if (weight > bestWeight) {
-                    bestWeight = weight;
-                    best = node;
+            if (SelectionRule == SelectionRule.Greedy) {
+                Node best = null;
+                var bestWeight = double.NegativeInfinity;
+
+                foreach (var node in candidates) {
+                    var weight = PheromoneVisibility(current, node);
+                    if (weight > bestWeight) {
+                        bestWeight = weight;
+                        best = node;
+                    }
                 }
+
+                return best;
             }
 
-            return best;
-        }
+            if (Weights.Length < candidates.Count)
+                Weights = new double[candidates.Count];
 
-        private double MoveProbability(Ant ant, Node i, Node j) {
-            var current = PheromoneVisibility(i, j);
-            var sum = ant.Unvisited.Sum(n => PheromoneVisibility(i, n));
-            return current / sum;
+            var sum = 0d;
+            for (int i = 0; i < candidates.Count; i++) {
+                Weights[i] = PheromoneVisibility(current, candidates[i]);
+                sum += Weights[i];
+            }
+
+            /* Also catches NaN: a weight can overflow for a very large Beta on a very short edge,
+             * and an undrawable distribution should still yield a legal move. */
+            if (!(sum > 0) || double.IsInfinity(sum))
+                return candidates[Random.Next(candidates.Count)];
+
+            var target = Random.NextDouble() * sum;
+            var cumulative = 0d;
+
+            for (int i = 0; i < candidates.Count; i++) {
+                cumulative += Weights[i];
+                if (target < cumulative)
+                    return candidates[i];
+            }
+
+            /* Only reachable through floating point drift in the accumulation. */
+            return candidates[^1];
         }
 
         private double PheromoneVisibility(Node i, Node j) {
@@ -223,5 +264,13 @@ namespace TravellingSalesmanProblem.Algorithms {
     public enum GlobalUpdatingRule {
         ACS = 0,
         AS = 1
+    }
+
+    public enum SelectionRule {
+        /* Draw the next node with a probability proportional to its weight - the rule that
+         * defines the Ant System. */
+        Proportional = 0,
+        /* Always take the largest weight. Deterministic per starting node. */
+        Greedy = 1
     }
 }

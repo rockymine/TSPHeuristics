@@ -17,9 +17,16 @@ numbers produced by re-running them on the current code.
 | `results/` | Raw `SimulationResult` aggregates per run |
 | `web_timings*.json`, `sa_mintemp8.json` | Browser runtimes and the matching script runtimes |
 
-`results/fixed` is the current code; `results/baseline` is the same machine running commit
-`d8c0488`, i.e. the code as it stood for the thesis. Having both separates "the machine got
-faster" from "the algorithms got faster".
+`results/fixed` is the current code. `results/prefix` is the same machine running `387eb5a`, the
+tip of the branch before any of the fixes, and `results/baseline` is `d8c0488`, an earlier commit
+measured first. The two pre-fix runs agree within noise - 69.659 s against 74.058 s for the
+slowest `eil76` configuration - so either can serve as the "before" column; `prefix` is the exact
+predecessor and is the one the report uses. Having a pre-fix run at all is what separates "the
+machine got faster" from "the code got faster": of the measured speedup, a factor of 5.7 is the
+machine and 452 is the code.
+
+`results/fixed/selection.json` compares the two Ant System transition rules over four budgets
+(see below).
 
 ## Distance metrics
 
@@ -34,6 +41,73 @@ The metrics check out against the published optima: the optimal `burma14` tour q
 thesis measures 3323 under GEO, `berlin52` measures 7542 and `eil51` measures 426 under EUC_2D.
 Under plain euclidean the same tours measure 30.878, 7544.37 and 429.12.
 
+## What the web application can handle now
+
+The old ceiling of 90 nodes, 50 iterations and one ant per node was set by what the page survived,
+not by the heuristics. Two things kept it there, and both are fixed:
+
+- the full distance matrix behind "Show Full Table" was part of every render whether the dialog was
+  open or not - 40 382 cells at 200 nodes, each one through a markdown parser. Clicking Execute for
+  a Nearest Neighbour run whose `FindPath` took 56 ms froze the page for 310 s. The dialog now
+  builds its table when it is opened and drops it when it is closed, and cells without LaTeX skip
+  the parser: the same run is 1.2 s, and opening the dialog at 90 nodes costs 1.7 s.
+- the canvas is sized `scale x coordinate range`, so a wide range asked the browser for a buffer
+  hundreds of megabytes large. It is capped at 3000 px per edge, which shrinks the drawing instead
+  of clipping it.
+
+Measured in the browser afterwards, click to responsive page:
+
+| | 150 nodes | 200 nodes | 300 nodes |
+| --- | --- | --- | --- |
+| Nearest Neighbour | 1.9 s | 1.5 s | 2.9 s |
+| Simulated Annealing, phase length 10 | 4.0 s | 4.7 s | 7.2 s |
+| Hill Climbing, 2-opt, steepest | 3.3 s | 4.8 s | 12.7 s |
+| Hill Climbing, swap, steepest | 5.5 s | 10.6 s | 36.6 s |
+| Ant System, 50 ants, 10 iterations | 3.8 s | 22.5 s | 31.2 s |
+
+The new limits follow those numbers: 300 nodes, a coordinate range of 300, and up to 500 ants. The
+colony is no longer tied to the node count - under the greedy rule two ants from the same start
+walked the same tour, so more ants than nodes were pointless, but under the proportional rule they
+diverge. Ants cost 0.0047 s each at 100 nodes and carry no memory of their own.
+
+Iterations are capped at 500 but additionally against the instance, because each iteration keeps
+its own pheromone snapshot - one `Edge` per edge of the complete graph, about 95 bytes. Measured:
+200 nodes at 100 iterations holds 167 MB, and the formula predicts 189 MB. The budget is 250 MB,
+which leaves the full 500 iterations up to about 130 nodes and 61 at 300. Entering more snaps the
+field to the ceiling rather than discarding the input.
+
+## Ant System: which transition rule
+
+The Ant System picks the next node with a probability proportional to its pheromone-visibility
+weight. This implementation always took the largest weight instead, which makes an ant's tour a
+function of its starting node alone: a colony of *m* ants explores exactly *m* tours, and further
+iterations only move pheromone around. That is the reason table 7.8 shows almost no benefit from
+doubling the colony, and it is visible in `selection.json` - greedy `eil51` sits at 464 (8.9 %
+above the optimum) at 10 ants/20 iterations and is still at 464 at 50 ants/300 iterations.
+
+Both rules are available; `AntSystem.SelectionRule` and the "State Transition Rule" control select
+between them, and `PerformanceAnalysis.cli --selection greedy|proportional` does the same. The
+tables of chapter 7 were produced with `greedy`, which is what `run_analysis.py` passes for the
+`as` grid so those numbers stay reproducible.
+
+Mean tour length over 5 runs, as a percentage above the known optimum:
+
+| Budget | | burma14 | ulysses16 | eil51 | berlin52 | st70 | eil76 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 10 ants, 20 it. | greedy | 1.7 | 0.7 | **8.9** | **15.3** | **18.4** | **13.2** |
+| | proportional | **1.5** | 1.5 | 26.9 | 27.4 | 36.1 | 38.3 |
+| 25 ants, 50 it. | greedy | 1.7 | 0.7 | 8.9 | 13.2 | **13.2** | **15.2** |
+| | proportional | **0.3** | **0.4** | **6.2** | **8.4** | 15.1 | 18.6 |
+| 50 ants, 100 it. | greedy | 1.7 | 0.7 | 8.9 | 6.9 | 13.2 | 10.0 |
+| | proportional | **0.2** | **0.0** | **3.6** | **4.5** | **7.4** | **6.8** |
+| 50 ants, 300 it. | greedy | 1.7 | 0.7 | 8.9 | 6.9 | 13.2 | 10.0 |
+| | proportional | **0.3** | **0.3** | **4.8** | **5.4** | **6.4** | **5.6** |
+
+Greedy is the better choice at the small budgets the thesis used - it exploits immediately, while
+the proportional rule is still exploring. From roughly 25 ants and 50 iterations onwards that
+reverses, and only the proportional rule ever reaches an optimum (`burma14` 3323, `ulysses16`
+6859). The greedy column stops improving entirely.
+
 ## Reproducing
 
 ```bash
@@ -42,7 +116,7 @@ export DOTNET_ROLL_FORWARD=Major
 dotnet build -c Release
 
 python3 convert.py                       # only needed to rebuild the instance files
-python3 run_analysis.py <cli-bin-dir> fixed all
+python3 run_analysis.py <cli-bin-dir> fixed all      # hc, sa, as, selection, timings
 python3 report.py
 
 # Browser runtimes: serve the app first, then

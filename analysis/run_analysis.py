@@ -92,11 +92,44 @@ def ant_system(exe_dir, out_dir, log):
             for iters in [5, 10, 20]:
                 r = run_one(exe_dir, out_dir, name, metric,
                             ['-h', 'antsystem', '--ants', str(ants), '--iterations', str(iters),
-                             '--alpha', '0.1', '--beta', '2'])
+                             '--alpha', '0.1', '--beta', '2', '--selection', 'greedy'])
                 r['_optimum'] = opt
                 results.append(r)
                 log(f'AS ants={ants:2d} iters={iters:2d} {name:10s} '
                     f'delta={r["TourLength"]:9.1f} t={r["RunTime"]:8.3f}')
+    return results
+
+
+def ant_system_selection(exe_dir, out_dir, log):
+    """Greedy against random proportional selection over a growing budget.
+
+    The thesis ran the greedy rule, whose tour is fixed by the ant's starting node - which is
+    why a bigger colony and more iterations changed nothing in table 7.8. The proportional rule
+    keeps improving, so the two are compared over budgets rather than at one setting.
+    """
+    results = []
+    for ants, iters in [(10, 20), (25, 50), (50, 100), (50, 300)]:
+        for name, metric, opt in TSPLIB:
+            for rule in ['greedy', 'proportional']:
+                # The proportional rule is stochastic, so it is averaged over repeats.
+                repeats = 1 if rule == 'greedy' else 5
+                lengths, seconds = [], []
+                for r in range(repeats):
+                    res = run_one(exe_dir, out_dir, name, metric,
+                                  ['-h', 'antsystem', '--ants', str(ants),
+                                   '--iterations', str(iters), '--alpha', '0.1', '--beta', '2',
+                                   '--selection', rule], number=r)
+                    lengths.append(res['TourLength'])
+                    seconds.append(res['RunTime'])
+
+                entry = {'instance': name, 'ants': ants, 'iterations': iters, 'rule': rule,
+                         'optimum': opt, 'repeats': repeats,
+                         'mean': sum(lengths) / len(lengths), 'best': min(lengths),
+                         'seconds': sum(seconds) / len(seconds)}
+                results.append(entry)
+                log(f'AS {rule:12s} ants={ants:3d} iters={iters:3d} {name:10s} '
+                    f'mean={entry["mean"]:9.1f} ({100 * (entry["mean"] / opt - 1):5.1f}%) '
+                    f'best={entry["best"]:9.1f} t={entry["seconds"]:7.3f}')
     return results
 
 
@@ -116,7 +149,7 @@ def script_timings(exe_dir, out_dir, log):
 
         r = run_one(exe_dir, out_dir, name, 'EUCLIDEAN',
                     ['-h', 'antsystem', '--ants', '5', '--iterations', '5',
-                     '--alpha', '0.1', '--beta', '2'])
+                     '--alpha', '0.1', '--beta', '2', '--selection', 'greedy'])
         entry['as'] = r['RunTime']
 
         rows.append(entry)
@@ -149,6 +182,8 @@ def main():
         bundle['simulated_annealing'] = simulated_annealing(exe_dir, out_dir, log)
     if which in ('all', 'as'):
         bundle['ant_system'] = ant_system(exe_dir, out_dir, log)
+    if which in ('all', 'selection'):
+        bundle['ant_system_selection'] = ant_system_selection(exe_dir, out_dir, log)
     if which in ('all', 'timings'):
         bundle['script_timings'] = script_timings(exe_dir, out_dir, log)
 

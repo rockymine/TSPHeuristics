@@ -13,7 +13,7 @@
 			<thead>
 				<tr>
 					@for (int i = 0; i < cols; i++) {
-						<th><MarkdownRenderer Value=@tableInfo.Header[i]/></th>
+						<th>@Render(tableInfo.Header[i])</th>
 					}
 
 					@if (cols < tableInfo.Cells.GetLength(1)) {
@@ -28,7 +28,7 @@
 				@for (int i = 0; i < rows; i++) {
 					<tr>
 						@for (int j = 0; j < cols; j++) {
-							<td class="@tableInfo.Cells[i,j].Class"><MarkdownRenderer Value="@tableInfo.Cells[i,j].Value"/></td>
+							<td class="@tableInfo.Cells[i,j].Class">@Render(tableInfo.Cells[i,j].Value)</td>
 						}
 
 						@if (cols < tableInfo.Cells.GetLength(1)) {
@@ -61,7 +61,8 @@
 	<!-- Table expansion through modal -->
 	@if (CanShowModal) {
 		@if (rows < tableInfo.Cells.GetLength(0) || cols < tableInfo.Cells.GetLength(1)) {
-			<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+			<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal"
+					@onclick="OpenModal">
 				Show Full Table
 			</button>
 		}
@@ -72,13 +73,18 @@
 				<div class="modal-content">
 					<div class="modal-header">
 						<h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+								@onclick="CloseModal"></button>
 					</div>
 					<div class="modal-body">
-						<TableGenerator @ref=modalTable CanShowModal="false"/>
+						@if (modalOpen) {
+							<TableGenerator @ref=modalTable CanShowModal="false"
+											MaxCols="ModalMaxCols" MaxRows="ModalMaxRows" />
+						}
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+								@onclick="CloseModal">Close</button>
 					</div>
 				</div>
 			</div>
@@ -94,16 +100,68 @@
 	[Parameter]
 	public int MaxRows { get; set; } = int.MaxValue;
 
+	/* The full table used to be part of every render, hidden behind the modal's CSS but present in
+	 * the DOM all the same - and the distance matrix has n*(n+1) cells, 40382 of them at n=200.
+	 * Building it cost the browser five minutes of blocked UI thread for a run whose FindPath took
+	 * 56 ms. It is now built when the modal is opened and dropped when it is closed. The cap keeps
+	 * even that bounded; the rows and columns beyond it are marked with the same ellipsis cells the
+	 * inline table already uses. */
+	private const int ModalMaxCols = 200;
+	private const int ModalMaxRows = 200;
+
 	private TableInfo tableInfo = new();
 	private string title;
 	private TableGenerator modalTable;
+	private bool modalOpen;
+	private LinkedListNode<GraphState> lastNode;
+	private AlgorithmEnum lastAlgorithm;
+	private NeighbourType lastNeighbour;
 
 	public void Reset() {
 		tableInfo = new TableInfo();
+		modalOpen = false;
 		modalTable?.Reset();
+		modalTable = null;
 	}
 
+	private void OpenModal() => modalOpen = true;
+
+	private void CloseModal() {
+		modalOpen = false;
+		modalTable = null;
+	}
+
+	/* @ref is assigned after the render that creates the child, so the freshly opened modal has to
+	 * be filled on the following render pass. */
+	protected override void OnAfterRender(bool firstRender) {
+		if (modalOpen && modalTable != null && !modalTable.tableInfo.HasData && lastNode != null) {
+			modalTable.UpdateFromGraphState(lastNode, lastAlgorithm, lastNeighbour);
+		}
+	}
+
+	/* MarkdownRenderer parses and typesets every value it is given. Most cells - the distances, the
+	 * node indices, the tours - contain no math and no markup, and routing those through the parser
+	 * was the single largest cost of a redraw. They are emitted directly; only values carrying
+	 * LaTeX still go through the renderer. All content here is generated from node indices and
+	 * distances, so there is nothing user supplied to escape. */
+	private RenderFragment Render(string value) => builder => {
+		if (string.IsNullOrEmpty(value))
+			return;
+
+		if (value.Contains('$')) {
+			builder.OpenComponent<MarkdownRenderer>(0);
+			builder.AddAttribute(1, nameof(MarkdownRenderer.Value), value);
+			builder.CloseComponent();
+			return;
+		}
+
+		builder.AddContent(2, (MarkupString)value);
+	};
+
 	public void UpdateFromGraphState(LinkedListNode<GraphState> node, AlgorithmEnum algorithmEnum, NeighbourType neighbourType) {
+		lastNode = node;
+		lastAlgorithm = algorithmEnum;
+		lastNeighbour = neighbourType;
 		tableInfo.Header.Clear();
 
 		if (algorithmEnum == AlgorithmEnum.NN) {

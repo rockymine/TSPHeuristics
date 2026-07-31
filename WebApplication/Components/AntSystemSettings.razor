@@ -16,6 +16,13 @@
     <input type="number" step="0.5" id="beta" class="form-control" @bind="Beta">
 </div>
 <div class="form-group">
+    <label for="selectSelectionRule">State Transition Rule</label>
+    <select class="form-control" name="selectionRule" id="selectSelectionRule" @bind="SelectionRule">
+        <option value="Proportional">Random Proportional</option>
+        <option value="Greedy">Greedy (deterministic)</option>
+    </select>
+</div>
+<div class="form-group">
     <label for="selectUpdatingRule">Global Updating Rule</label>
     <select class="form-control" name="updatingRule" id="selectUpdatingRule" @bind="GlobalUpdatingRule">
         <option value="ACS" @onselect="e => GlobalUpdatingRule = GlobalUpdatingRule.ACS">Ant Colony System</option>
@@ -102,6 +109,21 @@
     }
     [Parameter]
     public EventCallback<bool> BreakWhenPathsAreEqualChanged { get; set; }
+
+    private SelectionRule selectionRule;
+    [Parameter]
+    public SelectionRule SelectionRule {
+        get => selectionRule;
+        set {
+            if (value == selectionRule)
+                return;
+
+            selectionRule = value;
+            SelectionRuleChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<SelectionRule> SelectionRuleChanged { get; set; }
 
     private GlobalUpdatingRule globalUpdatingRule;
     [Parameter]

@@ -53,7 +53,8 @@
                                            @bind-AlphaACS="@AppState.AlphaACS"
                                            @bind-AntCount="@AppState.AntCount" @bind-Beta="@AppState.Beta"
                                            @bind-BreakWhenPathsAreEqual="@AppState.BreakWhenPathsAreEqual"
-                                           @bind-GlobalUpdatingRule="@AppState.GlobalUpdatingRule" />
+                                           @bind-GlobalUpdatingRule="@AppState.GlobalUpdatingRule"
+                                           @bind-SelectionRule="@AppState.SelectionRule" />
                         }
                     </form>
                 </div>
@@ -532,6 +533,7 @@
                 AppState.AntSystem.Beta = AppState.Beta;
                 AppState.AntSystem.BreakWhenPathsAreEqual = AppState.BreakWhenPathsAreEqual;
                 AppState.AntSystem.GlobalUpdatingRule = AppState.GlobalUpdatingRule;
+                AppState.AntSystem.SelectionRule = AppState.SelectionRule;
                 AppState.GraphHistory = AppState.AntSystem.FindPath(AppState.Instance);
                 break;
             case AlgorithmEnum.HC:

@@ -53,13 +53,22 @@ namespace WebApplication.Utils {
             }
         }
 
+        /* The old ceiling of 90 nodes was set by what the app could survive, not by the heuristics.
+         * Measured in the browser after the fixes, from the click on Execute until the page answers
+         * again: Nearest Neighbour 2.9 s at 300 nodes, Simulated Annealing with phase length 10
+         * 7.2 s, Hill Climbing with 2-opt and steepest descent 12.7 s, with swap 36.6 s. The
+         * coordinate range follows so a graph that large still has room to spread out; the canvas
+         * caps its own pixel size, so a wide range no longer means an enormous buffer. */
+        private const int MaxNodeCount = 300;
+        private const int MaxCoordinate = 300;
+
         private int _maxX = 30;
         public int MaxX {
             get => _maxX;
             set {
                 if (value == _maxX)
                     return;
-                if (value < 10 || value > 90)
+                if (value < 10 || value > MaxCoordinate)
                     return;
 
                 _maxX = value;
@@ -72,7 +81,7 @@ namespace WebApplication.Utils {
             set {
                 if (value == _maxY)
                     return;
-                if (value < 10 || value > 90)
+                if (value < 10 || value > MaxCoordinate)
                     return;
 
                 _maxY = value;
@@ -85,7 +94,7 @@ namespace WebApplication.Utils {
             set {
                 if (value == _nodeCount)
                     return;
-                if (value < 5 || value > 90)
+                if (value < 5 || value > MaxNodeCount)
                     return;
 
                 _nodeCount = value;
@@ -170,16 +179,37 @@ namespace WebApplication.Utils {
             }
         }
 
-        private int _iterations = 10;
+        /* Every Ant System iteration keeps its own pheromone snapshot in the history, one Edge per
+         * edge of the complete graph - n*(n-1)/2 of them at roughly 95 bytes each. That, not the
+         * runtime, is what a long run runs out of: 300 nodes at 500 iterations would ask for over
+         * two gigabytes. The iteration count is therefore capped against the loaded instance,
+         * which leaves 500 for anything up to about 130 nodes and 58 at 300. */
+        private const int MaxIterations = 500;
+        private const long IterationMemoryBudget = 250L * 1024 * 1024;
+        private const int BytesPerEdge = 95;
+
+        private int IterationLimit {
+            get {
+                var count = NodeCountOfInstance;
+                if (count < 2)
+                    return MaxIterations;
+
+                var perIteration = (long)count * (count - 1) / 2 * BytesPerEdge;
+                return (int)Math.Clamp(IterationMemoryBudget / perIteration, 1, MaxIterations);
+            }
+        }
+
+        private int _iterations = 50;
         public int Iterations {
-            get => _iterations;
+            get => Math.Clamp(_iterations, 1, IterationLimit);
+            /* Snaps to the ceiling instead of refusing the input: an entry that is silently
+             * discarded leaves the panel showing the old number with no hint of where the limit
+             * is, while snapping shows it. */
             set {
-                if (value == _iterations)
-                    return;
-                if (value <= 0 || value > 50)
+                if (value < 1)
                     return;
 
-                _iterations = value;
+                _iterations = Math.Min(value, IterationLimit);
             }
         }
 
@@ -209,25 +239,24 @@ namespace WebApplication.Utils {
             }
         }
 
-        private int _antCount = 10;
-        /* Same two problems as StartNode, and one more: the default of ten ants exceeds the node
-         * count of every graph smaller than ten, and that combination used to crash the run before
-         * the setter was ever involved. AntSystem now wraps its starts, and the value is clamped
-         * here so the panel cannot ask for more ants than there are nodes. */
+        /* The colony used to be capped at one ant per node, and under the greedy transition rule
+         * that was the only sensible cap: two ants leaving the same node walked the same tour, so
+         * the extra ant cost time and found nothing. With the random proportional rule two ants
+         * from the same start diverge, and more ants than nodes are worth having. The cost is
+         * linear and carries no memory of its own - 0.0045 s per ant at 100 nodes, flat from 25
+         * ants upwards - so the cap is now a plain runtime ceiling. */
+        private const int MaxAntCount = 500;
+
+        private int _antCount = 25;
+        /* Same two problems as StartNode: the value is read before any graph exists, and a colony
+         * sized for one instance stayed behind when another was loaded. */
         public int AntCount {
-            get {
-                var count = NodeCountOfInstance;
-                return count == 0 ? _antCount : Math.Clamp(_antCount, 1, count);
-            }
+            get => Math.Clamp(_antCount, 1, MaxAntCount);
             set {
                 if (value < 1)
                     return;
 
-                var count = NodeCountOfInstance;
-                if (count > 0 && value > count)
-                    return;
-
-                _antCount = value;
+                _antCount = Math.Min(value, MaxAntCount);
             }
         }
 
@@ -248,6 +277,7 @@ namespace WebApplication.Utils {
         public GraphSource GraphSource;
         public DescentType DescentType;
         public GlobalUpdatingRule GlobalUpdatingRule;
+        public SelectionRule SelectionRule = SelectionRule.Proportional;
         public NearestNeighbour NearestNeighbor = new();
         public SimulatedAnnealing SimulatedAnnealing = new();
         public AntSystem AntSystem = new();

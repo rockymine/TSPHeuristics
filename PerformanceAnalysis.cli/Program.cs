@@ -41,6 +41,11 @@ namespace PerformanceAnalysis.cli {
          * euclidean default puts the tour length on a completely different scale. */
         [Argument('t', "metric")]
         private static string Metric { get; set; }
+        /* "proportional" is the random proportional rule of the Ant System and the default;
+         * "greedy" is the deterministic rule this implementation originally used, which the
+         * analysis scripts ask for explicitly to reproduce the numbers published in the thesis. */
+        [Argument('r', "selection")]
+        private static string Selection { get; set; }
 
         private static LinkedList<GraphState> History { get; set; }
         private static GraphProblem Instance;
@@ -88,6 +93,7 @@ namespace PerformanceAnalysis.cli {
                     ant.Iterations = Iterations;
                     ant.Alpha = Alpha;
                     ant.Beta = Beta;
+                    ant.SelectionRule = ParseSelection(Selection);
                     History = ant.FindPath(Instance);
                     break;
                 case "hc":
@@ -136,6 +142,13 @@ namespace PerformanceAnalysis.cli {
                 Directory.CreateDirectory(directory);
 
             File.WriteAllText(target, JsonConvert.SerializeObject(result));
+        }
+
+        private static SelectionRule ParseSelection(string selection) {
+            return (selection ?? string.Empty).Trim().ToLower() switch {
+                "greedy" => SelectionRule.Greedy,
+                _ => SelectionRule.Proportional
+            };
         }
 
         private static DistanceMetric ParseMetric(string metric) {
