@@ -1,0 +1,62 @@
+/* tokens.css — design tokens for the TSP visualisation.
+ * Only :root custom properties here. No selectors, no component rules.
+ * Load before shell.css and app.css.
+ *
+ * Dark is the only theme today, which is what the application already shipped. The names are
+ * chosen so a light theme can be added later as a `:root[data-theme="light"]` block overriding
+ * only the colour tokens - the structural ones (spacing, radii, type, widths) stay shared. */
+
+:root {
+  color-scheme: dark;
+
+  /* ── Backgrounds ─────────────────────────────────────────────────────── */
+  --bg-base:     #0f172a;   /* page background, behind the panels */
+  --bg-panel:    #1e293b;   /* sidebar, topbar, dock, run bar */
+  --bg-deep:     #080f1a;   /* recessed surfaces — the canvas stage */
+  --bg-raised:   #273449;   /* hovered rows, inactive tabs */
+  --bg-selected: #1e3a5f;   /* active tab / selected control */
+
+  /* ── Borders ─────────────────────────────────────────────────────────── */
+  --border: #334155;
+
+  /* ── Text hierarchy (quiet → strong) ─────────────────────────────────── */
+  --text-muted:     #8397b0;   /* section headers, metadata */
+  --text-secondary: #94a3b8;   /* form labels */
+  --text-primary:   #cbd5e1;   /* body text */
+  --text-bright:    #e2e8f0;   /* headings */
+  --text-strong:    #ffffff;   /* active chrome */
+
+  /* ── Accent ──────────────────────────────────────────────────────────── */
+  --accent:       #3b82f6;
+  --accent-light: #60a5fa;
+  --accent-hover: #2563eb;
+
+  /* ── Status ──────────────────────────────────────────────────────────── */
+  --color-error:    #f87171;
+  --color-error-bg: #3b1d1d;
+
+  /* ── Type scale ──────────────────────────────────────────────────────── */
+  --font-lg:   14px;
+  --font-md:   13px;
+  --font-base: 12px;
+  --font-sm:   11px;
+
+  /* ── Spacing ─────────────────────────────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+
+  /* ── Radii ───────────────────────────────────────────────────────────── */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+
+  /* ── Structure ───────────────────────────────────────────────────────── */
+  --sidebar-width: 300px;
+  --topbar-height: 44px;
+  --dock-height:   260px;   /* default; the dock is resizable at runtime */
+
+  /* ── Motion ──────────────────────────────────────────────────────────── */
+  --transition-fast: 0.12s ease;
+}

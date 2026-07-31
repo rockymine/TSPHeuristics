@@ -1,6 +1,10 @@
-﻿@page "/"
-<h1>MHVis</h1>
-Explore the Traveling Salesman Problem using different heuristics.
+@page "/"
+
+@* The layout used to render GraphView directly and ignore @Body, which left this page's
+   placeholder heading unreachable. The route hosts the view instead, so the router decides what
+   is on screen. *@
+
+<WebApplication.Pages.GraphView />
 
 @code {
 }

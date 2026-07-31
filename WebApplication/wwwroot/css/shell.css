@@ -1,0 +1,312 @@
+/* shell.css — the application frame.
+ *
+ * The whole point of this file is containment. Before it, nothing bounded the page to the
+ * viewport: every panel grew to its content, the document became ~1300px tall on a 768px screen,
+ * and one scrollbar moved everything at once - so scrolling down to reach "Run" also scrolled the
+ * canvas out of view. Here the shell is pinned to 100vh and each region owns its own scrolling.
+ *
+ * `min-height: 0` / `min-width: 0` on the flex children is the load-bearing part. A flex item
+ * defaults to `min-height: auto`, which refuses to shrink below its content, so without these the
+ * overflow simply escapes the container again and the page scrolls exactly as it did before. */
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;             /* the shell scrolls its panes; the document never scrolls */
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: var(--font-lg);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FRAME
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Topbar ──────────────────────────────────────────────────────────────── */
+
+.app-topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  height: var(--topbar-height);
+  padding: 0 var(--space-4);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-title {
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--text-bright);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-topbar-meta {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.app-topbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SIDEBAR — the instance, then the algorithm. Workflow order.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.app-sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  overflow-y: auto;             /* the sidebar scrolls itself, not the page */
+  overflow-x: hidden;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+}
+
+.sidebar-section { padding: var(--space-4); }
+.sidebar-section + .sidebar-section { border-top: 1px solid var(--border); }
+
+.sidebar-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* The step number that makes the order readable: instance first, algorithm second. */
+.sidebar-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-selected);
+  color: var(--text-strong);
+  font-size: var(--font-sm);
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+
+.sidebar-error {
+  margin: 0 var(--space-4) var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  background: var(--color-error-bg);
+  color: var(--text-bright);
+  font-size: var(--font-base);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   WORKSPACE — run bar, canvas stage, canvas toolbar, results dock.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.app-workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Run bar: the one strip that never scrolls away ──────────────────────── */
+
+.run-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  min-height: 44px;
+}
+
+.run-bar-transport { display: flex; align-items: center; gap: 2px; }
+
+.run-bar-readout {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  margin-left: auto;
+  font-size: var(--font-base);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.run-bar-stat { display: inline-flex; align-items: baseline; gap: var(--space-1); }
+.run-bar-stat-label { color: var(--text-muted); }
+.run-bar-stat-value { color: var(--text-bright); font-variant-numeric: tabular-nums; }
+.run-bar-route {
+  color: var(--text-primary);
+  font-family: ui-monospace, monospace;
+  font-size: var(--font-sm);
+  max-width: 32ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Canvas stage: the pair sits side by side, centred, and scrolls itself ── */
+
+.canvas-area {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--bg-deep);
+  padding: var(--space-4);
+}
+
+.canvas-stage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+.canvas-pane { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.canvas-pane-label {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* The canvas used to be a direct child of Bootstrap's `.row`, which applied
+ * `width: 100%; max-width: 100%; padding: 0 12px; box-sizing: border-box` to the element - so the
+ * bitmap was resampled to the column width, and the horizontal padding made the two axes scale by
+ * different factors. Out of the grid it draws at its own size. (Sizing the buffer from this box
+ * and from devicePixelRatio is the next step; this only stops the stretching.) */
+.canvas-pane canvas {
+  display: block;
+  max-width: none;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #fff;
+}
+
+/* ── Canvas toolbar: view options, next to what they act on ─────────────── */
+
+.canvas-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  font-size: var(--font-base);
+}
+
+.canvas-toolbar-group { display: flex; align-items: center; gap: var(--space-2); }
+.canvas-toolbar-sep { width: 1px; height: 20px; background: var(--border); }
+.canvas-toolbar label { margin: 0; color: var(--text-secondary); white-space: nowrap; }
+.canvas-toolbar input[type="number"] { width: 72px; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RESULTS DOCK
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.results-dock {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  height: var(--dock-height);
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+}
+
+.results-dock--collapsed { height: auto; }
+
+.dock-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: 0 var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.dock-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-base);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.dock-tab:hover { color: var(--text-bright); }
+.dock-tab--active { color: var(--text-strong); border-bottom-color: var(--accent); }
+
+.dock-actions { margin-left: auto; display: flex; align-items: center; }
+
+.dock-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;               /* wide tables scroll here, not in the page */
+  padding: var(--space-3);
+}
+
+/* Manual Search reads edge lengths off the matrix while checking the move history, so its
+   Tables view is two panes rather than one. */
+.dock-split {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  min-width: 0;
+}
+.dock-split > * { flex: 1; min-width: 0; overflow-x: auto; }
+
+.dock-empty {
+  color: var(--text-muted);
+  font-size: var(--font-base);
+  padding: var(--space-4);
+  text-align: center;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SCROLLBARS — the default light scrollbars are jarring on these surfaces.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.app-sidebar, .canvas-area, .dock-body, .dock-split > * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}

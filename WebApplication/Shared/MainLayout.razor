@@ -1,13 +1,7 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
-<div class="page">
-    @*<div class="sidebar">
-        <NavMenu />
-    </div>*@
+@* The page owns the shell (AppShell), so the layout is only a pass-through. The old
+   .page / .main / .content wrappers are gone: none of them had a bounded height, which is what
+   let the document grow past the viewport and made one scrollbar move everything at once. *@
 
-    <div class="main">
-        <div class="content px-4">
-            <WebApplication.Pages.GraphView/>
-        </div>
-    </div>
-</div>
+@Body

@@ -1,0 +1,68 @@
+@namespace WebApplication.Components
+
+@* The results dock: tables, charts and calculations under the canvas rather than beside it, so
+   the side-by-side canvases and the inherently wide distance matrix both get the full width.
+
+   Which tabs exist depends on the heuristic - Nearest Neighbour and Ant System produce no charts,
+   and only some states carry equations. The caller says so explicitly rather than the dock
+   inferring it from the fragments, because a RenderFragment passed as child content is never null
+   even when it renders nothing. The active tab is re-validated whenever those flags change, since
+   switching heuristic can remove the tab that was selected. *@
+
+<section class="results-dock @(Collapsed ? "results-dock--collapsed" : null)">
+    <div class="dock-tabs">
+        @foreach (var tab in Available()) {
+            <button type="button" class="dock-tab @(tab == Active ? "dock-tab--active" : null)"
+                    @onclick="() => Active = tab">@tab</button>
+        }
+        <div class="dock-actions">
+            <button type="button" class="btn btn-sm btn-link" title="@(Collapsed ? "Expand" : "Collapse")"
+                    @onclick="() => Collapsed = !Collapsed">
+                <i class="bi @(Collapsed ? "bi-chevron-up" : "bi-chevron-down")"></i>
+            </button>
+        </div>
+    </div>
+    @if (!Collapsed) {
+        <div class="dock-body">
+            @if (Active == TablesLabel) {
+                @Tables
+            } else if (Active == ChartsLabel) {
+                @Charts
+            } else if (Active == CalculationsLabel) {
+                @Calculations
+            } else {
+                <p class="dock-empty">Run a heuristic to see results here.</p>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private const string TablesLabel = "Tables";
+    private const string ChartsLabel = "Charts";
+    private const string CalculationsLabel = "Calculations";
+
+    [Parameter] public RenderFragment Tables { get; set; }
+    [Parameter] public RenderFragment Charts { get; set; }
+    [Parameter] public RenderFragment Calculations { get; set; }
+
+    [Parameter] public bool HasTables { get; set; } = true;
+    [Parameter] public bool HasCharts { get; set; }
+    [Parameter] public bool HasCalculations { get; set; }
+
+    private bool Collapsed;
+    private string Active;
+
+    private IEnumerable<string> Available() {
+        if (HasTables) yield return TablesLabel;
+        if (HasCharts) yield return ChartsLabel;
+        if (HasCalculations) yield return CalculationsLabel;
+    }
+
+    protected override void OnParametersSet() {
+        var available = Available().ToList();
+
+        if (Active == null || !available.Contains(Active))
+            Active = available.FirstOrDefault();
+    }
+}

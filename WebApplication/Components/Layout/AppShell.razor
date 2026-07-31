@@ -1,0 +1,25 @@
+@namespace WebApplication.Components
+
+@* The application frame: a topbar, then a body holding the sidebar and the workspace.
+   The layout itself lives in shell.css - this component only supplies the regions, so a page
+   decides what goes in them without knowing how they are sized or which of them scroll. *@
+
+<div class="app-shell">
+    <header class="app-topbar">
+        @Topbar
+    </header>
+    <div class="app-body">
+        <aside class="app-sidebar">
+            @Sidebar
+        </aside>
+        <main class="app-workspace">
+            @Workspace
+        </main>
+    </div>
+</div>
+
+@code {
+    [Parameter] public RenderFragment Topbar { get; set; }
+    [Parameter] public RenderFragment Sidebar { get; set; }
+    [Parameter] public RenderFragment Workspace { get; set; }
+}
