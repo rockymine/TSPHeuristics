@@ -84,6 +84,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             var state = new GraphState { Nodes = graph.Nodes };
             var history = new LinkedList<GraphState>();
             var costs = double.MaxValue;
+            var iteration = 0;
 
             history.AddLast(state);
 
@@ -94,17 +95,19 @@ namespace TravellingSalesmanProblem.Algorithms {
                 if (X.CalcCosts() < costs) {
                     costs = X.Distance;
                     XBest = X;
+                    iteration++;
 
-                    history.AddLast(AdvanceMultiStartState(history.Last.Value));
-                }                    
+                    history.AddLast(AdvanceMultiStartState(history.Last.Value, iteration));
+                }
             }
 
             return history;
         }
 
-        private GraphState AdvanceMultiStartState(GraphState state) {
+        private GraphState AdvanceMultiStartState(GraphState state, int iteration) {
             var newState = state.DeepCopy();
 
+            newState.Iteration = iteration;
             newState.Distance = XBest.Distance;
             newState.Path = XBest.Path;
             newState.PathEdges = XBest.PathEdges;

@@ -501,6 +501,10 @@
         var annotations = CanvasRenderer.BuildAnnotations(state);
         var measured = new Dictionary<string, (double Width, double Height)>();
 
+        /* Measure in the font the labels are actually drawn in, not whatever the context happens
+         * to carry - otherwise the box is sized for the 10px default and the text overflows it. */
+        await context.FontAsync(CanvasRenderer.EdgeTextFont);
+
         foreach (var annotation in annotations) {
             if (!measured.TryGetValue(annotation.Text, out var size)) {
                 var metrics = await context.MeasureTextAsync(annotation.Text);

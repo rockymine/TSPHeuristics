@@ -1,61 +1,264 @@
-﻿<div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="offcanvasWithBothOptions"
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="offcanvasWithBothOptions"
     aria-labelledby="offcanvasWithBothOptionsLabel">
     <div class="offcanvas-header">
         <h5 class="offcanvas-title" id="offcanvasWithBothOptionsLabel">Help</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body">
-        <p>Read more about the interactive algorithm visualization tool for the Traveling Salesman Problem here.</p>
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home-tab-pane"
-                    type="button" role="tab" aria-controls="home-tab-pane" aria-selected="true">Settings</button>
+                <button class="nav-link active" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-tab-pane"
+                    type="button" role="tab" aria-controls="settings-tab-pane" aria-selected="true">Settings</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-tab-pane"
-                    type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="false">Graph</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact-tab-pane"
-                    type="button" role="tab" aria-controls="contact-tab-pane" aria-selected="false">Contact</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="disabled-tab" data-bs-toggle="tab" data-bs-target="#disabled-tab-pane"
-                    type="button" role="tab" aria-controls="disabled-tab-pane" aria-selected="false" disabled>Disabled</button>
+                <button class="nav-link" id="display-tab" data-bs-toggle="tab" data-bs-target="#display-tab-pane"
+                    type="button" role="tab" aria-controls="display-tab-pane" aria-selected="false">Display</button>
             </li>
         </ul>
         <div class="tab-content" id="myTabContent">
-            <div class="tab-pane fade show active" id="home-tab-pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
-                <br/>
-                <p>In the <em>dropdown menu</em> you can choose between Nearest Neighbor, Simulated Annealing, Ant Algorithm,
-                    Hill Climbing and Manual Search. The selection of the algorithm influences which parameters can be configured in the
-                    heuristic settings area.</p>
-                <h5>Multi-Start</h5>
-                <p>Additionally, the checkbox <em>Multi-Start</em> can be activated for Nearest Neighbor and Hill-Climbing.
-                    Instead of running the algorithm once, it will be run n times, depending on the number of nodes in the graph.</p>
-                <h5>Starting tour</h5>
-                <p>Simulated Annealing, Hill Climbing and Manual Search improve a tour, so they need one to start from. By
-                    default that is the order the nodes are listed in. To state a different one, add a line
-                    <code>t,index,index,&hellip;</code> to the graph text, listing every node once in visiting order. It may be
-                    written open or closed; anything that is not a tour of the given nodes is rejected with the reason.</p>
-                <h5>Manual Search</h5>
-                <p>Plays the search by hand: you choose each move yourself instead of letting a rule choose it. Pick the move
-                    type, pick the nodes it applies to, and the panel shows what the move would cost <em>before</em> it is
-                    applied - so a calculation done on paper can be checked against it. <em>Apply Move</em> adds it to the move
-                    history, and moves of different types can be chained in any order.</p>
-                <p>The two canvases show the tour before and after the last move, the distance matrix stands next to the move
-                    history so the edge lengths can be read off, and each row of the history carries the calculation that move
-                    actually used. <em>Undo</em> takes the last move back; stepping to an earlier state and applying something
-                    else replaces the continuation from there, so different lines of play can be compared.</p>
+            <div class="tab-pane fade show active" id="settings-tab-pane" role="tabpanel" aria-labelledby="settings-tab" tabindex="0">
+                <div class="accordion" id="accordionSettings">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingAlgorithmSettings">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAlgorithmSettings" aria-expanded="true" aria-controls="collapseAlgorithmSettings">
+                                Algorithm Settings
+                            </button>
+                        </h2>
+                        <div id="collapseAlgorithmSettings" class="accordion-collapse collapse show" aria-labelledby="headingAlgorithmSettings" data-bs-parent="#accordionSettings">
+                            <div class="accordion-body">
+                                <div class="word-break">
+                                    <h5>Heuristic</h5>
+                                    <p>In the drop-down menu, users can choose between five different modes: <em>Nearest Neighbor</em>, <em>Simulated Annealing</em>, <em>Ant Algorithm</em>, <em>Hill Climbing</em>, and <em>Manual Search</em>. The selection affects which parameters can be configured in the Heuristic Settings section.</p>
+                                </div>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+                                    <h5>Multi-Start</h5>
+                                    <p>The Multi-Start checkbox can be enabled for the Nearest Neighbor and Hill-Climbing heuristics. Instead of executing the algorithm once, it will be executed n times, depending on the number of nodes in the graph.</p>
+                                    <p>Using the visualization control, users can walk through the final results of each algorithm execution, but not the individual steps (e.g., swap operations) of each execution.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingHeuristicSettings">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHeuristicSettings" aria-expanded="false" aria-controls="collapseHeuristicSettings">
+                                Heuristic Settings
+                            </button>
+                        </h2>
+                        <div id="collapseHeuristicSettings" class="accordion-collapse collapse" aria-labelledby="headingHeuristicSettings" data-bs-parent="#accordionSettings">
+                            <div class="accordion-body">
+                                <div class="word-break">
+                                    <h5>Nearest Neighbor</h5>
+                                    <p>Starting from the <em>start node</em>, the next unvisited node is searched for and added to the tour. This is repeated with the last node of the tour until there are no more unvisited nodes. Finally, the tour is closed by adding an edge from the last node to the start node.</p>
+                                </div>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+                                    <h5>Simulated Annealing</h5>
+                                    <h6><strong>Annealing Schedule</strong></h6>
+                                    <p>Users can define the annealing schedule in the settings. This contains information about the initial and lowest temperature of the system. In addition, the schedule describes how the temperature is lowered, how long the temperature is kept constant and how long the system is to be developed.</p>
+                                    <p>The <em>initial and lowest temperature</em> play a central role within the algorithm. If the temperature is high at the beginning of the process, large deviations, i.e. worse solutions, are accepted. As the iterations progress, only smaller deviations are tolerated due to the slow reduction of the control parameter.</p>
+                                    <p>The initial temperature can be specified by the user or calculated algorithmically. To calculate the temperature automatically, the <em>Calculate Initial Temperature</em> option must be selected. The temperature calculated by the system corresponds to the difference between the best and worst solution of the Nearest Neighbor heuristic found with Multi Start.</p>
+                                    <p>The <em>phase length</em> describes the number of iterations to be performed at unchanged temperature. For each of these iterations, a neighboring solution is generated and compared to the current best solution. At the end of the phase, the temperature is updated regardless of whether a better solution has been found.</p>
+                                    <p>The <em>cooling factor</em> (alpha) indicates how much the temperature should be reduced after each phase. Starting from the initial temperature, the current temperature is multiplied by the factor for this purpose.</p>
+                                    <h6><strong>Neighbor Function</strong></h6>
+                                    <p>Two functions are available for generating the neighbors: swap and two-opt. In each iteration of a phase, a random neighbor solution is returned according to the selected neighbor rule.</p>
+                                </div>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+                                    <h5>Ant System</h5>
+                                    <h6><strong>Iterations</strong></h6>
+                                    <p>The number of iterations determines how often the ants of the colony walk along a route within the graph. As the number of iterations increases, the pheromone concentration along the frequently used edges increases. This has the consequence that shorter routes can be found.</p>
+                                    <p>The runtime of the algorithm can be shortened by activating a stop criterion. The setting <em>Break when all ants are on same path</em> ensures that the iterations are stopped as soon as all ants are on the same path. The specified number of iterations then no longer corresponds to the actual iterations but to the maximum iterations.</p>
+                                    <p>Each iteration keeps its own pheromone snapshot of the whole graph, so the permitted number of iterations is limited by the size of the instance as well as by the fixed ceiling.</p>
+                                    <h6><strong>Ant Count</strong></h6>
+                                    <p>The number of ants indicates how many ants are distributed among the nodes in the graph. The colony is not tied to the number of nodes: under the proportional transition rule two ants starting from the same node still walk different tours, so a colony larger than the instance is meaningful. Data suggests that with a larger number of ants, better solutions are found.</p>
+                                    <h6><strong>Alpha</strong></h6>
+                                    <p>The parameter alpha controls the evaporation of the phermones on the edges and at the same time prevents the algorithm from converging too fast.</p>
+                                    <h6><strong>Beta</strong></h6>
+                                    <p>The parameter beta indicates the relative importance of the pheromone versus the distance of a node, the heuristic value. Ants are guided by both heuristic information and pheromone information when building their tours. Ants preferentially choose short edges.</p>
+                                    <h6><strong>State Transition Rule</strong></h6>
+                                    <p>The transition rule determines how an ant picks the next node from the pheromone-visibility weights of the available edges. The <em>random proportional</em> rule draws the next node with a probability proportional to its weight; this is the rule that defines the Ant System.</p>
+                                    <p>The <em>greedy</em> rule always takes the largest weight instead. It is deterministic per starting node, which means a colony of n ants explores exactly n tours and further iterations only redistribute pheromone. Greedy exploits immediately and is therefore ahead at small budgets, while the proportional rule overtakes it once the colony and the iteration count grow.</p>
+                                    <h6><strong>Global Updating Rule</strong></h6>
+                                    <p>The selected update rule determines how the pheromone values of the edges within the graph are updated. Initially, the pheromone values of all edges are reduced by the evaporation factor.</p>
+                                    <p>If the <em>Ant Colony System</em> rule is used, the pheromone concentration is increased only for the edges that are within the best found route of the ant colony.</p>
+                                </div>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+                                    <h5>Hill Climbing</h5>
+                                    <h6><strong>Descent Type</strong></h6>
+                                    <p>The neighborhood can be examined using three strategies: <em>random descent</em>, <em>next descent</em>, and <em>steepest descent</em>. In random descent, neighbors are randomly selected and the first best solution is accepted. In next and steepest descent, <code>N(x)</code> is explored systematically and completely. While next descent accepts the next best solution, steepest descent returns the best solution from the entire neighborhood.</p>
+                                    <h6><strong>Neighbor Function</strong></h6>
+                                    <p>Two functions are available for generating the neighbors: swap and two-opt.</p>
+                                </div>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+                                    <h5>Manual Search</h5>
+                                    <p>Manual Search plays the search by hand: the moves are chosen by the user, one at a time, instead of being chosen by a rule. It is not a heuristic and decides nothing on its own, which makes it suited to exercises that hand out a tour and ask for a single move worked out on paper.</p>
+                                    <p>Users pick the move type - <em>swap</em>, <em>2-opt exchange</em>, <em>3-opt reconnection</em>, or <em>double bridge</em> - and then the nodes it applies to. Nodes are chosen by their own identifier rather than by their position in the tour, because that is how an exercise is written down. The panel states what the move would cost <em>before</em> it is applied, so a hand calculation can be checked against it, and a combination the move cannot be built from is refused with the rule that forbids it: a swap needs its neighbors on both sides, so the first and last node of the tour cannot take part, while a 2-opt move only needs a successor and can start at the first.</p>
+                                    <p><em>Apply Move</em> extends the move history, and move types can be chained in any order. <em>Undo</em> takes the last move back and <em>Back to start</em> returns to the given tour. Applying a move to a state that is not the last one drops the entries after it, so stepping back is a way to try a different line of play rather than to accumulate abandoned ones.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingCanvasSettings">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCanvasSettings" aria-expanded="false" aria-controls="collapseCanvasSettings">
+                                Canvas Settings
+                            </button>
+                        </h2>
+                        <div id="collapseCanvasSettings" class="accordion-collapse collapse" aria-labelledby="headingCanvasSettings" data-bs-parent="#accordionSettings">
+                            <div class="accordion-body">
+                                <div class="word-break">
+                                    <h5>Inputs</h5>
+                                    <p>The <em>Animation Delay</em> determines how long each iteration is displayed on the canvas when Play is selected in the visualization control. The greater the delay, the longer a single iteration is displayed.</p>
+                                </div>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+                                    <h5>Toggles</h5>
+                                    <p>The distances between the individual edges of the graph can be revealed using the <em>Annotate edges</em> option.</p>
+                                    <p>The grid behind the nodes and edges on the canvas can be switched on and off with the <em>Show Grid</em> option.</p>
+                                    <p>The changes in the graph between two iterations of the algorithm can be made visible with the <em>Colorize Changes</em> option. When this option is enabled, edges that were not previously in the path are colored green. On the other hand, edges that were previously in the path are dotted and colored red.</p>
+                                    <p>The changes take effect when the next state is displayed (e.g. when clicking backwards in the visualization control).</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingGraphSettings">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGraphSettings" aria-expanded="false" aria-controls="collapseGraphSettings">
+                                Graph Settings
+                            </button>
+                        </h2>
+                        <div id="collapseGraphSettings" class="accordion-collapse collapse" aria-labelledby="headingGraphSettings" data-bs-parent="#accordionSettings">
+                            <div class="accordion-body">
+                                <div class="word-break">
+                                    <h5>Graph Source</h5>
+                                    <p>A TSP instance is defined through the specification of multiple nodes. Inside the program for each node an identifier and a position is stored. The user can choose from three options to generate the instance; <em>Text</em>, <em>File</em>, and <em>Random</em>.</p>
+                                    <h6><strong>Text</strong></h6>
+                                    <p>Users can specify how many nodes to create and where to position them on the canvas. The definition of a node starts with a lowercase <code>n</code>, followed by the unique <code>identifier</code> (integer). Finally, the <code>x</code> and <code>y</code> coordinates of the node must be specified (double). Each of these elements must be separated by a comma. The nodes are to be separated by a line break.</p>
+                                    <p>A node whose identifier or whose position repeats one that was already given is skipped, so an instance never contains two nodes at the same place or under the same name.</p>
+                                    <h6><strong>File</strong></h6>
+                                    <p>The definition of the nodes is identical to the selection of <em>Text</em>. The difference is that users do not change the text in the text field, but select their own text files. This makes it easier to work with different instances.</p>
+                                    <h6><strong>Random</strong></h6>
+                                    <p>Users can specify how many nodes should be generated. Furthermore, the maximum x- and y-position can be specified in which area the nodes should be generated. The nodes are then randomly distributed on the canvas, and no two of them share a position. Since each node needs a free position, the number generated is limited by the size of the area that was given.</p>
+                                </div>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+                                    <h5>Starting Tour</h5>
+                                    <p>Simulated Annealing, Hill Climbing and Manual Search improve a tour, so they need one to start from. By default that is the order in which the nodes are listed, taken implicitly. To state a different one, add a line beginning with a lowercase <code>t</code>, followed by the node identifiers in visiting order and separated by commas.</p>
+                                    <p>The tour may be written open or closed - <code>t,0,2,1,3</code> and <code>t,0,2,1,3,0</code> describe the same cycle. Anything that is not a permutation of the given nodes is rejected with a message naming the problem. Without the line the node order is used exactly as before, so existing instance files are unaffected, and <em>Download Source</em> writes the line back so the tour survives a round trip.</p>
+                                </div>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+                                    <h5>Execute Algorithm</h5>
+                                    <p>After the user has configured the settings, they can click the <em>Execute Algorithm</em> button to have the algorithm solve the specified problem instance. The more nodes are selected, the higher the calculation time will be. The calculation time also depends on the other parameters used.</p>
+                                    <p><strong>Note</strong>: At the moment, while the program is calculating the results, the web application does not respond to any further input. This is due to the way it is implemented and will not be changed in the foreseeable future.</p>
+                                </div>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+                                    <h5>Download Source</h5>
+                                    <p>After the algorithm is executed, users can download the serialized graph source. The text file contains a graph definition that can be selected as a <em>File</em>-import in the graph settings. Besides the definition of the nodes, this file also contains the serialized edge definitions.</p>
+                                </div>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+                                    <h5>Error</h5>
+                                    <p>If an error is displayed, the specified instance definition was most likely incorrect. In this case, check if the instance was defined in the specified way. In case of further problems, please create a new issue on <a href="https://github.com/rockymine/TSPHeuristics/issues">GitHub</a>.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="tab-pane fade" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
-                ...
-            </div>
-            <div class="tab-pane fade" id="contact-tab-pane" role="tabpanel" aria-labelledby="contact-tab" tabindex="0">
-                ...
-            </div>
-            <div class="tab-pane fade" id="disabled-tab-pane" role="tabpanel" aria-labelledby="disabled-tab" tabindex="0">
-                ...
+            <div class="tab-pane fade" id="display-tab-pane" role="tabpanel" aria-labelledby="display-tab" tabindex="0">
+                <div class="accordion" id="accordionDisplay">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingVisualizationControl">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseVisualizationControl" aria-expanded="true" aria-controls="collapseVisualizationControl">
+                                Visualization Control
+                            </button>
+                        </h2>
+                        <div id="collapseVisualizationControl" class="accordion-collapse collapse show" aria-labelledby="headingVisualizationControl" data-bs-parent="#accordionDisplay">
+                            <div class="accordion-body">
+                                <div class="word-break">
+                                    <p>After the algorithm has been executed, the user can the buttons <em>Jump First</em>, <en>Reverse</en>, <em>Play/Pause</em>, <em>Advance</em> and <em>Jump Last</em> to navigate through the results. By pressing Play all graph states are displayed on the canvas one after the other.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingGraphView">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGraphView" aria-expanded="false" aria-controls="collapseGraphView">
+                            Graph View
+                        </button>
+                        </h2>
+                        <div id="collapseGraphView" class="accordion-collapse collapse" aria-labelledby="headingGraphView" data-bs-parent="#accordionDisplay">
+                            <div class="accordion-body">
+                                <div class="word-break">
+                                    <p>The visualization of a graph state takes place on up to two canvases. The displayed solution step is determined by the user via the control elements. Both the nearest neighbor heuristic and the ant algorithm are displayed on a single canvas element. The local search procedures are visualized on two canvases. This is important to visualize how a neighbor solution differs from the graph at the beginning of a solution step.</p>
+                                    <p>While the lower view shows the initial graph of the iteration, the lower view shows the created neighboring solution. The difference between two states is visualized by the color highlighting of the edges. When a user jumps to the next state, the previous content of the upper drawing area is moved down. This is due to the fact that the result of the previous iteration is the starting point for the next iteration in local search methods.</p>
+                                    <p>In Manual Search the same two canvases show the tour before and after the move that was last applied.</p>
+                                    <p>The nodes of an instance are visualized as colored dots and labeled with the corresponding identifier. They are drawn into a grid which can be displayed and hidden. The origin of the grid lies at the smallest <code>x</code> and <code>y</code> positions of the nodes contained in the instance. Similarly, the grid ends at the maximum <code>x</code> and <code>y</code> positions of the instance. In Hill-Climbing and Simulated Annealing, the nodes <code>i</code> and <code>j</code> selected by the neighborhood operations are also highlighted with different colors.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingCalculations">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCalculations" aria-expanded="false" aria-controls="collapseCalculations">
+                            Calculations
+                        </button>
+                        </h2>
+                        <div id="collapseCalculations" class="accordion-collapse collapse" aria-labelledby="headingCalculations" data-bs-parent="#accordionDisplay">
+                            <div class="accordion-body">
+                                <p>The formula view shows selected calculations which take place during the execution of the algorithms. The calculations refer to the current content of the visualization. Similar to the tabular view of the neighborhood functions, the general formulas are displayed at first and then resolved step by step with the entered parameters and the information about the nodes and edges.</p>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+	                                <h5>Simulated Annealing</h5>
+	                                <p>For the Simulated Annealing heuristic, the <em>Metropolis rule</em> and the <em>temperature update</em> are shown as examples. The Metropolis rule indicates whether a solution with a worse objective function value was accepted.</p>
+                                </div>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+	                                <h5>Ant Algorithm</h5>
+	                                <p>For the ant algorithm, the <em>global update</em> of the pheromone concentration is shown using one of the edges in the graph. Based on the calculation, both the evaporation and the amplification of the pheromone trace can be understood.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingTables">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTables" aria-expanded="false" aria-controls="collapseTables">
+                            Tables
+                        </button>
+                        </h2>
+                        <div id="collapseTables" class="accordion-collapse collapse" aria-labelledby="headingTables" data-bs-parent="#accordionDisplay">
+                            <div class="accordion-body">
+                                <p>Depending on the selected heuristic, the table view shows different tabular representations that complement the visualization on the canvases. If the table is larger than 12 x 12, a button appears that allows the user to view the table in full in a modal.</p>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+	                                <h5>Distance Matrix</h5>
+	                                <p>For the Nearest Neighbor heuristic, a <em>distance matrix</em> is displayed that lists the rounded euclidean distances of the edges. Parallel to the drawing of a new edge, the corresponding cell in the table is highlighted. The same matrix stands next to the move history in Manual Search, because playing by hand means reading the edge lengths off it.</p>
+                                </div>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+	                                <h5>Neighbor Function History</h5>
+	                                <p>The local search procedures are supplemented with a tabular summary of the performed neighbor operations. The table row corresponding to the current iteration of the algorithm is highlighted.</p>
+	                                <p>In the table the iteration of the algorithm, the selected nodes <code>i</code> and <code>j</code> and the tour before and after the application of the operator are given.  This information is also included on the canvases and in the state view. A new feature in the representation is the calculation of the savings, or costs, resulting from the operation. The general formulas are given in the header of the table. In all further rows the values for the respective iteration are inserted. While only one iteration can be visualized on the canvas, the entire course of the algorithm can be traced with the help of the table.</p>
+                                </div>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+	                                <h5>Move History</h5>
+	                                <p>Manual Search records every applied move in its own table. Since a hand-played search mixes move types freely, each row names the rule that produced it and carries the calculation that move actually used, rather than taking either from a run-level setting.</p>
+                                </div>
+                                <hr class="custom-hr-2" />
+                                <div class="word-break" style="margin-top: 1rem;">
+	                                <h5>Tour Summary</h5>
+	                                <p>For the ant algorithm and all multi-start algorithms, the tour history is tabulated across the iterations. In each row, the iteration, the tour and its distance are documented. The table row corresponding to the current iteration of the algorithm is highlighted.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

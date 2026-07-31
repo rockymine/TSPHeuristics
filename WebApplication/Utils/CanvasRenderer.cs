@@ -10,9 +10,14 @@ using WebApplication.Extensions;
 
 namespace WebApplication.Utils {
     public class CanvasRenderer {
+        /* GraphView has to select this font on the context before measuring the annotations, or
+         * MeasureTextAsync reports the canvas default (10px sans-serif) and every label box comes
+         * out too small for the text it is drawn behind. */
+        public const string EdgeTextFont = "15px serif";
+
         private static readonly Brush EdgeBrush = new() {
             Color = "black", Width = 2,
-            TextFont = "15px serif", TextStyle = "black"
+            TextFont = EdgeTextFont, TextStyle = "black"
         };
         private static readonly Brush NodeBrush = new() {
             Color = "#4e5072", Width = 2, Style = FillStyle.Fill,

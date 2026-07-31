@@ -61,6 +61,11 @@ namespace TravellingSalesmanProblem.Graph {
         public static GraphProblem RandomGraphProblem(int maxX, int maxY, int maxNodes) {
             var graph = new GraphProblem();
 
+            /* Positions are integral, so the area is also the number of distinct ones. Asking for
+             * more nodes than that cannot be satisfied and would leave the loop below falling back
+             * on a duplicate once its attempts run out. */
+            maxNodes = Math.Min(maxNodes, maxX * maxY);
+
             /* A single re-roll still left coincident nodes (which render on top of each other and
              * give zero length edges), so keep trying. The attempt cap keeps this terminating when
              * maxNodes approaches the number of distinct integer positions available. */
@@ -235,8 +240,17 @@ namespace TravellingSalesmanProblem.Graph {
             if (splitted.Length < 4)
                 throw new FormatException($"Expected 4 comma separated fields, got {splitted.Length}: '{line}'");
 
-            if (splitted[0] == "n")
-                graph.Nodes.Add(ParseNode(splitted));
+            /* Two nodes sharing an index make the tour ambiguous, and two sharing a position render
+             * on top of each other with a zero length edge between them. Skip the repeat rather
+             * than reject the whole instance, which is what the random source does as well. */
+            if (splitted[0] == "n") {
+                var node = ParseNode(splitted);
+
+                if (graph.EqualId(node) || graph.EqualPosition(node))
+                    return;
+
+                graph.Nodes.Add(node);
+            }
 
             if (splitted[0] == "e")
                 graph.Edges.Add(ParseEdge(splitted));
@@ -333,6 +347,7 @@ namespace TravellingSalesmanProblem.Graph {
         }
 
         public bool EqualPosition(Node node) => Nodes.Find(n => n.Position == node.Position) != null;
+        public bool EqualId(Node node) => Nodes.Find(n => n.Index == node.Index) != null;
     }
 }
 

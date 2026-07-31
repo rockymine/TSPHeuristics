@@ -78,12 +78,30 @@ namespace WebApplication.Extensions {
          * available on a batch; GraphView measures the labels before opening one. */
         public static async Task DrawTextBox(this IContext2DWithoutGetters context, Brush brush,
             Vector2 pos, string text, double width, double height) {
-            var startX = pos.X - (width / 2);
-            var startY = pos.Y - (height / 2);
+            /* The caller measures the glyphs exactly, so pad before drawing: a box tight against
+             * the text reads as a slab. Rounded corners keep the annotation legible where several
+             * labels crowd together. */
+            var boxWidth = width * 1.2;
+            var boxHeight = height * 1.2;
+
+            var left = pos.X - (boxWidth / 2);
+            var bottom = pos.Y - (boxHeight / 2);
+            var right = left + boxWidth;
+            var top = bottom + boxHeight;
+
+            /* A radius wider than half the shorter side would make the arcs overlap. */
+            var radius = Math.Min(10, Math.Min(boxWidth, boxHeight) / 2);
 
             await context.FillStyleAsync("#3f74a8");
             await context.LineWidthAsync(2);
-            await context.FillRectAsync(startX, startY, width, height);
+            await context.BeginPathAsync();
+            await context.MoveToAsync(left + radius, bottom);
+            await context.ArcToAsync(right, bottom, right, top, radius);
+            await context.ArcToAsync(right, top, left, top, radius);
+            await context.ArcToAsync(left, top, left, bottom, radius);
+            await context.ArcToAsync(left, bottom, right, bottom, radius);
+            await context.ClosePathAsync();
+            await context.FillAsync(FillRule.EvenOdd);
             await WriteText(context, brush.TextFont, "white", text, pos);
         }
 
