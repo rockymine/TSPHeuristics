@@ -1,29 +1,22 @@
 @namespace WebApplication.Components
 
-@* Icons as inline SVG. The shapes are vendored below rather than pulled from a font or a script:
-   an icon font ships every glyph to draw a dozen, and a CDN script is a dependency that fails
-   quietly offline - which the Chart.js tag at the top of index.html already demonstrates.
-
-   Inline SVG also inherits currentColor, so an icon takes the colour of whatever it sits in and
-   follows a theme without a second definition.
-
-   Shapes are from Lucide (https://lucide.dev), ISC licensed:
-     Copyright (c) Lucide Icons and Contributors
-     Permission to use, copy, modify, and/or distribute this software for any purpose with or
-     without fee is hereby granted, provided that the above copyright notice and this permission
-     notice appear in all copies.
-
-   To add one, copy the contents of the <svg> element from the Lucide source for that icon. *@
+@* Icons as inline SVG, so nothing is downloaded and the shapes inherit currentColor - an icon
+   takes the colour of whatever it sits in and follows a theme without a second definition. Shapes
+   are from Lucide (https://lucide.dev), ISC licensed: Copyright (c) Lucide Icons and
+   Contributors. Permission to use, copy, modify, and/or distribute this software for any purpose
+   with or without fee is hereby granted, provided that the above copyright notice and this
+   permission notice appear in all copies. To add one, copy the contents of the <svg> element from
+   the Lucide source for that icon. *@
 
 <svg class="icon @Class" width="@Size" height="@Size" viewBox="0 0 24 24" fill="none"
      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
      aria-hidden="true" focusable="false">@Shapes</svg>
 
 @code {
-    /// <summary>Lucide icon name, e.g. "play". An unknown name renders an empty square.</summary>
+    /* Lucide icon name, e.g. "play". An unknown name renders nothing. */
     [Parameter] public string Name { get; set; }
 
-    /// <summary>Edge length in CSS pixels. 16 sits correctly on the small buttons.</summary>
+    /* Edge length in CSS pixels. 16 sits correctly on the small buttons. */
     [Parameter] public int Size { get; set; } = 16;
 
     [Parameter] public string Class { get; set; }

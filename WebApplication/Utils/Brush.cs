@@ -11,7 +11,7 @@ namespace WebApplication.Utils {
         public string TextStyle { get; set; }
         public FillStyle Style { get; set; }
 
-        /// <summary>Draw the stroke dashed. Marks an edge the tour has lost.</summary>
+        /* Draw the stroke dashed. Marks an edge the tour has lost. */
         public bool Dashed { get; set; }
 
         public Brush Copy() {

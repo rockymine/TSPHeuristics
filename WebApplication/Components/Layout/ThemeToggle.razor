@@ -1,9 +1,9 @@
 @namespace WebApplication.Components
 @inject IJSRuntime JSRuntime
 
-@* Switches between the dark and light token sets. The attribute the tokens hang off is set on
-   <html> by an inline script in index.html before any stylesheet loads, so the first paint is
-   already in the right theme; this only changes it afterwards and remembers the choice. *@
+@* Switches between the dark and light token sets. The attribute the tokens hang off is set on the
+   document element by an inline script in index.html before any stylesheet loads, so the first
+   paint is already in the right theme; this changes it afterwards and remembers the choice. *@
 
 <button type="button" class="btn btn-link btn-sm" title="@(theme == "light" ? "Switch to dark" : "Switch to light")"
         aria-label="Toggle theme" @onclick="Toggle">
@@ -11,7 +11,7 @@
 </button>
 
 @code {
-    /// <summary>Raised after the theme has been applied, so the canvas can re-read its colours.</summary>
+    /* Raised after the theme has been applied, so the canvas can re-read its colours. */
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private string theme = "dark";
@@ -20,8 +20,8 @@
         if (!firstRender)
             return;
 
-        /* Read what the inline script decided rather than assuming, so the icon matches the theme
-         * that is actually on screen - including the one restored from a previous visit. */
+        /* Reads the theme the inline script applied, so the icon matches what is on screen,
+         * including a choice restored from a previous visit. */
         try {
             var current = await JSRuntime.InvokeAsync<string>("GetTheme");
 

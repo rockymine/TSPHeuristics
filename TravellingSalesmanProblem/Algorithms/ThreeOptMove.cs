@@ -4,11 +4,9 @@ using System.Linq;
 using TravellingSalesmanProblem.Graph;
 
 namespace TravellingSalesmanProblem.Algorithms {
-    /* Cutting a tour in three places leaves the six endpoints A|B ... C|D ... E|F and seven ways to
-     * put the pieces back together that are not the original. Which one is applied used to be
-     * decided inside NeighbourState.ThreeOpt and could not be stated from outside, so the move was
-     * only ever available as "draw three positions, take the best of the seven". Both halves are
-     * separate here: the constructor takes the reconnection, Best scores them. */
+    /* Cutting a tour in three places leaves the six endpoints A|B ... C|D ... E|F and seven ways
+     * to reassemble the pieces that are not the original. The constructor takes the reconnection;
+     * Best ranks them. */
     public enum ThreeOptReconnection {
         ReverseFirst = 0,        // A CB DE F
         ReverseSecond = 1,       // A BC ED F
@@ -40,9 +38,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             Reconnection = reconnection;
         }
 
-        /* The seven reconnections all remove the same three edges, so ranking them by the length of
-         * the edges they add is the same ranking as by delta - which is what the original code did,
-         * and it is kept exactly so the tours it produced are reproducible. */
+        /* The seven reconnections all remove the same three edges, so ranking them by the length
+         * of the edges they add is the same ranking as by delta. */
         public static ThreeOptMove Best(GraphProblem graph, int i, int j, int k) {
             if (!IsApplicable(graph, i, j, k))
                 return null;

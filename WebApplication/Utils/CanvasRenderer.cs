@@ -10,18 +10,15 @@ using WebApplication.Extensions;
 
 namespace WebApplication.Utils {
     public class CanvasRenderer {
-        /* GraphView has to select this font on the context before measuring the annotations, or
-         * MeasureTextAsync reports the canvas default (10px sans-serif) and every label box comes
-         * out too small for the text it is drawn behind. */
+        /* GraphView selects this font on the context before measuring the annotations:
+         * MeasureTextAsync reports whatever font the context carries, so measuring in another one
+         * sizes the label box wrongly. */
         public const string EdgeTextFont = "15px serif";
 
-        /* The colours the drawing uses, resolved from the stylesheet by GraphView. They were
-         * literals here, which is why the canvas stayed white while the rest of the application
-         * was dark: a canvas is painted rather than laid out, so it inherits nothing.
-         *
-         * A property rather than the readonly Brush fields these replace, because a brush built
-         * once at type-initialisation would freeze whichever theme happened to be active first. The
-         * brushes are built per draw call instead - once each, not once per node or edge. */
+        /* The colours the drawing uses, resolved from the stylesheet by GraphView. A canvas is
+         * painted rather than laid out, so it inherits nothing and the values have to be handed
+         * in. The brushes are methods rather than fields so they pick up the current palette; one
+         * is built per draw call, not per node or edge. */
         public static CanvasPalette Palette { get; set; } = new();
 
         private static Brush EdgeBrush() => new() {
@@ -36,9 +33,8 @@ namespace WebApplication.Utils {
             Color = Palette.Grid, Width = 0.75
         };
 
-        /* One grid line used to be one DrawLine, i.e. seven interop calls each. A 90x90 instance
-         * meant well over a thousand round trips per canvas clear, and the canvas is cleared on
-         * every animation frame. The whole grid is one path with one stroke now. */
+        /* The whole grid is one path with one stroke: the canvas is cleared and redrawn on every
+         * animation frame. */
         public static async Task DrawGrid(IContext2DWithoutGetters context, CanvasSettings settings) {
             var segments = new List<(Vector2, Vector2)>();
 
@@ -57,7 +53,7 @@ namespace WebApplication.Utils {
         }
 
         /* Nodes are grouped by fill colour so each colour is a single path, and all the index
-         * labels share one font/style setup instead of re-sending it per node. */
+         * labels share one font and style setup. */
         public static async Task DrawNodes(IContext2DWithoutGetters context, GraphState state,
             LinkedListNode<GraphState> currentStateNode, CanvasSettings settings) {
             var nodes = state.Nodes;
@@ -104,9 +100,7 @@ namespace WebApplication.Utils {
             var edges = state.PathEdges;
 
             /* Pheromone weighted edges each need their own width, so they cannot share a path;
-             * everything else is grouped by (colour, width). The old loop also never restored
-             * brush.Width after a pheromone edge, so once one edge carried pheromone every
-             * following edge inherited its width. */
+             * everything else is grouped by (colour, width). */
             var groups = new Dictionary<(string Color, double Width), List<(Vector2, Vector2)>>();
             var edgeBrush = EdgeBrush();
 
@@ -133,9 +127,7 @@ namespace WebApplication.Utils {
             foreach (var group in groups) {
                 edgeBrush.Color = group.Key.Color;
                 edgeBrush.Width = group.Key.Width;
-                /* Lost edges are dashed as well as recoloured. This used to be decided inside the
-                 * drawing extension by comparing the colour to the string "red", which themed
-                 * colours would have quietly broken. */
+                /* Lost edges are dashed as well as recoloured. */
                 edgeBrush.Dashed = group.Key.Color == Palette.Removed;
                 await context.DrawLines(edgeBrush, group.Value);
             }
@@ -144,8 +136,8 @@ namespace WebApplication.Utils {
                 await DrawEdgeTextBoxes(context, annotations, settings);
         }
 
-        /* Membership was tested with compare.Find(e => e.IsEqual(edge)) - a linear scan of the
-         * comparison tour for every edge drawn, so O(E^2) per frame on a complete graph. */
+        /* Hashes the comparison tour once, so membership is a set lookup rather than a scan per
+         * edge drawn. */
         private static HashSet<(int, int)> PathKeys(List<Edge> edges) {
             var keys = new HashSet<(int, int)>();
             foreach (var edge in edges)
@@ -160,8 +152,8 @@ namespace WebApplication.Utils {
             return a < b ? (a, b) : (b, a);
         }
 
-        /* Label placement and the text measurements are computed by the caller, which still has an
-         * unbatched context; only the drawing happens here. */
+        /* Label placement and the text measurements are computed by the caller, which still has
+         * an unbatched context; only the drawing happens here. */
         public static List<TextMetric> BuildAnnotations(GraphState state) {
             var positions = new HashSet<Vector2>();
             var annotations = new List<TextMetric>(state.PathEdges.Count);
@@ -188,8 +180,8 @@ namespace WebApplication.Utils {
 
         private static async Task DrawEdgeTextBoxes(IContext2DWithoutGetters context,
             IReadOnlyList<TextMetric> annotations, CanvasSettings settings) {
-            /* The chip is not an edge: it has its own fill and its own text colour, and takes them
-             * from the brush so DrawTextBox holds no colours of its own. */
+            /* The chip has its own fill and text colour, taken from the brush so DrawTextBox
+             * holds no colours of its own. */
             var brush = EdgeBrush();
             brush.Color = Palette.LabelBackground;
             brush.TextStyle = Palette.LabelText;

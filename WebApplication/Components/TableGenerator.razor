@@ -66,9 +66,8 @@
 			</button>
 		}
 
-		@* Rendered only while open. It always was built that way for cost - the full matrix is
-		   40 382 cells at 200 nodes - and the visibility now follows the same state, instead of a
-		   script toggling classes on markup that sat in the document either way. *@
+		@* Rendered only while open: the full distance matrix is 40382 cells at 200 nodes, and each one
+		 * costs a render. *@
 		@if (modalOpen) {
 			<div class="dialog-backdrop" @onclick="CloseModal"></div>
 			<div class="dialog" role="dialog" aria-label="Full table">
@@ -98,17 +97,14 @@
 	[Parameter]
 	public int MaxRows { get; set; } = int.MaxValue;
 	/* Which table to build. Auto follows the algorithm, which is what a single table per run needs;
-	 * the manual mode shows two at once and has to be able to ask for the distance matrix
-	 * regardless of what the algorithm would pick. */
+	 * the manual mode shows two at once and has to ask for the distance matrix regardless of what
+	 * the algorithm would pick. */
 	[Parameter]
 	public TableKind Kind { get; set; } = TableKind.Auto;
 
-	/* The full table used to be part of every render, hidden behind the modal's CSS but present in
-	 * the DOM all the same - and the distance matrix has n*(n+1) cells, 40382 of them at n=200.
-	 * Building it cost the browser five minutes of blocked UI thread for a run whose FindPath took
-	 * 56 ms. It is now built when the modal is opened and dropped when it is closed. The cap keeps
-	 * even that bounded; the rows and columns beyond it are marked with the same ellipsis cells the
-	 * inline table already uses. */
+	/* The full table is built when the modal opens and dropped when it closes. The cap bounds even
+	 * that; rows and columns beyond it are marked with the same ellipsis cells the inline table
+	 * uses. */
 	private const int ModalMaxCols = 200;
 	private const int ModalMaxRows = 200;
 
@@ -136,19 +132,18 @@
 		modalTable = null;
 	}
 
-	/* @ref is assigned after the render that creates the child, so the freshly opened modal has to
-	 * be filled on the following render pass. */
+	/* @ref is assigned after the render that creates the child, so the freshly opened modal is
+	 * filled on the following render pass. */
 	protected override void OnAfterRender(bool firstRender) {
 		if (modalOpen && modalTable != null && !modalTable.HasData && lastNode != null) {
 			modalTable.UpdateFromGraphState(lastNode, lastAlgorithm, lastNeighbour);
 		}
 	}
 
-	/* MarkdownRenderer parses and typesets every value it is given. Most cells - the distances, the
-	 * node indices, the tours - contain no math and no markup, and routing those through the parser
-	 * was the single largest cost of a redraw. They are emitted directly; only values carrying
-	 * LaTeX still go through the renderer. All content here is generated from node indices and
-	 * distances, so there is nothing user supplied to escape. */
+	/* MarkdownRenderer parses and typesets every value it is given, and most cells - distances, node
+	 * indices, tours - carry no math and no markup, so only values containing LaTeX go through it.
+	 * All content here is generated from node indices and distances, so there is nothing user
+	 * supplied to escape. */
 	private RenderFragment Render(string value) => builder => {
 		if (string.IsNullOrEmpty(value))
 			return;
@@ -195,9 +190,8 @@
 		var size = state.Nodes.Count + 1;
 		tableInfo.Cells = new TableCellInfo[size - 1, size];
 
-		/* InPath scanned the whole tour for every cell, so the matrix cost O(n^3) to build and it
-		 * was rebuilt on every animation frame - roughly 700k comparisons per frame at the 90 node
-		 * maximum. The tour's adjacent pairs are collected once instead. */
+		/* The tour's adjacent pairs are collected once, so a cell tests membership with a set lookup
+		 * rather than a scan of the tour. The matrix is rebuilt on every animation frame. */
 		var adjacent = PathPairs(state.Path);
 
 		for (int i = 0; i < size - 1; i++) {
@@ -214,8 +208,7 @@
 				if (i == 0)
 					tableInfo.Header.Add(node2.Index.ToString());
 				if (j - i - 1 < 0) {
-					/* The matrix is symmetric, so the lower triangle is left blank. An em dash says that
-					   directly; it used to be an icon element built into the cell's value. */
+					/* The matrix is symmetric, so the lower triangle is left blank; an em dash says so. */
 					tableInfo.Cells[i, j] = new TableCellInfo("&mdash;", null);
 					continue;
 				}
@@ -239,12 +232,9 @@
 	private static (int, int) Pair(Node a, Node b) =>
 		a.Index < b.Index ? (a.Index, b.Index) : (b.Index, a.Index);
 
-	/* Both history tables used to append one row per call, and this component is updated on every
-	 * redraw. Stepping backwards - or replaying - therefore appended rows that were already there,
-	 * so the table filled up with duplicates and disagreed with the visualization. Each table is
-	 * now derived from the history up to the selected state, which makes it idempotent.
-	 * TableInfo.AddRow also reallocated and copied the whole array per row, making the build
-	 * quadratic in the number of iterations; rows are collected in a list and converted once. */
+	/* Each table is derived from the history up to the selected state, which makes rebuilding it
+	 * idempotent: this component is updated on every redraw, including when stepping backwards. Rows
+	 * are collected in a list and converted once rather than appended one at a time. */
 	private void CreateIterationTable(LinkedListNode<GraphState> node) {
 		tableInfo.Header = new List<string> { "Iteration", "Tour", "Distance" };
 
@@ -284,10 +274,8 @@
 		return grid;
 	}
 
-	/* A hand played search mixes move types, so the rule cannot come from a run level setting the
-	 * way it does for Hill Climbing and Simulated Annealing - each row states its own, and the
-	 * calculation column holds the numbers that move actually used. That is the column a student
-	 * checks their own arithmetic against. */
+	/* A hand played search mixes move types, so each row states its own rule rather than taking it
+	 * from a run level setting, and the calculation column holds the numbers that move used. */
 	private void CreateMoveHistory(LinkedListNode<GraphState> node) {
 		tableInfo.Header = new List<string> { "#", "Move", "Nodes", "Tour", "$\\triangle$", "f(x)" };
 
@@ -345,8 +333,7 @@
 		tableInfo.Cells = ToGrid(rows, tableInfo.Header.Count);
 	}
 
-	/* Took the "before" state as an argument that could be null (node.Previous?.Value on the very
-	 * first entry) and dereferenced it unguarded. */
+	/* The first entry has no preceding state, so the "before" tour is read from the entry itself. */
 	private TableCellInfo IndexedTourSummary(GraphState state, Node i, Node j) {
 		if (state == null)
 			return new TableCellInfo("", null);

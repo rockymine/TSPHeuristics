@@ -117,8 +117,8 @@
     </Sidebar>
 
     <Workspace>
-        @* The run bar never scrolls. Run and the transport used to sit in different columns, and
-           on a 768px-tall screen Run was 443px below the fold. *@
+        @* The run bar never scrolls, so Run, the transport and the readout stay reachable at any
+         * window height. *@
         <div class="run-bar">
             <button class="btn btn-primary btn-sm" type="button"
                     @onclick="e => InitiateGraph(AppState.GraphSource)">
@@ -390,8 +390,7 @@
             else
                 await ResetCanvases();
         } catch (JSException) {
-            /* The defaults in CanvasPalette are the literals the renderer used before it was
-             * themed, so the drawing looks exactly as it always did. */
+            /* CanvasPalette carries usable defaults, so the drawing stays legible without a read. */
         }
     }
 
@@ -573,8 +572,8 @@
     }
 
     /* Clear, grid, edges and nodes all go into one Batch2D, which flushes as a single JS interop
-     * call. Previously each of them issued its own round trip per primitive - a 30 node instance
-     * with the grid on was several thousand calls per canvas, twice per animation frame. */
+     * call. Issuing them separately costs one round trip per primitive, and the canvas is redrawn
+     * on every animation frame. */
     private async Task FillCanvas(Canvas canvas, GraphState state) {
         if (canvas == null)
             return;
@@ -594,9 +593,8 @@
     }
 
     private async Task<List<TextMetric>> MeasureAnnotations(Context2D context, GraphState state) {
-        /* Ant runs put a pheromone level on every edge of the complete graph; annotating all of
-         * them is unreadable, which is why this is suppressed. The renderer used to do it by
-         * assigning to the shared CanvasSettings mid-draw. */
+        /* Ant runs put a pheromone level on every edge of the complete graph, and annotating all
+         * of them is unreadable, so annotations are suppressed for those states. */
         if (!AppState.CanvasSettings.Annotate || state.PathEdges.Any(e => e.Pheromone != 0))
             return null;
 
@@ -622,10 +620,9 @@
     }
 
     private async Task ResetCanvases() {
-        /* The "Previous" canvas is only in the markup for SA and HC. After switching away from
-         * them AppState.PreviousCanvas still holds the removed component, and asking it for a
-         * context throws because its element is no longer in the document - so the algorithm has
-         * to be checked as well as the reference. */
+        /* The "Previous" canvas is only in the markup for the modes that show two, so the
+         * algorithm has to be checked as well as the reference: asking a removed component for a
+         * context throws. */
         if (ShowsPreviousCanvas)
             await ResetCanvasOf(AppState.PreviousCanvas);
 
@@ -664,9 +661,8 @@
     /* The "Previous" canvas shows the state a step is taken from. Simulated Annealing and Hill
      * Climbing use it for the iteration boundary, the manual mode for the tour before and after
      * the move that was just applied - which is the whole point of playing one by hand. */
-    /* Only the manual mode has a second table, and AppState.DistanceTable keeps whatever @ref last
-     * put there - so after switching away it still points at a component that is no longer in the
-     * document. Same trap as the charts: the reference has to be checked together with the mode. */
+    /* Only the manual mode has a second table, and AppState.DistanceTable keeps whatever @ref
+     * last put there, so the reference has to be checked together with the mode. */
     private bool ShowsDistanceTable => AppState.AlgorithmEnum == AlgorithmEnum.Manual;
 
     private bool ShowsPreviousCanvas =>
@@ -770,10 +766,9 @@
                 AppState.CurrentHistoryNode, AppState.AlgorithmEnum, AppState.NeighbourEnum);
         }
 
-        /* AppState.ChartJS keeps whatever @ref last put there, so after a run that rendered charts
-         * the entries survive a switch to an algorithm that renders none - and updating one of
-         * those calls into a canvas that is no longer in the document. Only the charts the current
-         * markup actually shows are refreshed, which mirrors the @if blocks above. */
+        /* AppState.ChartJS keeps whatever @ref last put there, so only the charts the current
+         * markup shows are refreshed - mirroring the @if blocks above. Updating a stale entry
+         * calls into a canvas that is not in the document. */
         for (int i = 0; i < ChartCount(); i++) {
             var chart = AppState.ChartJS[i];
             if (chart != null)

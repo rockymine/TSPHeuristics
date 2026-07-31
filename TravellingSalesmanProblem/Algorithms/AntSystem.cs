@@ -37,14 +37,12 @@ namespace TravellingSalesmanProblem.Algorithms {
 
             X = GraphProblem.ConnectedGraphProblem(graph);
 
-            /* "+=" only behaved like an assignment because NearestNeighbour.FindPath happens to
-             * call graph.Reset() first; re-running the algorithm on an already seeded graph would
-             * otherwise keep stacking the initial deposit on top of the previous run's trail. */
+            /* Assignment, not accumulation: re-running on an already seeded graph must start from
+             * the initial deposit rather than stack onto the previous run's trail. */
             X.Edges.ForEach(e => e.Pheromone = InitialPheromone);
 
-            /* Give each ant a starting node. Indexing graph.Nodes[i - 1] directly threw
-             * IndexOutOfRange whenever AntCount exceeded the node count - which the default of ten
-             * ants does for every graph smaller than ten nodes. Starts wrap around instead. */
+            /* Give each ant a starting node. Starts wrap around, since AntCount may exceed the
+             * node count. */
             Colony = Enumerable.Range(0, AntCount)
                 .Select(i => new Ant { Start = graph.Nodes[i % graph.Nodes.Count] }).ToList();
 
@@ -59,8 +57,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             for (int i = 0; i < Iterations; i++) {
                 BuildAntPaths(graph);
 
-                /* Costs re-sums the whole tour on every read, so the old OrderBy evaluated it
-                 * O(m log m) times just to take the first element. One pass, one read per ant. */
+                /* Costs re-sums the whole tour on every read, so the best ant is found in one
+                 * pass with one read per ant. */
                 var costs = new double[Colony.Count];
                 var bestAnt = 0;
                 for (int a = 0; a < Colony.Count; a++) {
@@ -97,10 +95,9 @@ namespace TravellingSalesmanProblem.Algorithms {
             return newState;
         }
 
-        /* Each history entry needs its own snapshot of the pheromone levels, but graph.DeepCopy()
-         * cloned every node and re-ran PostProcess only for the clones to be thrown away by the
-         * two Nodes.Find() calls below - O(V * E) per iteration on top of an O(n^3) copy. Copying
-         * the edges and pointing them straight at the existing nodes does the same job. */
+        /* Each history entry needs its own snapshot of the pheromone levels. The edges are copied
+         * and pointed at the existing nodes; cloning the nodes as well would be discarded by the
+         * lookups below. */
         private GraphProblem GlobalUpdating(GraphProblem graph) {
             var edges = new List<Edge>(graph.Edges.Count);
             foreach (var source in graph.Edges) {
@@ -110,17 +107,17 @@ namespace TravellingSalesmanProblem.Algorithms {
                 edges.Add(edge);
             }
 
-            /* Membership was tested with IsInside, a linear scan of the tour per edge per ant.
-             * Hashing each tour once turns the whole update from O(E * m * n) into O(E * m). */
+            /* Each tour is hashed once, so edge membership is a set lookup rather than a scan of
+             * the tour. */
             var deposits = GlobalUpdatingRule == GlobalUpdatingRule.AS
                 ? Colony.Select(a => (Keys: Edge.KeySet(a.Path.Edges), Amount: 1 / a.Path.Costs)).ToList()
                 : null;
             var bestKeys = GlobalUpdatingRule == GlobalUpdatingRule.AS ? null : Edge.KeySet(XBest.Edges);
             var lgbInversed = GlobalUpdatingRule == GlobalUpdatingRule.AS ? 0 : Math.Pow(BestCosts, -1);
 
-            /* The equation shown in the UI is the one for the last updated edge, as before, but it
-             * is built once instead of allocating a MathString for every edge of the graph. The
-             * pheromone is captured before the deposit because that is what the formula displays. */
+            /* The equation shown in the UI is the one for the last updated edge, built once
+             * rather than per edge. The pheromone is captured before the deposit because that is
+             * what the formula displays. */
             Edge lastEdge = null;
             var lastSum = 0d;
 
@@ -163,8 +160,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             return copy;
         }
 
-        /* Edge lookup table for the current pheromone snapshot. X.Edges.Find() was an O(E) scan,
-         * i.e. O(n^2) on the complete graph, executed inside the innermost selection loop. */
+        /* Edge lookup table for the current pheromone snapshot, so the innermost selection loop
+         * indexes rather than scans. */
         private Dictionary<(int, int), Edge> EdgeLookup = new();
 
         private void BuildAntPaths(GraphProblem graph) {
@@ -185,20 +182,15 @@ namespace TravellingSalesmanProblem.Algorithms {
          * the selection does not allocate once per ant per step. */
         private double[] Weights = new double[0];
 
-        /* Picks the next node for an ant.
-         *
-         * Proportional is the random proportional rule that defines the Ant System: a candidate is
-         * drawn with a probability proportional to its pheromone-visibility weight. Greedy always
-         * takes the largest weight - that is what this implementation did originally, and it is
-         * kept so the results published in the thesis stay reproducible from this code.
-         *
-         * Under Greedy an ant's tour is fully determined by its starting node, so a colony of m
-         * ants explores exactly m tours per iteration and further iterations only shift the
-         * pheromone. That is why doubling the colony helped so little in table 7.8.
-         *
-         * Note on exponents: Beta weights the visibility, as usual. Alpha is used by this project
-         * as the evaporation parameter (rho in most of the literature), not as the pheromone
-         * exponent, so the pheromone enters with exponent one. That convention is unchanged. */
+        /* Picks the next node for an ant. Proportional is the random proportional rule that
+         * defines the Ant System: a candidate is drawn with a probability proportional to its
+         * pheromone-visibility weight. Greedy always takes the largest weight, which makes an
+         * ant's tour a function of its starting node alone - a colony of m ants then explores
+         * exactly m tours per iteration and further iterations only shift the pheromone. Both are
+         * selectable so the thesis results stay reproducible. Exponents: Beta weights the
+         * visibility. Alpha is this project's evaporation parameter (rho in most of the
+         * literature) rather than the pheromone exponent, so the pheromone enters with exponent
+         * one. */
         private Node StateTransitionRule(Ant ant) {
             var candidates = ant.Unvisited;
             if (candidates.Count == 0)

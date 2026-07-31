@@ -1,13 +1,11 @@
 @namespace WebApplication.Components
 
 @* The results dock: tables, charts and calculations under the canvas rather than beside it, so
-   the side-by-side canvases and the inherently wide distance matrix both get the full width.
-
-   Which tabs exist depends on the heuristic - Nearest Neighbour and Ant System produce no charts,
-   and only some states carry equations. The caller says so explicitly rather than the dock
-   inferring it from the fragments, because a RenderFragment passed as child content is never null
-   even when it renders nothing. The active tab is re-validated whenever those flags change, since
-   switching heuristic can remove the tab that was selected. *@
+   the side-by-side canvases and the wide distance matrix both get the full width. Which tabs
+   exist depends on the heuristic - Nearest Neighbour and Ant System produce no charts, and only
+   some states carry equations. The caller states that explicitly, because a RenderFragment passed
+   as child content is never null even when it renders nothing. The active tab is re-validated
+   whenever the flags change, since switching heuristic can remove the selected tab. *@
 
 <section class="results-dock @(Collapsed ? "results-dock--collapsed" : null)">
     <div class="dock-tabs">

@@ -12,9 +12,8 @@ namespace WebApplication.Utils {
     public class AppState {
         public GraphProblem Instance { get; set; }
 
-        /* Was a fixed Scale in pixels per coordinate unit. The canvas fits itself to the stage now,
-         * so what is left for the user to say is how much larger or smaller than that fit they
-         * want it - a percentage, where 100 is the fit. */
+        /* How much larger or smaller than the fitted size the drawing is, as a percentage; 100 is
+         * the fit. */
         private float _zoom = 100;
         public float Zoom {
             get => _zoom;
@@ -56,12 +55,11 @@ namespace WebApplication.Utils {
             }
         }
 
-        /* The old ceiling of 90 nodes was set by what the app could survive, not by the heuristics.
-         * Measured in the browser after the fixes, from the click on Execute until the page answers
-         * again: Nearest Neighbour 2.9 s at 300 nodes, Simulated Annealing with phase length 10
-         * 7.2 s, Hill Climbing with 2-opt and steepest descent 12.7 s, with swap 36.6 s. The
-         * coordinate range follows so a graph that large still has room to spread out; the canvas
-         * caps its own pixel size, so a wide range no longer means an enormous buffer. */
+        /* Limits follow measured browser response time, from the click on Execute until the page
+         * answers again: at 300 nodes Nearest Neighbour takes 2.9 s, Simulated Annealing with
+         * phase length 10 7.2 s, Hill Climbing with 2-opt and steepest descent 12.7 s, with swap
+         * 36.6 s. The coordinate range follows so a graph that large has room to spread out; the
+         * canvas caps its own pixel size independently. */
         private const int MaxNodeCount = 300;
         private const int MaxCoordinate = 300;
 
@@ -107,11 +105,9 @@ namespace WebApplication.Utils {
         private int NodeCountOfInstance => Instance?.Nodes.Count ?? 0;
 
         private int _startNode;
-        /* The setter dereferenced Instance, which is null until a graph has been executed - and
-         * the Nearest Neighbour panel holding this control is what the app shows on load, so
-         * touching the start node first thing threw NullReferenceException. The getter clamps as
-         * well, because a start node picked for a large graph stayed behind when a smaller graph
-         * was loaded afterwards and then indexed Instance.Nodes out of range. */
+        /* Instance is null until a graph has been executed, and both accessors are reachable
+         * before that. The getter clamps as well as the setter, since a start node chosen for a
+         * large graph would otherwise index a smaller one out of range. */
         public int StartNode {
             get {
                 var count = NodeCountOfInstance;
@@ -182,11 +178,10 @@ namespace WebApplication.Utils {
             }
         }
 
-        /* Every Ant System iteration keeps its own pheromone snapshot in the history, one Edge per
-         * edge of the complete graph - n*(n-1)/2 of them at roughly 95 bytes each. That, not the
-         * runtime, is what a long run runs out of: 300 nodes at 500 iterations would ask for over
-         * two gigabytes. The iteration count is therefore capped against the loaded instance,
-         * which leaves 500 for anything up to about 130 nodes and 58 at 300. */
+        /* Every Ant System iteration keeps its own pheromone snapshot in the history, one Edge
+         * per edge of the complete graph at roughly 95 bytes. Memory rather than runtime is the
+         * binding constraint, so the iteration count is capped against the loaded instance: 500
+         * up to about 130 nodes, 58 at 300. */
         private const int MaxIterations = 500;
         private const long IterationMemoryBudget = 250L * 1024 * 1024;
         private const int BytesPerEdge = 95;
@@ -205,9 +200,8 @@ namespace WebApplication.Utils {
         private int _iterations = 50;
         public int Iterations {
             get => Math.Clamp(_iterations, 1, IterationLimit);
-            /* Snaps to the ceiling instead of refusing the input: an entry that is silently
-             * discarded leaves the panel showing the old number with no hint of where the limit
-             * is, while snapping shows it. */
+            /* Snaps to the ceiling instead of refusing the input, so the panel shows where the
+             * limit is rather than silently keeping the old number. */
             set {
                 if (value < 1)
                     return;
@@ -242,12 +236,9 @@ namespace WebApplication.Utils {
             }
         }
 
-        /* The colony used to be capped at one ant per node, and under the greedy transition rule
-         * that was the only sensible cap: two ants leaving the same node walked the same tour, so
-         * the extra ant cost time and found nothing. With the random proportional rule two ants
-         * from the same start diverge, and more ants than nodes are worth having. The cost is
-         * linear and carries no memory of its own - 0.0045 s per ant at 100 nodes, flat from 25
-         * ants upwards - so the cap is now a plain runtime ceiling. */
+        /* The colony is not tied to the node count: under the proportional transition rule two
+         * ants starting from the same node walk different tours, so more ants than nodes is
+         * meaningful. */
         private const int MaxAntCount = 500;
 
         private int _antCount = 25;

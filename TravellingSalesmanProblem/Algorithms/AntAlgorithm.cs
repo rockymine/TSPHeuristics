@@ -14,7 +14,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         public double Beta { get; set; }
         public double StateTransition { get; set; }
         public double InitialPheromone { get; set; }
-        /* Was a hard coded 100, with no way for a caller to ask for a shorter or longer run. */
+        /* Number of iterations the colony runs for. */
         public int Iterations { get; set; } = 100;
         private static readonly Random Random = new();
         private GraphProblem GlobalBest = new();
@@ -90,8 +90,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
         }
 
-        /* The normalising sum is over the same candidate set for every call within one step, so
-         * calling this per candidate made the selection O(u^2) in pheromone lookups. */
+        /* The normalising sum is over the whole candidate set, so it is computed once per step
+         * rather than once per candidate. */
         private double RandomProportionalRule(Ant k, Node r, Node s) {
             var sum = 0d;
             foreach (var node in k.Unvisited)
@@ -104,9 +104,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             return sum > 0 ? pcp / sum : 0;
         }
 
-        /* Kept free of side effects: it used to allocate a MathString on every call from the
-         * innermost selection loop, which dominated the running time. The displayed equation is
-         * recorded once per decision by RecordPheromoneClosenessProduct instead. */
+        /* Side effect free: called once per candidate from the innermost selection loop. The
+         * displayed equation is recorded separately by RecordPheromoneClosenessProduct. */
         private double PheromoneClosenessProduct(Node r, Node s) {
             var edge = Lookup(r, s);
             return edge.Pheromone * Math.Pow(1 / edge.Distance, Beta);
@@ -138,8 +137,8 @@ namespace TravellingSalesmanProblem.Algorithms {
                 Equations["Global Updating Rule"] = MathString.GlobalUpdatingRule(lastEdge, Alpha, lgbInversed);
         }
 
-        /* Swept every edge of the complete graph, testing membership of the ant's tour with a
-         * linear scan, once per ant per step - O(E * n) work to touch n edges. Walk the tour. */
+        /* Local updating touches only the edges of the ant's own tour, so it walks the tour
+         * rather than the complete graph. */
         private void LocalUpdatingRule(Ant k) {
             Edge lastEdge = null;
 
@@ -166,7 +165,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             return Random.NextDouble() <= StateTransition ? Exploitation(k) : BiasedExploration(k);
         }
 
-        /* Sorted the whole candidate list to take one element off the front. */
+        /* Takes the maximum in one pass; the candidate list does not need ordering. */
         private Node Exploitation(Ant k) {
             Node best = null;
             var bestWeight = double.NegativeInfinity;
@@ -185,15 +184,9 @@ namespace TravellingSalesmanProblem.Algorithms {
             return best;
         }
 
-        /* Roulette wheel selection over the unvisited nodes.
-         *
-         * The previous implementation drew a fresh random number for every candidate and returned
-         * the first one that exceeded it. That is not a roulette wheel - it biases heavily towards
-         * the head of the collection - and when no candidate matched (which happens whenever the
-         * draws all land above the running cumulative, including the very common case of the last
-         * candidate) FirstOrDefault returned a default KeyValuePair whose Key is null, so .Key.Node2
-         * threw a NullReferenceException. One draw against the cumulative distribution, with the
-         * last candidate as the fallback for floating point drift, fixes both. */
+        /* Roulette wheel selection over the unvisited nodes: one draw against the cumulative
+         * distribution of the weights. The last candidate is the fallback, since floating point
+         * drift can leave the running total just short of the draw. */
         private Node BiasedExploration(Ant k) {
             k.MoveProbability.Clear();
             var r = k.Current;
@@ -226,8 +219,8 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public void ScatterAnts(GraphProblem graph) {
-            /* Shuffling graph.Nodes in place reordered the caller's instance, which the rest of
-             * the application still renders and serializes. Shuffle a copy. */
+            /* Shuffles a copy: graph.Nodes is the caller's instance, which the rest of the
+             * application renders and serializes. */
             var nodes = new List<Node>(graph.Nodes);
             nodes.Shuffle();
 
@@ -257,8 +250,8 @@ namespace TravellingSalesmanProblem.Algorithms {
         
         public void UpdatePath(Node from, Node to) {
             Path.Nodes.Add(to);
-            /* An ant's tour edges live in its own Path; registering each of them in the shared
-             * Node.Edges adjacency cost two O(degree) scans per step and changed nothing. */
+            /* An ant's tour edges live in its own Path, so they are not registered in the shared
+             * Node.Edges adjacency. */
             Path.Edges.Add(Edge.Between(from, to, false));
             Unvisited.Remove(to);
         }

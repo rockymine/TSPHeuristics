@@ -10,9 +10,8 @@ using System.Drawing;
 
 namespace WebApplication.Extensions {
     /* Every method here takes IContext2DWithoutGetters, which both Context2D and Batch2D
-     * implement. Context2D issues one JS interop round trip per call, so a single redraw of a
-     * 30 node instance cost thousands of them; drawing through a Batch2D buffers the whole frame
-     * and flushes it in one call instead. The callers decide which to hand in. */
+     * implement. Context2D issues one JS interop round trip per call; a Batch2D buffers the whole
+     * frame and flushes it in one. The callers decide which to hand in. */
     public static class Context2DExtensions {
         private static readonly double[] Dashed = { 5 };
         private static readonly double[] Solid = { };
@@ -27,8 +26,8 @@ namespace WebApplication.Extensions {
             await context.StrokeAsync();
         }
 
-        /* Draws many segments that share one style as a single path. Stroke state is set once and
-         * one Stroke call covers the whole batch, instead of seven calls per individual segment. */
+        /* Draws many segments that share one style as a single path: the stroke state is set once
+         * and one Stroke call covers the batch. */
         public static async Task DrawLines(this IContext2DWithoutGetters context, Brush brush,
             IReadOnlyList<(Vector2 From, Vector2 To)> segments) {
             if (segments.Count == 0)
@@ -78,9 +77,8 @@ namespace WebApplication.Extensions {
          * available on a batch; GraphView measures the labels before opening one. */
         public static async Task DrawTextBox(this IContext2DWithoutGetters context, Brush brush,
             Vector2 pos, string text, double width, double height) {
-            /* The caller measures the glyphs exactly, so pad before drawing: a box tight against
-             * the text reads as a slab. Rounded corners keep the annotation legible where several
-             * labels crowd together. */
+            /* The caller measures the glyphs exactly, so the box is padded before drawing.
+             * Rounded corners keep the annotation legible where several labels crowd together. */
             var boxWidth = width * 1.2;
             var boxHeight = height * 1.2;
 

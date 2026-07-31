@@ -88,11 +88,9 @@ namespace TravellingSalesmanProblem.Algorithms {
             return worst - best;
         }
 
-        /* The acceptance probability has to use the temperature of the phase being run. It used to
-         * read history.Last.Value.Temperature, and a history entry is only appended when a new best
-         * tour is found - so the schedule cooled while the acceptance test stayed frozen at
-         * whatever the temperature was when the last improvement happened. With a long plateau the
-         * search kept accepting uphill moves at the initial temperature and never converged. */
+        /* The acceptance probability uses the temperature of the phase being run. History entries
+         * are only appended on an improvement, so reading the temperature from the last entry
+         * would freeze the acceptance test while the schedule continued to cool. */
         private bool MetropolisRule(double temperature) {
             var r = Random.NextDouble();
             bool condition = r < Math.Exp(-(Y.Costs - X.Costs) / temperature);

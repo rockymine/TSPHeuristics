@@ -112,8 +112,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public static MathString GlobalUpdatingRuleAS(Edge edge, double alpha, double delta) {
-            /* "\tau" in a non verbatim string is a TAB followed by "au", so the rendered formula
-             * lost its leading symbol. The backslash has to be escaped like every other one here. */
+            /* Verbatim string: "\tau" in a non-verbatim one is a TAB followed by "au". */
             var latex = "$\\tau(r,s) \\leftarrow (1 - \\alpha) \\cdot \\tau(r,s) + \\sum_{k=1}^{m}\\triangle\\tau_{k}(r,s)$";
             var dummy = "$\\tau(?r?,?s?) = (1 - ?alpha?) \\cdot ?tau? + ?triangle?$";
             var result = $"$\\tau({edge.Node1.Index},{edge.Node2.Index}) = {Math.Round(edge.Pheromone + delta, 3)}$";

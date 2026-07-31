@@ -42,8 +42,8 @@ namespace PerformanceAnalysis.cli {
         [Argument('t', "metric")]
         private static string Metric { get; set; }
         /* "proportional" is the random proportional rule of the Ant System and the default;
-         * "greedy" is the deterministic rule this implementation originally used, which the
-         * analysis scripts ask for explicitly to reproduce the numbers published in the thesis. */
+         * "greedy" is the deterministic rule, which the analysis scripts ask for explicitly to
+         * reproduce the numbers published in the thesis. */
         [Argument('r', "selection")]
         private static string Selection { get; set; }
 

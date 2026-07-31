@@ -2,13 +2,10 @@ using System.Collections.Generic;
 using TravellingSalesmanProblem.Graph;
 
 namespace TravellingSalesmanProblem.Algorithms {
-    /* What a single move did, in the form the tables and the info panel need.
-     *
-     * This replaces SwapInfo, which held exactly two nodes and a pre-rendered string. Two nodes
-     * describe a swap and a 2-opt move, but a 3-opt move has three cut points and one of seven
-     * reconnections, and a double bridge has four - so the type and the tour positions belong here
-     * as well. A move history that mixes types also has to be able to say, per row, which rule
-     * produced it; the run level NeighbourType cannot answer that. */
+    /* What a single move did, in the form the tables and the info panel need. Carries the move
+     * type and the tour positions as well as the nodes, because three-opt has three cut points
+     * and a double bridge four, and a history that mixes types has to say per row which rule
+     * produced it. */
     public class MoveInfo {
         public NeighbourType Type { get; set; }
         /* The nodes the move names: i and j for a swap or a 2-opt move, the cut points otherwise. */

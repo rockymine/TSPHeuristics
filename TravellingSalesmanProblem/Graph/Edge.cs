@@ -10,10 +10,10 @@ namespace TravellingSalesmanProblem.Graph {
         private Node _node2;
         private double _distance = -1;
 
-        /* Distance is read in the innermost loops of every heuristic (GraphProblem.Costs alone
-         * re-summed it thousands of times per run). Node positions never change once a graph is
-         * built, so the euclidean length is computed once and cached until an endpoint is
-         * reassigned - PostProcess and the ant colonies relink copied edges to their nodes. */
+        /* Distance is read in the innermost loops of every heuristic, and node positions do not
+         * change once a graph is built, so the length is computed once and cached until an
+         * endpoint is reassigned - PostProcess and the ant colonies relink copied edges to their
+         * nodes. */
         public Node Node1 {
             get => _node1;
             set { _node1 = value; _distance = -1; }
@@ -28,16 +28,12 @@ namespace TravellingSalesmanProblem.Graph {
         public double Pheromone { get; set; }
         public double Distance => _distance >= 0 ? _distance : _distance = CalcMetricDistance();
 
-        /* CalcDistance2D and CalcGeoDistance implement the TSPLIB EUC_2D and GEO edge weights, but
-         * nothing ever called them - Distance was always the plain euclidean length. Reproducing
-         * TSPLIB results needs the matching metric, otherwise a GEO instance like burma14 is scored
-         * over raw degrees (a tour length near 30 instead of 3323) and the rounded instances land a
-         * few units off their published optimum.
-         *
-         * Process wide on purpose: an instance file fixes one metric for a whole run, and the
-         * intended use is for a CLI to set it once at startup before any graph is built. The
-         * default keeps the web application on the metric it has always used. Distances are cached
-         * per edge, so changing this after graphs exist leaves those edges on the old metric. */
+        /* Selects the edge weight, since TSPLIB fixes one per instance: scoring a GEO instance as
+         * plain euclidean measures raw degrees. Process wide on purpose: an instance file fixes
+         * one metric for a whole run, and the intended use is for a CLI to set it once at startup
+         * before any graph is built. The default is plain euclidean, which is what the web
+         * application uses. Distances are cached per edge, so changing this after graphs exist
+         * leaves those edges on the old metric. */
         public static DistanceMetric Metric { get; set; } = DistanceMetric.Euclidean;
 
         private double CalcMetricDistance() {
@@ -125,8 +121,7 @@ namespace TravellingSalesmanProblem.Graph {
             return edges.Any(edge => IsEqual(edge));
         }
 
-        /* Order independent identity of an edge, for dictionary/set lookups. Scanning a list with
-         * IsEqual turned the pheromone updates into an O(E * tour) sweep per ant per iteration. */
+        /* Order independent identity of an edge, for dictionary and set lookups. */
         internal (int, int) Key => Node1Id < Node2Id ? (Node1Id, Node2Id) : (Node2Id, Node1Id);
 
         internal static (int, int) KeyOf(Node node1, Node node2) =>
@@ -153,7 +148,7 @@ namespace TravellingSalesmanProblem.Graph {
 
         /* register=false skips the adjacency bookkeeping. Only NearestNeighbour walks Node.Edges,
          * and it does so on the complete graph; tours and ant paths keep their edges in the
-         * GraphProblem itself, so registering them cost two O(degree) scans per edge for nothing. */
+         * GraphProblem itself. */
         public static Edge Between(Node node1, Node node2, bool register) {
             var edge = new Edge {
                 Node1 = node1, Node2 = node2 ,
@@ -171,11 +166,9 @@ namespace TravellingSalesmanProblem.Graph {
             return edge;
         }
 
-        /* Tour cost is the exact euclidean length, so move deltas have to be measured the same way.
-         * Evaluating them with GetDistanceRounded disagreed with the acceptance test on the sign of
-         * the delta often enough to matter: hill climbing would generate a move that looked like an
-         * improvement at one decimal, find it was not an improvement exactly, and stop the descent.
-         * GetDistanceRounded is kept for the numbers shown in the UI. */
+        /* Exact length. Tour cost is measured the same way, so a delta computed from rounded
+         * distances could disagree with the acceptance test on its own sign. GetDistanceRounded
+         * is for display. */
         public static double GetDistance(Node n1, Node n2) {
             return Vector2.Distance(n1.Position, n2.Position);
         }

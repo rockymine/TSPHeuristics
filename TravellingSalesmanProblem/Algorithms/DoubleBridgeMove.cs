@@ -5,9 +5,7 @@ using TravellingSalesmanProblem.Graph;
 
 namespace TravellingSalesmanProblem.Algorithms {
     /* The double bridge: cut the tour a|b|c|d|a into four pieces and reassemble it as a-d-c-b-a.
-     * It has only one outcome per set of cut points, so unlike three-opt there is nothing to
-     * choose - but it still needs to be a move object, because a manual run has to be able to name
-     * its cut points and see what the exchange costs. */
+     * There is one outcome per set of cut points, so unlike three-opt there is nothing to rank. */
     public class DoubleBridgeMove : ITourMove {
         public GraphProblem Graph { get; }
         public int I { get; }

@@ -54,9 +54,8 @@ namespace Tests.cli {
         private static string Route(GraphProblem graph) =>
             string.Join("-", graph.Nodes.Select(n => n.Index));
 
-        /* A move's delta is what the searches compare against the tour costs, so it has to be the
-         * real change in length - not merely self consistent. This is the check that caught the
-         * three-opt endpoints being read one position too far. */
+        /* A move's delta is what the searches compare against the tour costs, so it has to equal
+         * the real change in length rather than merely being self consistent. */
         private static bool DeltaMatches(GraphProblem tour, ITourMove move) =>
             Math.Abs(move.Apply().Costs - tour.Costs - move.Delta) < 1e-9;
 

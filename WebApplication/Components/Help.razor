@@ -1,13 +1,7 @@
 @namespace WebApplication.Components
 
-@* The help panel: a drawer holding two tabbed groups of collapsible sections.
-
-   It was Bootstrap's offcanvas, nav-tabs and accordion - three widgets driven by data-bs-*
-   attributes and a global script that toggled classes on this markup from outside Blazor. That
-   arrangement produced a real bug: the first tab pane carried "active" on its nav link but not on
-   the pane, so opening Help showed the tabs above an empty body, and every DOM assertion passed
-   because the text was in the document, merely invisible. The state is C# now, so what the
-   component believes and what is drawn cannot disagree. *@
+@* The help panel: a drawer holding two tabbed groups of collapsible sections. Open state, active
+   tab and expanded section are all C#, so the panel renders only what it believes is showing. *@
 
 @if (open) {
     <div class="drawer-backdrop" @onclick="Close"></div>
@@ -143,7 +137,7 @@
     private bool open;
     private Tab tab = Tab.Settings;
 
-    /// <summary>Opens the panel. The topbar button calls this through an @@ref.</summary>
+    /* Opens the panel; the topbar button holds a reference to this component. */
     public void Show() {
         open = true;
         StateHasChanged();

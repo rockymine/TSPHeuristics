@@ -3,11 +3,8 @@ using System.Collections.Generic;
 using TravellingSalesmanProblem.Graph;
 
 namespace TravellingSalesmanProblem.Algorithms {
-    /* Picks a move out of a neighbourhood. Applying it is the move's own job - see ITourMove.
-     *
-     * This used to do both at once and return the resulting tour, which is why nothing outside
-     * could say "apply this move at these positions": the positions never left the method. The
-     * selection rules are unchanged, so the tours the searches walk are the same. */
+    /* Picks a move out of a neighbourhood according to the descent type. Applying it is the
+     * move's own job - see ITourMove. */
     public class NeighbourState {
         private static readonly Random Random = new();
 
@@ -48,9 +45,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             return new TwoOptMove(graph, pos1, pos2);
         }
 
-        /* i started at 1, so the edge leaving the first tour node was never a candidate for
-         * removal and steepest/next descent explored a strictly smaller neighbourhood than the
-         * random variant (which draws pos1 from 0). Closed tours have no privileged first edge. */
+        /* i starts at 0: a closed tour has no privileged first edge, so the edge leaving the
+         * first node is a candidate for removal like any other. */
         private static TwoOptMove TwoOptLoop(GraphProblem graph, DescentType descent) {
             var n = graph.Nodes.Count;
             var savings = 0d;
@@ -79,8 +75,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             var n = graph.Nodes.Count;
 
             /* SwapMove reads Nodes[I-1] and Nodes[J+1], so it needs an interior i < j with a
-             * predecessor and a successor. Below five tour entries no such pair exists and the
-             * old bounds threw ArgumentOutOfRangeException out of Random.Next. */
+             * predecessor and a successor. Below five tour entries no such pair exists. */
             if (n < 5)
                 return null;
 
@@ -116,8 +111,8 @@ namespace TravellingSalesmanProblem.Algorithms {
         private static ITourMove SelectThreeOpt(GraphProblem graph) {
             var n = graph.Nodes.Count;
 
-            /* Needs three cut points with a node before the first and at the last, so the smallest
-             * workable tour has four entries. Below that Random.Next threw. */
+            /* Needs three cut points with a node before the first and at the last, so the
+             * smallest workable tour has four entries. */
             if (n < 4)
                 return null;
 
@@ -131,7 +126,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         private static ITourMove SelectDoubleBridge(GraphProblem graph) {
             var n = graph.Nodes.Count;
 
-            /* Four cut points need at least five tour entries; Random.Next threw below that. */
+            /* Four cut points need at least five tour entries. */
             if (n < 5)
                 return null;
 

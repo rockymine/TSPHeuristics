@@ -6,42 +6,33 @@ using System.Threading.Tasks;
 
 namespace WebApplication.Utils {
     public class CanvasSettings {
-        /* A canvas is a pixel buffer, so its cost is quadratic in the edge length: at scale 30 a
-         * 200x200 coordinate range asks the browser for two 6000x6000 canvases, roughly 300 MB of
-         * backing store. The requested scale is capped against the graph's extent instead, which
-         * shrinks the drawing rather than clipping it - everything that reads Scale, including the
-         * grid and the node positions, sees the same value.
-         *
-         * The cap is on the BUFFER edge, which is what actually costs memory, not on the drawing:
-         * a ratio of 2 doubles both edges and quadruples the allocation, so the two have to be
-         * accounted for together. */
+        /* A canvas is a pixel buffer, so its cost is quadratic in the edge length. The cap is on
+         * the buffer edge, which is what costs memory: a pixel ratio of 2 doubles both edges and
+         * quadruples the allocation, so the two are accounted for together. */
         private const float MaxEdgePixels = 3000;
 
         /* Beyond 2 the extra samples are not visible at these line widths and only cost memory. */
         private const float MaxDevicePixelRatio = 2;
 
-        /* What the canvas falls back to before the stage has been measured, and what the drawing
-         * used to be fixed at: pixels per coordinate unit. */
+        /* Pixels per coordinate unit used before the stage has been measured. */
         private const float FallbackScale = 30;
 
         public Vector2 MinPos { get; set; }
         public Vector2 MaxPos { get; set; }
 
         /* The box one canvas may occupy, in CSS pixels, set from the measured stage. GraphView
-         * subtracts the stage padding, the gap between two panes and the pane label before setting
-         * it, so this is already the budget for the drawing itself. */
+         * subtracts the stage padding, the gap between two panes and the pane label first, so
+         * this is the budget for the drawing itself. */
         public float AvailableWidth { get; set; }
         public float AvailableHeight { get; set; }
 
-        /* 1 fits the graph to that box. Above 1 the drawing is larger than the stage and the stage
-         * scrolls; below 1 it is smaller and stays centred. */
+        /* 1 fits the graph to that box. Above 1 the drawing is larger than the stage and the
+         * stage scrolls; below it the drawing stays centred. */
         public float Zoom { get; set; } = 1;
 
-        /* Scale used to be an input: a fixed number of pixels per coordinate unit, which decided
-         * both how large the drawing was and how much memory the canvas allocated. It made the
-         * canvas a fixed box marooned in the stage - a wider window only bought more empty space -
-         * and it meant the two jobs could not be adjusted independently. It is derived now: fit the
-         * graph to the available box, then apply the zoom. */
+        /* Fit the graph to the available box, then apply the zoom. Deriving the scale rather than
+         * taking it as an input keeps the drawing sized to its container and separates how large
+         * it is from how much memory the buffer costs. */
         private float FitScale =>
             AvailableWidth > 0 && AvailableHeight > 0
                 ? Math.Min(AvailableWidth / SpanX, AvailableHeight / SpanY)
@@ -55,20 +46,17 @@ namespace WebApplication.Utils {
         public Vector2 Offset => new(Scale / 2, Scale / 2);
 
         /* Width and Height are the drawing's own coordinate space, in CSS pixels. Every draw call
-         * works in these, which is why adding the pixel ratio below did not touch the renderer. */
+         * works in these; the pixel ratio below is applied as a transform rather than by the
+         * renderer. */
         public int Height => (int)(Scale * SpanY);
         public int Width => (int)(Scale * SpanX);
 
         /* What the browser reported, before clamping. GraphView reads it once from JS. */
         public float RawDevicePixelRatio { get; set; } = 1;
 
-        /* A CSS pixel is not a device pixel. The buffer was sized in CSS pixels and then scaled up
-         * by the display, so on any HiDPI screen every line and label was drawn at half resolution
-         * and enlarged - the blur was in the bitmap, not in the drawing. The buffer is the CSS box
-         * times this ratio, and the transform is pre-multiplied by it so the drawing code is
-         * unaffected. Clamped so the buffer edge still respects MaxEdgePixels: on an instance
-         * already large enough to hit that ceiling the ratio drops back towards 1 rather than
-         * quadrupling an allocation that was deliberately bounded. */
+        /* A CSS pixel is not a device pixel. The buffer is the CSS box times this ratio, and the
+         * transform is pre-multiplied by it so the drawing code works in CSS pixels throughout.
+         * Clamped so the buffer edge still respects MaxEdgePixels. */
         public float DevicePixelRatio {
             get {
                 var ratio = Math.Clamp(RawDevicePixelRatio, 1, MaxDevicePixelRatio);

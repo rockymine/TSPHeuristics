@@ -61,10 +61,9 @@ namespace TravellingSalesmanProblem.Algorithms {
             return history;
         }
 
-        /* Every restart called FindPath(graph), which always builds its initial tour from the same
-         * node ordering. A deterministic descent from a fixed start is a deterministic descent, so
-         * all n restarts produced the identical local optimum and multi start was a plain single
-         * run repeated n times. Each restart now begins from its own random permutation. */
+        /* Each restart begins from its own random permutation. A descent from a fixed start is
+         * deterministic, so restarting from the same node ordering would reach the same local
+         * optimum every time. */
         public LinkedList<GraphState> MultiStart(GraphProblem graph) {
             graph.Reset();
 
@@ -92,7 +91,7 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         private static GraphProblem Shuffled(GraphProblem graph) {
             /* Copies the node list: shuffling graph.Nodes in place would reorder the instance the
-             * rest of the application (distance matrix, serialization) is still displaying. */
+             * rest of the application (distance matrix, serialization) is displaying. */
             var nodes = new List<Node>(graph.Nodes);
             if (nodes.Count > 1 && nodes[0] == nodes[^1])
                 nodes.RemoveAt(nodes.Count - 1);
