@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 using TravellingSalesmanProblem.Graph;
 
 namespace TravellingSalesmanProblem.Algorithms {
-    public class SwapMove {
+    public class SwapMove : ITourMove {
         public GraphProblem Graph { get; set; }
-        public SwapInfo SwapInfo => GenerateSwapInfo();
+        public NeighbourType Type => NeighbourType.Swap;
+        public double Delta => CalcCosts();
         public int I { get; set; }
         public int J { get; set; }
         private Node NodeI => Graph.Nodes[I];
@@ -17,6 +18,12 @@ namespace TravellingSalesmanProblem.Algorithms {
         private Node JPrev => Graph.Nodes[J - 1];
         private Node INext => Graph.Nodes[I + 1];
         private Node JNext => Graph.Nodes[J + 1];
+        /* Reads the neighbours of both positions directly, so it needs an interior i < j: position
+         * 0 has no predecessor in the list and the closing node no successor. The search loops stay
+         * inside that range on their own; anything picking positions from outside - a manual move,
+         * say - has to check this first. */
+        public static bool IsApplicable(GraphProblem graph, int i, int j) =>
+            i > 0 && j > i && j < graph.Nodes.Count - 1;
         private double I_INext => Edge.GetDistance(NodeI, INext);
         private double I_JNext => Edge.GetDistance(NodeI, JNext);
         private double J_INext => Edge.GetDistance(NodeJ, INext);
@@ -44,7 +51,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             }
         }
 
-        public SwapInfo GenerateSwapInfo() {
+        public MoveInfo Describe() {
             var nodes = new List<Node> { NodeI, NodeJ };
             string calculation;
 
@@ -56,12 +63,12 @@ namespace TravellingSalesmanProblem.Algorithms {
                 calculation = $"${Round(IPrev_J)}+{Round(J_INext)}+{Round(JPrev_I)}+{Round(I_JNext)}-{Round(IPrev_I)}-{Round(I_INext)}-{Round(JPrev_J)}-{Round(J_JNext)}={Round(Costs)}$";
             }
 
-            return new SwapInfo(nodes, calculation);
+            return new MoveInfo(Type, nodes, new List<int> { I, J }, Costs, calculation);
         }
 
         private static double Round(double value) => Math.Round(value, 1);
 
-        public GraphProblem SwapNodes() {
+        public GraphProblem Apply() {
             var nodes = Graph.Nodes.ToArray();
             var node = nodes[I];
             nodes[I] = nodes[J];

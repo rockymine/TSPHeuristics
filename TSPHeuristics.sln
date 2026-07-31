@@ -18,6 +18,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PerformanceAnalysis.cli", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GraphGenerator.cli", "GraphGenerator.cli\GraphGenerator.cli.csproj", "{FA7F6714-71E2-4D59-8AE5-348B33DC0B0E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests.cli", "Tests.cli\Tests.cli.csproj", "{116C54DB-AB7F-4ABC-B877-27A7172C591E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,6 +46,10 @@ Global
 		{FA7F6714-71E2-4D59-8AE5-348B33DC0B0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FA7F6714-71E2-4D59-8AE5-348B33DC0B0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FA7F6714-71E2-4D59-8AE5-348B33DC0B0E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{116C54DB-AB7F-4ABC-B877-27A7172C591E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{116C54DB-AB7F-4ABC-B877-27A7172C591E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{116C54DB-AB7F-4ABC-B877-27A7172C591E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{116C54DB-AB7F-4ABC-B877-27A7172C591E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -111,7 +111,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             newState.Distance = XBest.Costs;
             newState.Path = XBest.Nodes;
             newState.PathEdges = XBest.Edges;
-            newState.SwapInfo = XBest.SwapInfo?.DeepCopy();
+            newState.MoveInfo = XBest.MoveInfo?.DeepCopy();
             newState.Iteration = iteration;
 
             for (int i = 0; i < newState.ChartInfo[0].YAxis[0].Values.Count; i++) {

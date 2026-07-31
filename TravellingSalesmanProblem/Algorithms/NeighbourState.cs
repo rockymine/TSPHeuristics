@@ -1,57 +1,52 @@
-﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TravellingSalesmanProblem.Graph;
 
 namespace TravellingSalesmanProblem.Algorithms {
+    /* Picks a move out of a neighbourhood. Applying it is the move's own job - see ITourMove.
+     *
+     * This used to do both at once and return the resulting tour, which is why nothing outside
+     * could say "apply this move at these positions": the positions never left the method. The
+     * selection rules are unchanged, so the tours the searches walk are the same. */
     public class NeighbourState {
         private static readonly Random Random = new();
-        public static GraphProblem Create(GraphProblem graph, NeighbourType type, DescentType descent) {
-            graph.Reset();
-            var neighbor = new GraphProblem();
-            switch (type) {
-                case NeighbourType.Swap:
-                    neighbor = Swap(graph, descent);
-                    break;
-                case NeighbourType.TwoOpt:
-                    neighbor = TwoOpt(graph, descent);
-                    break;
-                case NeighbourType.ThreeOpt:
-                    neighbor = ThreeOpt(graph);
-                    break;
-                case NeighbourType.FourOpt:
-                    neighbor = DoubleBridgeFourOpt(graph);
-                    break;
-            }
 
-            return neighbor;
+        /* Returns null when the neighbourhood holds nothing to apply: too few nodes for the move,
+         * or - for the descending rules - no move that shortens the tour. */
+        public static ITourMove Select(GraphProblem graph, NeighbourType type, DescentType descent) {
+            return type switch {
+                NeighbourType.Swap => SelectSwap(graph, descent),
+                NeighbourType.TwoOpt => SelectTwoOpt(graph, descent),
+                NeighbourType.ThreeOpt => SelectThreeOpt(graph),
+                NeighbourType.FourOpt => SelectDoubleBridge(graph),
+                _ => null
+            };
         }
 
-        public static GraphProblem TwoOpt(GraphProblem graph, DescentType descent) {
-            TwoOptMove move;
-            if (descent == DescentType.Random) {
-                var n = graph.Nodes.Count;
-                if (n < 4)
-                    return graph;
+        public static GraphProblem Create(GraphProblem graph, NeighbourType type, DescentType descent) {
+            graph.Reset();
 
-                var pos1 = Random.Next(0, n - 2);
-                var pos2 = Random.Next(pos1 + 1, n - 1);
-                move = new TwoOptMove(graph, pos1, pos2);
-            } else {
-                move = TwoOptLoop(graph, descent);
-            }
-
+            var move = Select(graph, type, descent);
             if (move == null)
                 return graph;
 
-            var best = move.SwapEdges();
-            best.SwapInfo = move.SwapInfo;
-            return best;
+            var neighbour = move.Apply();
+            neighbour.MoveInfo = move.Describe();
+            return neighbour;
         }
 
+        private static ITourMove SelectTwoOpt(GraphProblem graph, DescentType descent) {
+            if (descent != DescentType.Random)
+                return TwoOptLoop(graph, descent);
+
+            var n = graph.Nodes.Count;
+            if (n < 4)
+                return null;
+
+            var pos1 = Random.Next(0, n - 2);
+            var pos2 = Random.Next(pos1 + 1, n - 1);
+            return new TwoOptMove(graph, pos1, pos2);
+        }
 
         /* i started at 1, so the edge leaving the first tour node was never a candidate for
          * removal and steepest/next descent explored a strictly smaller neighbourhood than the
@@ -77,30 +72,21 @@ namespace TravellingSalesmanProblem.Algorithms {
             return move;
         }
 
-        public static GraphProblem Swap(GraphProblem graph, DescentType descent) {
-            SwapMove move;
-            if (descent == DescentType.Random) {
-                var n = graph.Nodes.Count;
+        private static ITourMove SelectSwap(GraphProblem graph, DescentType descent) {
+            if (descent != DescentType.Random)
+                return SwapLoop(graph, descent);
 
-                /* SwapMove reads Nodes[I-1] and Nodes[J+1], so it needs an interior i < j with a
-                 * predecessor and a successor. Below five tour entries no such pair exists and the
-                 * old bounds threw ArgumentOutOfRangeException out of Random.Next. */
-                if (n < 5)
-                    return graph;
+            var n = graph.Nodes.Count;
 
-                var pos1 = Random.Next(1, n - 2);
-                var pos2 = Random.Next(pos1 + 1, n - 1);
-                move = new SwapMove(graph, pos1, pos2);
-            } else {
-                move = SwapLoop(graph, descent);
-            }
+            /* SwapMove reads Nodes[I-1] and Nodes[J+1], so it needs an interior i < j with a
+             * predecessor and a successor. Below five tour entries no such pair exists and the
+             * old bounds threw ArgumentOutOfRangeException out of Random.Next. */
+            if (n < 5)
+                return null;
 
-            if (move == null)
-                return graph;
-
-            var best = move.SwapNodes();
-            best.SwapInfo = move.SwapInfo;
-            return best;
+            var pos1 = Random.Next(1, n - 2);
+            var pos2 = Random.Next(pos1 + 1, n - 1);
+            return new SwapMove(graph, pos1, pos2);
         }
 
         private static SwapMove SwapLoop(GraphProblem graph, DescentType descent) {
@@ -124,111 +110,37 @@ namespace TravellingSalesmanProblem.Algorithms {
             return move;
         }
 
-        public static GraphProblem ThreeOpt(GraphProblem graph) {
-            var tour = graph.Nodes.ToArray();
-            var n = tour.Length;
+        /* Both perturbations draw their cut points; three-opt then takes the shortest of the seven
+         * reconnections. Neither compares the result against the current tour - they are kicks, and
+         * the caller decides whether to accept a longer one. */
+        private static ITourMove SelectThreeOpt(GraphProblem graph) {
+            var n = graph.Nodes.Count;
 
             /* Needs three cut points with a node before the first and at the last, so the smallest
              * workable tour has four entries. Below that Random.Next threw. */
             if (n < 4)
-                return graph;
+                return null;
 
-            //random indexes for split
             var i = Random.Next(1, n - 3);
             var j = Random.Next(i + 1, n - 2);
             var k = Random.Next(j + 1, n - 1);
 
-            //tour segments
-            var start = tour[0..i];
-            var BC = tour[i..j];
-            var CB = BC.Reverse().ToArray();
-            var DE = tour[j..k];
-            var ED = DE.Reverse().ToArray();
-            var end = tour[k..n];
-
-            /* The six endpoints have to be the actual boundaries of the segments above: A is the
-             * last node of start, B/C the first/last of BC, D/E the first/last of DE and F the
-             * first of end. They were each read one position too far, so all seven candidate
-             * lengths described a different reconnection than the one that was applied - the
-             * "minimum" perturbation lengthened the tour in about a third of all draws, and
-             * reading tour[k + 1] overran the array on short tours. */
-            var A = tour[i - 1];
-            var B = BC[0];
-            var C = BC[^1];
-            var D = DE[0];
-            var E = DE[^1];
-            var F = end[0];
-
-            //edge distances
-            var dAB = Edge.GetDistance(A, B);
-            var dAC = Edge.GetDistance(A, C);
-            var dAD = Edge.GetDistance(A, D);
-            var dCD = Edge.GetDistance(C, D);
-            var dEF = Edge.GetDistance(E, F);
-            var dBD = Edge.GetDistance(B, D);
-            var dCE = Edge.GetDistance(C, E);
-            var dDF = Edge.GetDistance(D, F);
-            var dEB = Edge.GetDistance(E, B);
-            var dCF = Edge.GetDistance(C, F);
-            var dFB = Edge.GetDistance(F, B);
-            var dAE = Edge.GetDistance(A, E);
-
-            /* Reconnections paired with their length, so the applied one is always the scored one.
-             * The old chain of independent "if (min == dN)" tests could assign twice on ties and
-             * relied on exact floating point equality to recover the winner. */
-            var candidates = new (double Length, Node[] First, Node[] Second)[] {
-                (dAC + dBD + dEF, CB, DE), //A CB DE F
-                (dAB + dCE + dDF, BC, ED), //A BC ED F
-                (dAD + dCE + dFB, DE, CB), //A DE CB F
-                (dAD + dEB + dCF, DE, BC), //A DE BC F
-                (dAE + dCD + dFB, ED, CB), //A ED CB F
-                (dAE + dBD + dCF, ED, BC), //A ED BC F
-                (dAC + dEB + dDF, CB, ED)  //A CB ED F
-            };
-
-            var bestIndex = 0;
-            for (int c = 1; c < candidates.Length; c++) {
-                if (candidates[c].Length < candidates[bestIndex].Length)
-                    bestIndex = c;
-            }
-
-            var best = candidates[bestIndex];
-            var final = start.Concat(best.First).Concat(best.Second).Concat(end);
-
-            var swapped = new GraphProblem {
-                Nodes = final.ToList()
-            };
-            swapped.ConnectPathNodes();
-            return swapped;
+            return ThreeOptMove.Best(graph, i, j, k);
         }
 
-        public static GraphProblem DoubleBridgeFourOpt(GraphProblem graph) {
-            var tour = graph.Nodes.ToArray();
-            var n = tour.Length;
+        private static ITourMove SelectDoubleBridge(GraphProblem graph) {
+            var n = graph.Nodes.Count;
 
             /* Four cut points need at least five tour entries; Random.Next threw below that. */
             if (n < 5)
-                return graph;
+                return null;
 
             var i = Random.Next(1, n - 4);
             var j = Random.Next(i + 1, n - 3);
             var k = Random.Next(j + 1, n - 2);
             var l = Random.Next(k + 1, n - 1);
 
-            //tour is split into 5 segments: a-b-c-d-a
-            var a1 = tour[0..i];
-            var b = tour[i..j];
-            var c = tour[j..k];
-            var d = tour[k..l];
-            var a2 = tour[l..n];
-
-            //tour is recombined as: a-d-c-b-a
-            var final = a1.Concat(d).Concat(c).Concat(b).Concat(a2);
-            var swapped = new GraphProblem {
-                Nodes = final.ToList()
-            };
-            swapped.ConnectPathNodes();
-            return swapped;
+            return new DoubleBridgeMove(graph, i, j, k, l);
         }
     }
 

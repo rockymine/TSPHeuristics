@@ -108,7 +108,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             newState.Path = XBest.Nodes;
             newState.PathEdges = XBest.Edges;
             newState.Equations = Equations;
-            newState.SwapInfo = XBest.SwapInfo?.DeepCopy();
+            newState.MoveInfo = XBest.MoveInfo?.DeepCopy();
             newState.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
             newState.Temperature = temperature;
             newState.Iteration = iteration;

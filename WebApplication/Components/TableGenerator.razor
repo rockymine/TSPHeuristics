@@ -286,20 +286,20 @@
 		GraphState previous = null;
 
 		foreach (var state in HistoryUpTo(node)) {
-			if (state.SwapInfo == null || state.SwapInfo.Nodes.Count < 2) {
+			if (state.MoveInfo == null || state.MoveInfo.Nodes.Count < 2) {
 				previous = state;
 				continue;
 			}
 
-			var i = state.SwapInfo.Nodes[0];
-			var j = state.SwapInfo.Nodes[1];
+			var i = state.MoveInfo.Nodes[0];
+			var j = state.MoveInfo.Nodes[1];
 
 			rows.Add(new[] {
 				new TableCellInfo($"${state.Iteration}$", null),
 				new TableCellInfo($"${i.Index}$", null),
 				new TableCellInfo($"${j.Index}$", null),
 				IndexedTourSummary(previous, i, j),
-				new TableCellInfo(state.SwapInfo.Calculation, null),
+				new TableCellInfo(state.MoveInfo.Calculation, null),
 				IndexedTourSummary(state, i, j),
 				new TableCellInfo(Math.Round(state.Distance, 1).ToString(), null)
 			});

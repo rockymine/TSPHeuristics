@@ -85,6 +85,11 @@
                         @if (AppState.GraphSource == GraphSource.Text) {
                             <div class="form-group">
                                 <textarea class="form-control" @bind="AppState.DefaultGraph" style="height: 200px;"></textarea>
+                                <small class="form-text text-muted">
+                                    <code>n,index,x,y</code> per node. Simulated Annealing and Hill Climbing
+                                    start from the order the nodes are listed in; add
+                                    <code>t,index,index,&hellip;</code> to give an explicit starting tour.
+                                </small>
                             </div>
                         } else if (AppState.GraphSource == GraphSource.Random) {
                             <RandomGraphSettings @bind-NodeCount="AppState.NodeCount"
@@ -304,6 +309,12 @@
                 try {
                     //if (!string.IsNullOrEmpty(AppState.DefaultGraph) && !string.IsNullOrWhiteSpace(AppState.DefaultGraph))
                     AppState.Instance = GraphProblem.FromText(AppState.DefaultGraph);
+                } catch (FormatException e) {
+                    /* The parser names what is wrong with the line or the tour; swallowing that and
+                     * replacing it with "not a valid graph definition" hides the one thing the
+                     * reader needs. */
+                    AppState.Error = e.Message;
+                    return;
                 } catch (Exception) {
                     AppState.Error = "The specified text does not contain a valid graph definition.";
                     return;
@@ -315,6 +326,9 @@
             case GraphSource.File:
                 try {
                     AppState.Instance = GraphProblem.FromText(AppState.FileInput.LoadedFile);
+                } catch (FormatException e) {
+                    AppState.Error = e.Message;
+                    return;
                 } catch (Exception) {
                     AppState.Error = "The specified file does not contain a valid graph definition.";
                     return;

@@ -6,15 +6,21 @@ using System.Threading.Tasks;
 using TravellingSalesmanProblem.Graph;
 
 namespace TravellingSalesmanProblem.Algorithms {
-    public class TwoOptMove {
+    public class TwoOptMove : ITourMove {
         public GraphProblem Graph { get; set; }
-        public SwapInfo SwapInfo => GenerateSwapInfo();
+        public NeighbourType Type => NeighbourType.TwoOpt;
+        public double Delta => Costs;
         public int I { get; set; }
         public int J { get; set; }
         private Node NodeI => Graph.Nodes[I];
         private Node NodeI1 => Graph.Nodes[I + 1];
         private Node NodeJ => Graph.Nodes[J];
         private Node NodeJ1 => Graph.Nodes[J + 1];
+
+        /* Removes the edges leaving positions i and j, so both need a successor. Unlike a swap,
+         * position 0 is fine - a closed tour has no privileged first edge. */
+        public static bool IsApplicable(GraphProblem graph, int i, int j) =>
+            i >= 0 && j > i && j < graph.Nodes.Count - 1;
         private double Di_j => Edge.GetDistance(NodeI, NodeJ);
         private double Di1_j1 => Edge.GetDistance(NodeI1, NodeJ1);
         private double Di_i1 => Edge.GetDistance(NodeI, NodeI1);
@@ -30,15 +36,15 @@ namespace TravellingSalesmanProblem.Algorithms {
             J = j;
         }
 
-        public SwapInfo GenerateSwapInfo() {
+        public MoveInfo Describe() {
             var nodes = new List<Node> { NodeI, NodeJ };
             string calculation = $"${Round(Di_j)}+{Round(Di1_j1)}-{Round(Di_i1)}-{Round(Dj_j1)}={Round(Costs)}$";
-            return new(nodes, calculation);
+            return new MoveInfo(Type, nodes, new List<int> { I, J }, Costs, calculation);
         }
 
         private static double Round(double value) => Math.Round(value, 1);
 
-        public GraphProblem SwapEdges() {
+        public GraphProblem Apply() {
             var tour = Graph.Nodes.ToArray();
             var i = I + 1;
             var j = J + 1;

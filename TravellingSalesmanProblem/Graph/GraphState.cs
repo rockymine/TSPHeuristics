@@ -11,7 +11,7 @@ namespace TravellingSalesmanProblem.Graph {
         public List<Node> Nodes { get; set; } = new();
         public List<Node> Path { get; set; } = new();
         public List<Edge> PathEdges { get; set; } = new();
-        public SwapInfo SwapInfo { get; set; }
+        public MoveInfo MoveInfo { get; set; }
         public double Distance { get; set; }
         public double Temperature { get; set; }
         public int Iteration { get; set; }
@@ -33,7 +33,7 @@ namespace TravellingSalesmanProblem.Graph {
             state.Nodes.AddRange(Nodes);
             state.Path.AddRange(Path);
             state.PathEdges.AddRange(PathEdges);
-            state.SwapInfo = SwapInfo?.DeepCopy();
+            state.MoveInfo = MoveInfo?.DeepCopy();
             state.Distance = Distance;
             state.Temperature = Temperature;
             state.Iteration = Iteration;

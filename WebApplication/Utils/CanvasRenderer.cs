@@ -48,14 +48,14 @@ namespace WebApplication.Utils {
             LinkedListNode<GraphState> currentStateNode, CanvasSettings settings) {
             var nodes = state.Nodes;
             var brush = NodeBrush.Copy();
-            var swapInfo = currentStateNode.Value.SwapInfo;
+            var moveInfo = currentStateNode.Value.MoveInfo;
 
             var byColor = new Dictionary<string, List<Vector2>>();
             var labels = new List<(string, Vector2)>(nodes.Count);
 
             foreach (var node in nodes) {
                 var position = Manipulate(node.Position, settings);
-                var color = NodeColor(swapInfo, node);
+                var color = NodeColor(moveInfo, node);
 
                 if (!byColor.TryGetValue(color, out var group)) {
                     group = new List<Vector2>();
@@ -74,12 +74,12 @@ namespace WebApplication.Utils {
             await context.WriteTexts(NodeBrush.TextFont, NodeBrush.TextStyle, labels);
         }
 
-        private static string NodeColor(SwapInfo swapInfo, Node node) {
-            if (swapInfo == null || swapInfo.Nodes.Count < 2)
+        private static string NodeColor(MoveInfo moveInfo, Node node) {
+            if (moveInfo == null || moveInfo.Nodes.Count < 2)
                 return NodeBrush.Color;
-            if (node.Index == swapInfo.Nodes[0].Index)
+            if (node.Index == moveInfo.Nodes[0].Index)
                 return "purple";
-            if (node.Index == swapInfo.Nodes[1].Index)
+            if (node.Index == moveInfo.Nodes[1].Index)
                 return "orange";
 
             return NodeBrush.Color;

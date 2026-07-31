@@ -13,7 +13,15 @@ namespace TravellingSalesmanProblem.Graph {
     public class GraphProblem {
         public List<Node> Nodes { get; set; } = new();
         public List<Edge> Edges { get; set; } = new();
-        public SwapInfo SwapInfo { get; set; }
+        public MoveInfo MoveInfo { get; set; }
+
+        /* An explicitly given starting tour, in visiting order. Exercises usually hand out both the
+         * points and a tour to improve, and the order is half the task. Until now the order was
+         * implicit - OrderedGraphProblem read it off the node list, so "the tour" was whatever
+         * sequence the nodes happened to be listed in, with no way to state a different one and no
+         * check that it was a tour at all. A "t" line in the input sets this; when it is absent the
+         * node order is still used, so existing inputs behave exactly as before. */
+        public List<Node> StartTour { get; set; }
 
         /* Read several times per iteration by every heuristic; a plain loop over the cached edge
          * lengths avoids the LINQ enumerator and delegate allocation on that path. */
@@ -35,12 +43,18 @@ namespace TravellingSalesmanProblem.Graph {
 
         public GraphProblem DeepCopy() {
             var graph = new GraphProblem {
-                SwapInfo = SwapInfo?.DeepCopy(),
+                MoveInfo = MoveInfo?.DeepCopy(),
                 Nodes = Nodes.Select(n => n.Copy()).ToList(),
                 Edges = Edges.Select(e => e.Copy()).ToList()
             };
 
             PostProcess(graph);
+
+            /* The copy has its own Node instances, so the tour has to be remapped onto them or it
+             * would keep pointing at the originals. */
+            if (StartTour != null)
+                ApplyStartTour(graph, StartTour.Select(n => n.Index).ToList());
+
             return graph;
         }
 
@@ -76,7 +90,7 @@ namespace TravellingSalesmanProblem.Graph {
          * gained a bogus row, "Download Source" emitted n+1 nodes, and a Nearest Neighbour run
          * after a Hill Climbing run walked the duplicate. The node list is copied instead. */
         public static GraphProblem OrderedGraphProblem(GraphProblem graph) {
-            var path = new List<Node>(graph.Nodes);
+            var path = new List<Node>(graph.StartTour ?? graph.Nodes);
             if (path.Count > 0 && path[0] != path[^1])
                 path.Add(path[0]);
 
@@ -128,18 +142,23 @@ namespace TravellingSalesmanProblem.Graph {
          * and only parsed by luck (char.IsWhiteSpace covers '\r' inside float.Parse). Accept both. */
         public static GraphProblem FromText(string text) {
             GraphProblem graph = new();
+            List<int> tour = null;
+
             foreach (var line in text.Split('\n'))
-                ParseLine(graph, line.Trim('\r'));
+                ParseLine(graph, line.Trim('\r'), ref tour);
 
             graph.ConnectAllNodes();
             PostProcess(graph);
+            ApplyStartTour(graph, tour);
             return graph;
         }
 
         public static GraphProblem FromFile(string path) {
             var graph = new GraphProblem();
+            List<int> tour = null;
+
             foreach (var line in File.ReadAllLines(path))
-                ParseLine(graph, line);
+                ParseLine(graph, line, ref tour);
 
             /* FromText always returns a complete graph; FromFile silently returned an edgeless one
              * for node-only files, which the heuristics cannot traverse. */
@@ -147,16 +166,69 @@ namespace TravellingSalesmanProblem.Graph {
                 graph.ConnectAllNodes();
 
             PostProcess(graph);
+            ApplyStartTour(graph, tour);
             return graph;
         }
 
-        private static void ParseLine(GraphProblem graph, string line) {
+        /* Resolves the indices of a "t" line against the parsed nodes and rejects anything that is
+         * not a tour. A silently accepted bad tour would show up much later as a wrong length or a
+         * missing node, so it is worth being strict here: the message names the problem. */
+        public static void ApplyStartTour(GraphProblem graph, List<int> indices) {
+            if (indices == null)
+                return;
+
+            var byIndex = new Dictionary<int, Node>(graph.Nodes.Count);
+            foreach (var node in graph.Nodes)
+                byIndex[node.Index] = node;
+
+            var order = new List<int>(indices);
+
+            /* A tour may be written closed ("...,3,1") or open; both mean the same cycle. */
+            if (order.Count > 1 && order[0] == order[^1])
+                order.RemoveAt(order.Count - 1);
+
+            if (order.Count != graph.Nodes.Count)
+                throw new FormatException(
+                    $"The tour lists {order.Count} nodes, the graph has {graph.Nodes.Count}.");
+
+            var seen = new HashSet<int>();
+            var tour = new List<Node>(order.Count);
+
+            foreach (var index in order) {
+                if (!byIndex.TryGetValue(index, out var node))
+                    throw new FormatException($"The tour refers to node {index}, which is not defined.");
+                if (!seen.Add(index))
+                    throw new FormatException($"The tour visits node {index} more than once.");
+
+                tour.Add(node);
+            }
+
+            graph.StartTour = tour;
+        }
+
+        private static void ParseLine(GraphProblem graph, string line, ref List<int> tour) {
             if (string.IsNullOrWhiteSpace(line))
                 return;
             if (line.StartsWith("#"))
                 return;
 
             var splitted = line.Split(",");
+
+            /* A "t" line is as long as the tour, so it is length checked against its own rule. */
+            if (splitted[0] == "t") {
+                if (splitted.Length < 3)
+                    throw new FormatException($"A tour needs at least two nodes: '{line}'");
+
+                tour = new List<int>(splitted.Length - 1);
+                for (int i = 1; i < splitted.Length; i++) {
+                    if (!int.TryParse(splitted[i].Trim(), out var index))
+                        throw new FormatException($"'{splitted[i]}' is not a node index: '{line}'");
+
+                    tour.Add(index);
+                }
+
+                return;
+            }
 
             /* A short line used to throw IndexOutOfRangeException from deep inside the parser.
              * Reject it here so callers see a single, predictable FormatException. */
@@ -183,6 +255,15 @@ namespace TravellingSalesmanProblem.Graph {
             foreach (var edge in graph.Edges) {
                 sb.Append("e,").Append(edge.Node1Id).Append(",")
                     .Append(edge.Node2Id).Append(",").Append(edge.Value).AppendLine();
+            }
+
+            /* Round trips the starting tour, so a graph that was handed out with one keeps it. */
+            if (graph.StartTour != null && graph.StartTour.Count > 0) {
+                sb.Append("t");
+                foreach (var node in graph.StartTour)
+                    sb.Append(",").Append(node.Index);
+
+                sb.AppendLine();
             }
 
             return sb.ToString();

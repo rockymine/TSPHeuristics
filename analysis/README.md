@@ -28,6 +28,42 @@ machine and 452 is the code.
 `results/fixed/selection.json` compares the two Ant System transition rules over four budgets
 (see below).
 
+## Instance format and the starting tour
+
+```
+n,index,x,y          a node
+e,index,index,value  an edge (optional; the complete graph is built anyway)
+t,index,index,…      the starting tour, in visiting order (optional)
+```
+
+Simulated Annealing and Hill Climbing improve a tour, so they need one to start from, and they have
+always taken it from the order the nodes are listed in - implicitly, unchecked, and with no way to
+state a different order for the same points. A `t` line makes it explicit. It may be written open or
+closed (`t,0,2,1,3` and `t,0,2,1,3,0` are the same cycle) and is rejected with a specific message if
+it is not a permutation of the nodes. Without the line the node order is used exactly as before, so
+every existing instance file is unaffected. `SerializeGraph` writes the line back, so "Download
+Source" round trips it.
+
+This matters for exercises: a task usually hands out both the points and a tour to improve, and the
+tour is half of it.
+
+## Moves
+
+A move - a swap, a 2-opt exchange, a 3-opt reconnection, a double bridge - is an object
+(`ITourMove`) that knows its exact `Delta`, can `Describe()` itself as a rendered calculation, and
+can `Apply()` itself to the tour it was built on. `NeighbourState` only *selects* one according to
+the descent type; it no longer applies it as well.
+
+Before, selection and application were the same call, so the positions never left the method and
+nothing outside could ask for a specific move. Three-opt had no move type at all: it drew three cut
+points, scored the seven reconnections and applied the winner inside one static method. The seven
+are now a `ThreeOptReconnection` enum, and `ThreeOptMove.Best` is the policy that ranks them - the
+same ranking as before, so the tours are unchanged.
+
+`Tests.cli` pins this down: it walks every combination of cut points on a small tour and checks that
+each move's delta equals the actual change in tour length, that all seven reconnections are
+reachable, and that the position guards hold. Run it with `dotnet run --project Tests.cli`.
+
 ## Distance metrics
 
 TSPLIB fixes an edge weight type per instance, and the analysis depends on it: `burma14` and
