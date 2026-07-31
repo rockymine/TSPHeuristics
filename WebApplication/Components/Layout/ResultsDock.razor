@@ -11,7 +11,7 @@
     <div class="dock-tabs">
         @foreach (var tab in Available()) {
             <button type="button" class="dock-tab @(tab == Active ? "dock-tab--active" : null)"
-                    @onclick="() => Active = tab">@tab</button>
+                    @onclick="() => Select(tab)">@tab</button>
         }
         <div class="dock-actions">
             <button type="button" class="btn btn-sm btn-link" title="@(Collapsed ? "Expand" : "Collapse")"
@@ -44,6 +44,11 @@
     [Parameter] public RenderFragment Charts { get; set; }
     [Parameter] public RenderFragment Calculations { get; set; }
 
+    /* Raised after the selection changes. A tab's content is supplied by the parent, and a
+     * component that leaves the render tree loses its state, so the parent has to be given the
+     * chance to refill whatever comes back. */
+    [Parameter] public EventCallback OnTabChanged { get; set; }
+
     [Parameter] public bool HasTables { get; set; } = true;
     [Parameter] public bool HasCharts { get; set; }
     [Parameter] public bool HasCalculations { get; set; }
@@ -62,5 +67,13 @@
 
         if (Active == null || !available.Contains(Active))
             Active = available.FirstOrDefault();
+    }
+
+    private async Task Select(string tab) {
+        if (tab == Active)
+            return;
+
+        Active = tab;
+        await OnTabChanged.InvokeAsync();
     }
 }

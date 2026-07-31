@@ -209,7 +209,8 @@
                                    @bind-AnimationDelay="@AppState.AnimationDelay" />
         </div>
 
-        <ResultsDock HasCharts="@hasCharts" HasCalculations="@hasCalculations">
+        <ResultsDock HasCharts="@hasCharts" HasCalculations="@hasCalculations"
+                     OnTabChanged="OnDockTabChanged">
             <Tables>
                 @* Playing the search by hand means reading distances off the matrix while checking
                    them against the log of what has been played, so Manual Search shows both. *@
@@ -297,12 +298,21 @@
                 subscribedFileInput.LoadedFileChanged += OnLoadedFileChanged;
         }
 
-        /* The distance matrix only exists in the manual mode, so @ref assigns it during the render
-         * that follows the run - after UpdateVisualsFromGraphState has already been past. Without
-         * this it would stay empty until the next redraw. */
-        if (ShowsDistanceTable && AppState.DistanceTable is { HasData: false } && AppState.CurrentHistoryNode != null) {
-            AppState.DistanceTable.UpdateFromGraphState(
-                AppState.CurrentHistoryNode, AppState.AlgorithmEnum, AppState.NeighbourEnum);
+        /* A table holds its rows in its own state, filled by UpdateFromGraphState after a run. The
+         * dock renders only the selected tab, so switching away from Tables disposes the component
+         * and switching back creates an empty one; the distance matrix is likewise assigned by @ref
+         * only on the render after the run. Either way a table that is on screen without rows has
+         * to be filled here, on the render that follows its creation. */
+        if (AppState.CurrentHistoryNode != null) {
+            if (AppState.TableGenerator is { HasData: false }) {
+                AppState.TableGenerator.UpdateFromGraphState(
+                    AppState.CurrentHistoryNode, AppState.AlgorithmEnum, AppState.NeighbourEnum);
+            }
+
+            if (ShowsDistanceTable && AppState.DistanceTable is { HasData: false }) {
+                AppState.DistanceTable.UpdateFromGraphState(
+                    AppState.CurrentHistoryNode, AppState.AlgorithmEnum, AppState.NeighbourEnum);
+            }
         }
 
         return base.OnAfterRenderAsync(firstRender);
@@ -315,6 +325,13 @@
      * off the budget here. Kept as constants so the two places that have to agree are visible. */
     private const float CanvasPaneGap = 16;
     private const float CanvasPaneLabel = 30;
+    /* The canvas is content-box with a 1px border on each side, so its outer width is its drawing
+     * width plus two. Two panes that each claimed exactly half the stage would overflow it by four
+     * and the stage, which wraps, would drop the second canvas onto its own row. */
+    private const float CanvasPaneBorder = 2;
+
+    /* Re-renders so OnAfterRenderAsync runs and refills the table the dock has just rebuilt. */
+    private void OnDockTabChanged() => StateHasChanged();
 
     private DotNetObjectReference<GraphView> selfReference;
     private float stageWidth;
@@ -363,9 +380,9 @@
         var panes = ShowsPreviousCanvas ? 2 : 1;
 
         AppState.CanvasSettings.AvailableWidth =
-            Math.Max(1, (stageWidth - CanvasPaneGap * (panes - 1)) / panes);
+            Math.Max(1, (stageWidth - CanvasPaneGap * (panes - 1)) / panes - CanvasPaneBorder);
         AppState.CanvasSettings.AvailableHeight =
-            Math.Max(1, stageHeight - CanvasPaneLabel);
+            Math.Max(1, stageHeight - CanvasPaneLabel - CanvasPaneBorder);
     }
 
     public void Dispose() => selfReference?.Dispose();

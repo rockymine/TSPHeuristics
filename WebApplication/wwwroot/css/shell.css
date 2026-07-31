@@ -9,6 +9,12 @@
  * defaults to `min-height: auto`, which refuses to shrink below its content, so without these the
  * overflow simply escapes the container again and the page scrolls exactly as it did before. */
 
+/* Padding and borders count inside a declared width, so a rule like `width: 100%` on a padded
+   element stays inside its container. The canvas opts out below. */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 html, body {
   height: 100%;
   margin: 0;
@@ -214,6 +220,10 @@ html, body {
   display: block;
   max-width: none;
   padding: 0;
+  /* content-box, so the CSS width is exactly the drawing width and the pixel buffer maps onto it
+     one to one. Under border-box the border would be taken out of that width and the bitmap would
+     be resampled to fit what is left. */
+  box-sizing: content-box;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: #fff;
