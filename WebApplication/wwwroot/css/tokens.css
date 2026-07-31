@@ -39,6 +39,22 @@
   --color-error:    #f87171;
   --color-error-bg: #3b1d1d;
 
+  /* ── Canvas ──────────────────────────────────────────────────────────────
+     The drawing surface. These are read back through getComputedStyle and handed to the renderer,
+     because the canvas is painted from C# and cannot inherit a colour the way an element does.
+     Add one here and it has to be picked up in GetCanvasColors and CanvasPalette as well. */
+  --canvas-bg:        #131c2e;
+  --canvas-grid:      #263349;
+  --canvas-edge:      #e2e8f0;   /* tour edges: light lines on a dark surface */
+  --canvas-node:      #93c5fd;
+  --canvas-node-text: #0f172a;   /* the index, on the node fill */
+  --canvas-added:     #4ade80;   /* edge gained since the compared state */
+  --canvas-removed:   #f87171;   /* edge lost since the compared state */
+  --canvas-node-i:    #c084fc;   /* the two nodes a move acts on */
+  --canvas-node-j:    #fb923c;
+  --canvas-label-bg:  #3b82f6;   /* edge annotation chip */
+  --canvas-label-text: #ffffff;
+
   /* ── Type scale ──────────────────────────────────────────────────────── */
   --font-lg:   14px;
   --font-md:   13px;
@@ -98,4 +114,18 @@
   --color-error-bg: #fee2e2;
 
   --code-color: #0369a1;
+
+  /* Canvas: the values the drawing had before it was themed at all - a white surface with dark
+     edges - which is what the light theme wants anyway. */
+  --canvas-bg:        #ffffff;
+  --canvas-grid:      #cbd5e1;
+  --canvas-edge:      #0f172a;
+  --canvas-node:      #4e5072;
+  --canvas-node-text: #ffffff;
+  --canvas-added:     #16a34a;
+  --canvas-removed:   #dc2626;
+  --canvas-node-i:    #7c3aed;
+  --canvas-node-j:    #ea580c;
+  --canvas-label-bg:  #3f74a8;
+  --canvas-label-text: #ffffff;
 }

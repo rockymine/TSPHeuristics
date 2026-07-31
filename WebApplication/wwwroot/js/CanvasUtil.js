@@ -64,3 +64,25 @@ function SetTheme(theme) {
     try { localStorage.setItem("tsp-theme", theme); } catch (e) { /* private mode: not fatal */ }
     return theme;
 }
+
+/* The canvas is painted from C#, so it cannot inherit a colour the way an element does - the
+   values have to be read out of the stylesheet and handed over. Resolved against <html>, so they
+   already reflect whichever data-theme is active. */
+function GetCanvasColors() {
+    const s = getComputedStyle(document.documentElement);
+    const read = name => s.getPropertyValue(name).trim();
+
+    return {
+        background: read("--canvas-bg"),
+        grid: read("--canvas-grid"),
+        edge: read("--canvas-edge"),
+        node: read("--canvas-node"),
+        nodeText: read("--canvas-node-text"),
+        added: read("--canvas-added"),
+        removed: read("--canvas-removed"),
+        nodeI: read("--canvas-node-i"),
+        nodeJ: read("--canvas-node-j"),
+        labelBackground: read("--canvas-label-bg"),
+        labelText: read("--canvas-label-text")
+    };
+}

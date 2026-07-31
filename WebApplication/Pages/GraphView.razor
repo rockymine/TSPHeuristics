@@ -27,7 +27,7 @@
             <span class="app-topbar-meta">@AppState.Instance.Nodes.Count nodes</span>
         }
         <div class="app-topbar-right">
-            <ThemeToggle />
+            <ThemeToggle OnChanged="ReadCanvasPalette" />
             <button class="btn btn-outline-primary btn-sm" type="button" @onclick="() => helpPanel.Show()">
                 <Icon Name="circle-help" /> Help
             </button>
@@ -279,6 +279,7 @@
         if (firstRender) {
             _ = RunAnimationLoop();
             _ = ReadDevicePixelRatio();
+            _ = ReadCanvasPalette();
             _ = ObserveCanvasStage();
         }
 
@@ -372,6 +373,26 @@
     private class StageSize {
         public float Width { get; set; }
         public float Height { get; set; }
+    }
+
+    /* The canvas is painted rather than laid out, so it inherits nothing from the stylesheet: its
+     * colours have to be read out and handed to the renderer, and read again whenever the theme
+     * changes. */
+    private async Task ReadCanvasPalette() {
+        try {
+            var read = await JSRuntime.InvokeAsync<CanvasPalette>("GetCanvasColors");
+            CanvasRenderer.Palette.Apply(read);
+            AppState.BackgroundColor = CanvasRenderer.Palette.Background;
+            AppState.CanvasSettings.BackgroundColor = CanvasRenderer.Palette.Background;
+
+            if (AppState.GraphHistory != null)
+                await Redraw();
+            else
+                await ResetCanvases();
+        } catch (JSException) {
+            /* The defaults in CanvasPalette are the literals the renderer used before it was
+             * themed, so the drawing looks exactly as it always did. */
+        }
     }
 
     /* Read once: the ratio only changes if the window moves to a display with a different density,

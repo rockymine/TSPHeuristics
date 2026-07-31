@@ -15,16 +15,25 @@ namespace WebApplication.Utils {
          * out too small for the text it is drawn behind. */
         public const string EdgeTextFont = "15px serif";
 
-        private static readonly Brush EdgeBrush = new() {
-            Color = "black", Width = 2,
-            TextFont = EdgeTextFont, TextStyle = "black"
+        /* The colours the drawing uses, resolved from the stylesheet by GraphView. They were
+         * literals here, which is why the canvas stayed white while the rest of the application
+         * was dark: a canvas is painted rather than laid out, so it inherits nothing.
+         *
+         * A property rather than the readonly Brush fields these replace, because a brush built
+         * once at type-initialisation would freeze whichever theme happened to be active first. The
+         * brushes are built per draw call instead - once each, not once per node or edge. */
+        public static CanvasPalette Palette { get; set; } = new();
+
+        private static Brush EdgeBrush() => new() {
+            Color = Palette.Edge, Width = 2,
+            TextFont = EdgeTextFont, TextStyle = Palette.Edge
         };
-        private static readonly Brush NodeBrush = new() {
-            Color = "#4e5072", Width = 2, Style = FillStyle.Fill,
-            TextFont = "15px serif bold", TextStyle = "white"
+        private static Brush NodeBrush() => new() {
+            Color = Palette.Node, Width = 2, Style = FillStyle.Fill,
+            TextFont = "15px serif bold", TextStyle = Palette.NodeText
         };
-        private static readonly Brush GridBrush = new() {
-            Color = "#999999", Width = 0.75
+        private static Brush GridBrush() => new() {
+            Color = Palette.Grid, Width = 0.75
         };
 
         /* One grid line used to be one DrawLine, i.e. seven interop calls each. A 90x90 instance
@@ -44,7 +53,7 @@ namespace WebApplication.Utils {
                     Manipulate(new Vector2(i, settings.MaxPos.Y), settings)));
             }
 
-            await context.DrawLines(GridBrush, segments);
+            await context.DrawLines(GridBrush(), segments);
         }
 
         /* Nodes are grouped by fill colour so each colour is a single path, and all the index
@@ -52,7 +61,7 @@ namespace WebApplication.Utils {
         public static async Task DrawNodes(IContext2DWithoutGetters context, GraphState state,
             LinkedListNode<GraphState> currentStateNode, CanvasSettings settings) {
             var nodes = state.Nodes;
-            var brush = NodeBrush.Copy();
+            var brush = NodeBrush();
             var moveInfo = currentStateNode.Value.MoveInfo;
 
             var byColor = new Dictionary<string, List<Vector2>>();
@@ -76,18 +85,18 @@ namespace WebApplication.Utils {
                 await context.DrawCircles(brush, settings.NodeRadius, group.Value);
             }
 
-            await context.WriteTexts(NodeBrush.TextFont, NodeBrush.TextStyle, labels);
+            await context.WriteTexts(brush.TextFont, brush.TextStyle, labels);
         }
 
         private static string NodeColor(MoveInfo moveInfo, Node node) {
             if (moveInfo == null || moveInfo.Nodes.Count < 2)
-                return NodeBrush.Color;
+                return Palette.Node;
             if (node.Index == moveInfo.Nodes[0].Index)
-                return "purple";
+                return Palette.NodeI;
             if (node.Index == moveInfo.Nodes[1].Index)
-                return "orange";
+                return Palette.NodeJ;
 
-            return NodeBrush.Color;
+            return Palette.Node;
         }
 
         public static async Task DrawEdges(IContext2DWithoutGetters context, GraphState state,
@@ -99,17 +108,18 @@ namespace WebApplication.Utils {
              * brush.Width after a pheromone edge, so once one edge carried pheromone every
              * following edge inherited its width. */
             var groups = new Dictionary<(string Color, double Width), List<(Vector2, Vector2)>>();
+            var edgeBrush = EdgeBrush();
 
             var compare = state == stateNode.Value ? stateNode.Previous?.Value.PathEdges : stateNode.Value.PathEdges;
-            var changeColor = state == stateNode.Value ? "green" : "red";
+            var changeColor = state == stateNode.Value ? Palette.Added : Palette.Removed;
             var compareKeys = compare == null ? null : PathKeys(compare);
 
             foreach (var edge in edges) {
-                var color = EdgeBrush.Color;
+                var color = Palette.Edge;
                 if (compareKeys != null && !compareKeys.Contains(EdgeKey(edge)))
                     color = changeColor;
 
-                var width = edge.Pheromone != 0 ? edge.Pheromone * 500 : EdgeBrush.Width;
+                var width = edge.Pheromone != 0 ? edge.Pheromone * 500 : edgeBrush.Width;
                 var key = (color, width);
 
                 if (!groups.TryGetValue(key, out var group)) {
@@ -120,11 +130,14 @@ namespace WebApplication.Utils {
                 group.Add((Manipulate(edge.Node1.Position, settings), Manipulate(edge.Node2.Position, settings)));
             }
 
-            var brush = EdgeBrush.Copy();
             foreach (var group in groups) {
-                brush.Color = group.Key.Color;
-                brush.Width = group.Key.Width;
-                await context.DrawLines(brush, group.Value);
+                edgeBrush.Color = group.Key.Color;
+                edgeBrush.Width = group.Key.Width;
+                /* Lost edges are dashed as well as recoloured. This used to be decided inside the
+                 * drawing extension by comparing the colour to the string "red", which themed
+                 * colours would have quietly broken. */
+                edgeBrush.Dashed = group.Key.Color == Palette.Removed;
+                await context.DrawLines(edgeBrush, group.Value);
             }
 
             if (annotations != null)
@@ -175,7 +188,11 @@ namespace WebApplication.Utils {
 
         private static async Task DrawEdgeTextBoxes(IContext2DWithoutGetters context,
             IReadOnlyList<TextMetric> annotations, CanvasSettings settings) {
-            var brush = EdgeBrush.Copy();
+            /* The chip is not an edge: it has its own fill and its own text colour, and takes them
+             * from the brush so DrawTextBox holds no colours of its own. */
+            var brush = EdgeBrush();
+            brush.Color = Palette.LabelBackground;
+            brush.TextStyle = Palette.LabelText;
 
             foreach (var annotation in annotations) {
                 await context.DrawTextBox(brush, Manipulate(annotation.Position, settings),

@@ -11,6 +11,9 @@
 </button>
 
 @code {
+    /// <summary>Raised after the theme has been applied, so the canvas can re-read its colours.</summary>
+    [Parameter] public EventCallback OnChanged { get; set; }
+
     private string theme = "dark";
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
@@ -34,5 +37,6 @@
     private async Task Toggle() {
         theme = theme == "light" ? "dark" : "light";
         await JSRuntime.InvokeVoidAsync("SetTheme", theme);
+        await OnChanged.InvokeAsync();
     }
 }

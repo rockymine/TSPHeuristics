@@ -11,13 +11,17 @@ namespace WebApplication.Utils {
         public string TextStyle { get; set; }
         public FillStyle Style { get; set; }
 
+        /// <summary>Draw the stroke dashed. Marks an edge the tour has lost.</summary>
+        public bool Dashed { get; set; }
+
         public Brush Copy() {
             return new Brush {
                 Color = new string(Color),
                 Width = Width,
                 TextFont = new string(TextFont),
                 TextStyle = new string(TextStyle),
-                Style = Style
+                Style = Style,
+                Dashed = Dashed
             };
         }
     }
