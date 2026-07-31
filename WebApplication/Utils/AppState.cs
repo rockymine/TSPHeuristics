@@ -267,6 +267,8 @@ namespace WebApplication.Utils {
         public Canvas CurrentCanvas;
 
         public TableGenerator TableGenerator;
+        /* Only the manual mode shows a second table - the distance matrix the moves are read off. */
+        public TableGenerator DistanceTable;
         public ChartJS[] ChartJS = new ChartJS[5];
 
         //private GraphProblem Instance;
@@ -282,6 +284,7 @@ namespace WebApplication.Utils {
         public SimulatedAnnealing SimulatedAnnealing = new();
         public AntSystem AntSystem = new();
         public HillClimbing HillClimbing = new();
+        public ManualSearch ManualSearch = new();
 
         public FileInput FileInput = new();
         public FileOutput FileOutput = new();

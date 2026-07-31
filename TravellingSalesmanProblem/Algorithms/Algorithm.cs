@@ -27,6 +27,8 @@ namespace TravellingSalesmanProblem.Algorithms {
         NN = 0,
         SA = 1,
         AS = 3,
-        HC = 4
+        HC = 4,
+        /* Not a heuristic: the moves are chosen by hand, one at a time. See ManualSearch. */
+        Manual = 5
     }
 }

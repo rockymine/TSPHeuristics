@@ -27,12 +27,26 @@
         <div class="tab-content" id="myTabContent">
             <div class="tab-pane fade show active" id="home-tab-pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
                 <br/>
-                <p>In the <em>dropdown menu</em> you can choose between Nearest Neighbor, Simulated Annealing, Ant Algorithm 
-                    and Hill Climbing. The selection of the algorithm influences which parameters can be configured in the 
+                <p>In the <em>dropdown menu</em> you can choose between Nearest Neighbor, Simulated Annealing, Ant Algorithm,
+                    Hill Climbing and Manual Search. The selection of the algorithm influences which parameters can be configured in the
                     heuristic settings area.</p>
                 <h5>Multi-Start</h5>
-                <p>Additionally, the checkbox <em>Multi-Start</em> can be activated for Nearest Neighbor and Hill-Climbing. 
+                <p>Additionally, the checkbox <em>Multi-Start</em> can be activated for Nearest Neighbor and Hill-Climbing.
                     Instead of running the algorithm once, it will be run n times, depending on the number of nodes in the graph.</p>
+                <h5>Starting tour</h5>
+                <p>Simulated Annealing, Hill Climbing and Manual Search improve a tour, so they need one to start from. By
+                    default that is the order the nodes are listed in. To state a different one, add a line
+                    <code>t,index,index,&hellip;</code> to the graph text, listing every node once in visiting order. It may be
+                    written open or closed; anything that is not a tour of the given nodes is rejected with the reason.</p>
+                <h5>Manual Search</h5>
+                <p>Plays the search by hand: you choose each move yourself instead of letting a rule choose it. Pick the move
+                    type, pick the nodes it applies to, and the panel shows what the move would cost <em>before</em> it is
+                    applied - so a calculation done on paper can be checked against it. <em>Apply Move</em> adds it to the move
+                    history, and moves of different types can be chained in any order.</p>
+                <p>The two canvases show the tour before and after the last move, the distance matrix stands next to the move
+                    history so the edge lengths can be read off, and each row of the history carries the calculation that move
+                    actually used. <em>Undo</em> takes the last move back; stepping to an earlier state and applying something
+                    else replaces the continuation from there, so different lines of play can be compared.</p>
             </div>
             <div class="tab-pane fade" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
                 ...

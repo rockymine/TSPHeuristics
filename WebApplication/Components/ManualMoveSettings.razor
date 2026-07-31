@@ -1,0 +1,204 @@
+@using TravellingSalesmanProblem.Algorithms
+@using TravellingSalesmanProblem.Graph
+
+@* Chooses one move on the current tour. The nodes are picked by their own index rather than by
+   their position in the tour, because that is how an exercise is written down - "swap 3 and 7",
+   not "swap the second and the fifth entry". The preview shows what the move would cost before it
+   is applied, so a hand calculation can be checked against it. *@
+
+<div class="form-group">
+    <label for="selectMoveType">Move</label>
+    <select class="form-control" name="moveType" id="selectMoveType" @bind="MoveType">
+        <option value="Swap">Swap two nodes</option>
+        <option value="TwoOpt">2-opt exchange</option>
+        <option value="ThreeOpt">3-opt reconnection</option>
+        <option value="FourOpt">Double bridge (4-opt)</option>
+    </select>
+    <small class="form-text text-muted">@Explanation</small>
+</div>
+
+@if (Tour == null || !Choices.Any()) {
+    <p class="text-muted">Load a graph to start.</p>
+} else {
+    var move = BuildMove(out var message);
+
+    @for (int slot = 0; slot < Needed; slot++) {
+        var index = slot;
+        <div class="form-group">
+            <label for="@($"moveNode{index}")">@SlotLabel(index)</label>
+            <select class="form-control" id="@($"moveNode{index}")"
+                    value="@Selection[index]"
+                    @onchange="e => SetSelection(index, e.Value?.ToString())">
+                @foreach (var node in Choices) {
+                    <option value="@node.Index">@node.Index</option>
+                }
+            </select>
+        </div>
+    }
+
+    @if (MoveType == NeighbourType.ThreeOpt) {
+        <div class="form-group">
+            <label for="selectReconnection">Reconnection</label>
+            <select class="form-control" id="selectReconnection" @bind="Reconnection">
+                @foreach (ThreeOptReconnection option in Enum.GetValues(typeof(ThreeOptReconnection))) {
+                    <option value="@option">@ReconnectionLabel(option)</option>
+                }
+            </select>
+        </div>
+    }
+
+    <div class="custom-input-group" id="movePreview" style="margin-bottom: 0.5rem;">
+        @if (move != null) {
+            <span><strong>Change</strong>: @Math.Round(move.Delta, 3)</span>
+            <br />
+            <span class="text-muted">
+                @(move.Delta < 0 ? "shortens the tour"
+                  : move.Delta > 0 ? "lengthens the tour"
+                  : "leaves the length unchanged")
+            </span>
+        } else {
+            <span class="text-danger">@message</span>
+        }
+    </div>
+
+    <div class="d-grid gap-2">
+        <button type="button" class="btn btn-primary" id="applyMove" disabled="@(move == null)"
+                @onclick="() => Apply()">
+            Apply Move
+        </button>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="undoMove"
+                    disabled="@(!CanUndo)" @onclick="() => OnUndo.InvokeAsync()">
+                Undo
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="resetMoves"
+                    disabled="@(!CanUndo)" @onclick="() => OnReset.InvokeAsync()">
+                Back to start
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    /* The tour of the state currently shown, not of the last one: applying a move after stepping
+     * back has to build on what is on screen. */
+    [Parameter]
+    public GraphProblem Tour { get; set; }
+    [Parameter]
+    public bool CanUndo { get; set; }
+    [Parameter]
+    public EventCallback<ITourMove> OnApply { get; set; }
+    [Parameter]
+    public EventCallback OnUndo { get; set; }
+    [Parameter]
+    public EventCallback OnReset { get; set; }
+
+    private NeighbourType moveType = NeighbourType.Swap;
+    public NeighbourType MoveType {
+        get => moveType;
+        set {
+            if (value == moveType)
+                return;
+
+            moveType = value;
+            EnsureUsableSelection();
+        }
+    }
+
+    private ThreeOptReconnection reconnection = ThreeOptReconnection.ReverseFirst;
+    public ThreeOptReconnection Reconnection {
+        get => reconnection;
+        set => reconnection = value;
+    }
+
+    private readonly int[] Selection = new int[4];
+
+    private int Needed => MoveType switch {
+        NeighbourType.Swap or NeighbourType.TwoOpt => 2,
+        NeighbourType.ThreeOpt => 3,
+        _ => 4
+    };
+
+    /* The closing entry repeats the opening node, so offering it would let the same node be picked
+     * under two names. */
+    private IEnumerable<Node> Choices =>
+        Tour == null ? Enumerable.Empty<Node>()
+                     : Tour.Nodes.Take(Math.Max(0, Tour.Nodes.Count - 1));
+
+    private string Explanation => MoveType switch {
+        NeighbourType.Swap => "Exchanges the two nodes; the four edges around them are rebuilt.",
+        NeighbourType.TwoOpt => "Removes the edge leaving each node and reverses the piece between them.",
+        NeighbourType.ThreeOpt => "Cuts the tour in front of each node and reconnects the three pieces.",
+        _ => "Cuts the tour in front of each node and reassembles the pieces as a-d-c-b-a."
+    };
+
+    private string SlotLabel(int slot) => MoveType switch {
+        NeighbourType.Swap => slot == 0 ? "Exchange node" : "with node",
+        NeighbourType.TwoOpt => slot == 0 ? "Remove the edge leaving" : "and the edge leaving",
+        _ => slot == 0 ? "Cut in front of" : "and in front of"
+    };
+
+    private static string ReconnectionLabel(ThreeOptReconnection reconnection) => reconnection switch {
+        ThreeOptReconnection.ReverseFirst => "reverse the first piece",
+        ThreeOptReconnection.ReverseSecond => "reverse the second piece",
+        ThreeOptReconnection.SwapReverseFirst => "swap the pieces, reverse the first",
+        ThreeOptReconnection.Swap => "swap the pieces",
+        ThreeOptReconnection.SwapReverseBoth => "swap the pieces, reverse both",
+        ThreeOptReconnection.SwapReverseSecond => "swap the pieces, reverse the second",
+        _ => "reverse both pieces"
+    };
+
+    private ITourMove BuildMove(out string message) {
+        message = null;
+        if (Tour == null)
+            return null;
+
+        var positions = new List<int>();
+        for (int i = 0; i < Needed; i++) {
+            var position = ManualSearch.PositionOf(Tour, Selection[i]);
+            if (position < 0) {
+                message = "That node is not part of the current tour.";
+                return null;
+            }
+
+            positions.Add(position);
+        }
+
+        return ManualSearch.Build(Tour, MoveType, positions, Reconnection, out message);
+    }
+
+    private async Task Apply() {
+        var move = BuildMove(out _);
+        if (move != null)
+            await OnApply.InvokeAsync(move);
+    }
+
+    private void SetSelection(int slot, string value) {
+        if (int.TryParse(value, out var index))
+            Selection[slot] = index;
+    }
+
+    /* The tour changes under the panel after every applied move. Choices that still work are kept -
+     * a student comparing two moves on the same nodes should not have to re-enter them - and only a
+     * combination this move can no longer be built from is replaced. */
+    protected override void OnParametersSet() => EnsureUsableSelection();
+
+    private void EnsureUsableSelection() {
+        if (Tour == null)
+            return;
+        if (BuildMove(out _) != null)
+            return;
+
+        var nodes = Choices.ToList();
+        if (nodes.Count < Needed)
+            return;
+
+        /* Swaps and cuts cannot use the opening node of the tour, a 2-opt move can. */
+        var first = MoveType == NeighbourType.TwoOpt ? 0 : 1;
+        if (first + Needed > nodes.Count)
+            first = nodes.Count - Needed;
+
+        for (int i = 0; i < Needed; i++)
+            Selection[i] = nodes[first + i].Index;
+    }
+}

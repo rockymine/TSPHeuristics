@@ -56,6 +56,11 @@
                                            @bind-GlobalUpdatingRule="@AppState.GlobalUpdatingRule"
                                            @bind-SelectionRule="@AppState.SelectionRule" />
                         }
+                        @if (AppState.AlgorithmEnum == AlgorithmEnum.Manual) {
+                            <ManualMoveSettings Tour="@CurrentTour()" CanUndo="@(AppState.GraphHistory?.Count > 1)"
+                                            OnApply="ApplyManualMove" OnUndo="UndoManualMove"
+                                            OnReset="ResetManualMoves" />
+                        }
                     </form>
                 </div>
                 <hr class="custom-hr" />
@@ -176,15 +181,15 @@
                 <!-- Graph View -->
                 <div class="custom-input-group">
                     <h5 class="font-weight-bold">Graph View</h5>
-                    @if (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
-                        <h6>Previous (Iteration Start)</h6>
+                    @if (ShowsPreviousCanvas) {
+                        <h6>@(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Previous (Before the Move)" : "Previous (Iteration Start)")</h6>
                         <div class="row">
                             <Canvas @ref="@AppState.PreviousCanvas"
                                     width="@AppState.CanvasSettings.Width"
                                     height="@AppState.CanvasSettings.Height" />                            
                         </div>
                     }
-                    <h6>Current (Iteration End)</h6>
+                    <h6>@(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Current (After the Move)" : "Current (Iteration End)")</h6>
                     <div class="row">
                         <Canvas @ref="@AppState.CurrentCanvas"
                                 width="@AppState.CanvasSettings.Width"
@@ -242,6 +247,14 @@
                                 </ChartJS>
                             </div>
                         }
+                        @if (AppState.AlgorithmEnum is AlgorithmEnum.Manual) {
+                            <div class="col-md-12">
+                                <ChartJS @ref="@AppState.ChartJS[0]"
+                                 Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[0]"
+                                 ChartID="manual_distance">
+                                </ChartJS>
+                            </div>
+                        }
                     </div>
                     <hr class="custom-hr" />
                 }
@@ -249,6 +262,15 @@
                 <div class="custom-input-group">
                     <TableGenerator @ref="@AppState.TableGenerator" MaxCols="12" MaxRows="12" />
                 </div>
+                @* Playing the search by hand means reading distances off the matrix, so it has to be
+                   on screen next to the log of what has been played. *@
+                @if (AppState.AlgorithmEnum == AlgorithmEnum.Manual && AppState.GraphHistory != null) {
+                    <hr class="custom-hr" />
+                    <div class="custom-input-group">
+                        <TableGenerator @ref="@AppState.DistanceTable" Kind="TableKind.DistanceMatrix"
+                                    MaxCols="12" MaxRows="12" />
+                    </div>
+                }
             </div>
         </div>
     </div>
@@ -276,6 +298,14 @@
 
             if (subscribedFileInput != null)
                 subscribedFileInput.LoadedFileChanged += OnLoadedFileChanged;
+        }
+
+        /* The distance matrix only exists in the manual mode, so @ref assigns it during the render
+         * that follows the run - after UpdateVisualsFromGraphState has already been past. Without
+         * this it would stay empty until the next redraw. */
+        if (ShowsDistanceTable && AppState.DistanceTable is { HasData: false } && AppState.CurrentHistoryNode != null) {
+            AppState.DistanceTable.UpdateFromGraphState(
+                AppState.CurrentHistoryNode, AppState.AlgorithmEnum, AppState.NeighbourEnum);
         }
 
         return base.OnAfterRenderAsync(firstRender);
@@ -428,7 +458,7 @@
     }
 
     private async Task FillCanvases() {
-        if (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC) {
+        if (ShowsPreviousCanvas) {
             /* Stepping back to the first state left the "Previous" canvas showing whatever frame
              * was drawn last, because it was only ever painted when a previous state existed. */
             if (AppState.CurrentHistoryNode.Previous != null)
@@ -490,7 +520,7 @@
          * them AppState.PreviousCanvas still holds the removed component, and asking it for a
          * context throws because its element is no longer in the document - so the algorithm has
          * to be checked as well as the reference. */
-        if (AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC)
+        if (ShowsPreviousCanvas)
             await ResetCanvasOf(AppState.PreviousCanvas);
 
         await ResetCanvasOf(AppState.CurrentCanvas);
@@ -517,9 +547,56 @@
             await CanvasRenderer.DrawGrid(context, settings);
     }
 
+    /* The "Previous" canvas shows the state a step is taken from. Simulated Annealing and Hill
+     * Climbing use it for the iteration boundary, the manual mode for the tour before and after
+     * the move that was just applied - which is the whole point of playing one by hand. */
+    /* Only the manual mode has a second table, and AppState.DistanceTable keeps whatever @ref last
+     * put there - so after switching away it still points at a component that is no longer in the
+     * document. Same trap as the charts: the reference has to be checked together with the mode. */
+    private bool ShowsDistanceTable => AppState.AlgorithmEnum == AlgorithmEnum.Manual;
+
+    private bool ShowsPreviousCanvas =>
+        AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC or AlgorithmEnum.Manual;
+
+    /* The tour the move panel builds on: the one currently displayed, so that stepping back and
+     * applying something else works on what is on screen rather than on the last state. */
+    private GraphProblem CurrentTour() =>
+        AppState.CurrentHistoryNode == null ? null : ManualSearch.TourOf(AppState.CurrentHistoryNode.Value);
+
+    private async Task ApplyManualMove(ITourMove move) {
+        if (AppState.GraphHistory == null || AppState.CurrentHistoryNode == null || move == null)
+            return;
+
+        AppState.AutoAdvance = false;
+        AppState.CurrentHistoryNode =
+            AppState.ManualSearch.Apply(AppState.GraphHistory, AppState.CurrentHistoryNode, move);
+
+        await Redraw();
+    }
+
+    private async Task UndoManualMove() {
+        if (AppState.GraphHistory == null)
+            return;
+
+        AppState.AutoAdvance = false;
+        AppState.CurrentHistoryNode = ManualSearch.Undo(AppState.GraphHistory);
+        await Redraw();
+    }
+
+    private async Task ResetManualMoves() {
+        if (AppState.GraphHistory == null)
+            return;
+
+        AppState.AutoAdvance = false;
+        AppState.CurrentHistoryNode = ManualSearch.Reset(AppState.GraphHistory);
+        await Redraw();
+    }
+
     private async Task UpdateEnumerator() {
         AppState.Instance.Reset();
         AppState.TableGenerator.Reset();
+        if (ShowsDistanceTable)
+            AppState.DistanceTable?.Reset();
         await ResetCanvases();
 
         AppState.Stopwatch.Restart();
@@ -557,6 +634,11 @@
                     AppState.HillClimbing.MultiStart(AppState.Instance) :
                     AppState.HillClimbing.FindPath(AppState.Instance);
                 break;
+            case AlgorithmEnum.Manual:
+                /* Nothing is searched here. The history starts with the given tour and grows one
+                 * entry per move the user applies. */
+                AppState.GraphHistory = AppState.ManualSearch.FindPath(AppState.Instance);
+                break;
         }
 
         AppState.FileOutput.LoadedFile = GraphProblem.SerializeGraph(AppState.Instance);
@@ -569,6 +651,10 @@
 
     private async Task UpdateVisualsFromGraphState() {
         AppState.TableGenerator.UpdateFromGraphState(AppState.CurrentHistoryNode, AppState.AlgorithmEnum, AppState.NeighbourEnum);
+        if (ShowsDistanceTable) {
+            AppState.DistanceTable?.UpdateFromGraphState(
+                AppState.CurrentHistoryNode, AppState.AlgorithmEnum, AppState.NeighbourEnum);
+        }
 
         /* AppState.ChartJS keeps whatever @ref last put there, so after a run that rendered charts
          * the entries survive a switch to an algorithm that renders none - and updating one of
@@ -586,7 +672,7 @@
 
         return AppState.AlgorithmEnum switch {
             AlgorithmEnum.SA => Math.Min(2, available),
-            AlgorithmEnum.HC => Math.Min(1, available),
+            AlgorithmEnum.HC or AlgorithmEnum.Manual => Math.Min(1, available),
             _ => 0
         };
     }

@@ -79,7 +79,7 @@
 					<div class="modal-body">
 						@if (modalOpen) {
 							<TableGenerator @ref=modalTable CanShowModal="false"
-											MaxCols="ModalMaxCols" MaxRows="ModalMaxRows" />
+											MaxCols="ModalMaxCols" MaxRows="ModalMaxRows" Kind="Kind" />
 						}
 					</div>
 					<div class="modal-footer">
@@ -99,6 +99,11 @@
 	public int MaxCols { get; set; } = int.MaxValue - 1;
 	[Parameter]
 	public int MaxRows { get; set; } = int.MaxValue;
+	/* Which table to build. Auto follows the algorithm, which is what a single table per run needs;
+	 * the manual mode shows two at once and has to be able to ask for the distance matrix
+	 * regardless of what the algorithm would pick. */
+	[Parameter]
+	public TableKind Kind { get; set; } = TableKind.Auto;
 
 	/* The full table used to be part of every render, hidden behind the modal's CSS but present in
 	 * the DOM all the same - and the distance matrix has n*(n+1) cells, 40382 of them at n=200.
@@ -117,6 +122,8 @@
 	private AlgorithmEnum lastAlgorithm;
 	private NeighbourType lastNeighbour;
 
+	public bool HasData => tableInfo.HasData;
+
 	public void Reset() {
 		tableInfo = new TableInfo();
 		modalOpen = false;
@@ -134,7 +141,7 @@
 	/* @ref is assigned after the render that creates the child, so the freshly opened modal has to
 	 * be filled on the following render pass. */
 	protected override void OnAfterRender(bool firstRender) {
-		if (modalOpen && modalTable != null && !modalTable.tableInfo.HasData && lastNode != null) {
+		if (modalOpen && modalTable != null && !modalTable.HasData && lastNode != null) {
 			modalTable.UpdateFromGraphState(lastNode, lastAlgorithm, lastNeighbour);
 		}
 	}
@@ -164,9 +171,12 @@
 		lastNeighbour = neighbourType;
 		tableInfo.Header.Clear();
 
-		if (algorithmEnum == AlgorithmEnum.NN) {
+		if (Kind == TableKind.DistanceMatrix || (Kind == TableKind.Auto && algorithmEnum == AlgorithmEnum.NN)) {
 			title = "Distance Matrix";
 			CreateDistanceMatrix(node);
+		} else if (algorithmEnum == AlgorithmEnum.Manual) {
+			title = "Move History";
+			CreateMoveHistory(node);
 		} else if (algorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC &&
 			neighbourType is NeighbourType.Swap or NeighbourType.TwoOpt) {
 			title = "Neighbor Function History";
@@ -272,6 +282,31 @@
 		}
 
 		return grid;
+	}
+
+	/* A hand played search mixes move types, so the rule cannot come from a run level setting the
+	 * way it does for Hill Climbing and Simulated Annealing - each row states its own, and the
+	 * calculation column holds the numbers that move actually used. That is the column a student
+	 * checks their own arithmetic against. */
+	private void CreateMoveHistory(LinkedListNode<GraphState> node) {
+		tableInfo.Header = new List<string> { "#", "Move", "Nodes", "Tour", "$\\triangle$", "f(x)" };
+
+		var rows = new List<TableCellInfo[]>();
+		foreach (var state in HistoryUpTo(node)) {
+			var info = state.MoveInfo;
+
+			rows.Add(new[] {
+				new TableCellInfo(state.Iteration.ToString(), null),
+				new TableCellInfo(info == null ? "start" : ManualSearch.Label(info.Type), null),
+				new TableCellInfo(info == null ? "" : string.Join(", ", info.Nodes.Select(n => n.Index)), null),
+				new TableCellInfo("(" + string.Join("-", state.Path.Select(n => n.Index)) + ")", null),
+				new TableCellInfo(info?.Calculation ?? "", null),
+				new TableCellInfo(Math.Round(state.Distance, 3).ToString(),
+					info != null && info.Delta < 0 ? "table-light" : null)
+			});
+		}
+
+		tableInfo.Cells = ToGrid(rows, tableInfo.Header.Count);
 	}
 
 	private void CreateSwapSummary(LinkedListNode<GraphState> node, NeighbourType neighbourType) {

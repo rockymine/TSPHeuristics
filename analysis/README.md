@@ -64,6 +64,29 @@ same ranking as before, so the tours are unchanged.
 each move's delta equals the actual change in tour length, that all seven reconnections are
 reachable, and that the position guards hold. Run it with `dotnet run --project Tests.cli`.
 
+## Manual search
+
+`ManualSearch` is what the move objects were for. It is not a heuristic and decides nothing: its
+`FindPath` returns a history holding only the starting tour, and `Apply` extends it with a move
+chosen from outside. Everything downstream - the animation, the tables, the canvases - reads the
+same `LinkedList<GraphState>` it always did; only the producer differs.
+
+In the page it is the "Manual Search" heuristic. Pick a move type, pick the nodes it applies to, and
+the panel states what the move would cost before it is applied, so a calculation done on paper can
+be checked against it. Move types can be chained in any order - a swap, then a 3-opt reconnection,
+then a double bridge - which is why the move history table takes the rule from each row rather than
+from a run level setting, and why the distance matrix is on screen next to it.
+
+Applying a move to a state that is not the last one drops the entries after it. A history that kept
+both would no longer match what is drawn, and the point of stepping back is to try a different line
+of play, not to accumulate abandoned ones.
+
+Nodes are chosen by their own index rather than by their position in the tour, because that is how
+an exercise is written down - "swap 3 and 7", not "swap the second and the fifth entry". A
+combination the move cannot be built from is refused with the rule that forbids it: a swap needs the
+neighbours on both sides, so the first and last node of the tour cannot take part, while a 2-opt
+move only needs a successor and can start at the first.
+
 ## Distance metrics
 
 TSPLIB fixes an edge weight type per instance, and the analysis depends on it: `burma14` and

@@ -26,13 +26,15 @@ namespace Tests.cli {
             ThreeOptReconnections();
             ApplicabilityGuards();
             GivenStartTour();
+            ManualMoves();
 
             Console.WriteLine();
             Console.WriteLine(_failures == 0 ? "ALL PASS" : $"{_failures} FAILED");
             return _failures == 0 ? 0 : 1;
         }
 
-        private static GraphProblem Tour(int n, int seed) {
+        /* The instance as the page holds it: points and a complete graph, no closing entry. */
+        private static GraphProblem Instance(int n, int seed) {
             var graph = new GraphProblem();
             var random = new Random(seed);
 
@@ -43,8 +45,11 @@ namespace Tests.cli {
                 });
             }
 
-            return GraphProblem.OrderedGraphProblem(GraphProblem.ConnectedGraphProblem(graph));
+            return GraphProblem.ConnectedGraphProblem(graph);
         }
+
+        private static GraphProblem Tour(int n, int seed) =>
+            GraphProblem.OrderedGraphProblem(Instance(n, seed));
 
         private static string Route(GraphProblem graph) =>
             string.Join("-", graph.Nodes.Select(n => n.Index));
@@ -198,6 +203,92 @@ namespace Tests.cli {
 
             Check(Route(GraphProblem.OrderedGraphProblem(given.DeepCopy())) == "0-2-1-3-0",
                 "a deep copy keeps the tour, remapped onto its own nodes");
+        }
+
+        /* The manual mode is the one place where the move positions come from outside, and where
+         * the history is written to after the run rather than produced in one go. */
+        private static void ManualMoves() {
+            var manual = new ManualSearch();
+            var graph = GraphProblem.FromText(Square + "t,0,2,1,3\n");
+            var history = manual.FindPath(graph);
+
+            Check(history.Count == 1, "a manual session starts with the tour and nothing else", $"{history.Count} states");
+            Check(string.Join("-", history.First.Value.Path.Select(n => n.Index)) == "0-2-1-3-0",
+                "and that tour is the given one");
+
+            var tour = ManualSearch.TourOf(history.First.Value);
+            Check(ManualSearch.PositionOf(tour, 2) == 1, "a node is found at its opening position");
+            Check(ManualSearch.PositionOf(tour, 0) == 0, "the closing entry does not shadow the opening one");
+            Check(ManualSearch.PositionOf(tour, 9) == -1, "a node outside the tour has no position");
+
+            /* Swapping the two crossed nodes untangles the square. */
+            var move = ManualSearch.Build(tour, NeighbourType.Swap, new[] { 1, 2 },
+                ThreeOptReconnection.ReverseFirst, out var error);
+            Check(move != null && error == null, "a legal swap is built", error);
+            Check(move != null && Math.Abs(move.Delta - (40 - history.First.Value.Distance)) < 1e-9,
+                "and its delta is the change it will cause");
+
+            var applied = manual.Apply(history, history.First, move);
+            Check(history.Count == 2, "applying a move appends one state");
+            Check(string.Join("-", applied.Value.Path.Select(n => n.Index)) == "0-1-2-3-0",
+                "the new state holds the resulting tour",
+                string.Join("-", applied.Value.Path.Select(n => n.Index)));
+            Check(Math.Abs(applied.Value.Distance - 40) < 1e-9, "and its length", applied.Value.Distance.ToString("F3"));
+            Check(applied.Value.Iteration == 1, "the move counter advances");
+            Check(applied.Value.MoveInfo != null && applied.Value.MoveInfo.Type == NeighbourType.Swap,
+                "the state records which rule produced it");
+
+            /* Applying to an earlier state replaces the continuation rather than growing a second
+             * branch the display could not show. */
+            var alternative = ManualSearch.Build(ManualSearch.TourOf(history.First.Value),
+                NeighbourType.TwoOpt, new[] { 0, 2 }, ThreeOptReconnection.ReverseFirst, out _);
+            var branched = manual.Apply(history, history.First, alternative);
+            Check(history.Count == 2, "applying to an earlier state drops what followed it", $"{history.Count} states");
+            Check(history.Last == branched, "and the new move is the last entry");
+
+            manual.Apply(history, history.Last, ManualSearch.Build(ManualSearch.TourOf(history.Last.Value),
+                NeighbourType.Swap, new[] { 1, 2 }, ThreeOptReconnection.ReverseFirst, out _));
+            Check(history.Count == 3, "moves chain", $"{history.Count} states");
+
+            var undone = ManualSearch.Undo(history);
+            Check(history.Count == 2 && history.Last == undone, "undo removes the last move");
+
+            var reset = ManualSearch.Reset(history);
+            Check(history.Count == 1 && history.First == reset, "back to start leaves only the given tour");
+            Check(string.Join("-", reset.Value.Path.Select(n => n.Index)) == "0-2-1-3-0",
+                "which is still the given tour");
+            Check(ManualSearch.Undo(history) == history.First, "undo on the starting tour does nothing");
+
+            /* The panel offers every node, so the rejection has to explain itself rather than
+             * throwing out of an index. */
+            var square = ManualSearch.TourOf(manual.FindPath(GraphProblem.FromText(Square)).First.Value);
+            ManualSearch.Build(square, NeighbourType.Swap, new[] { 0, 2 }, ThreeOptReconnection.ReverseFirst, out var swapError);
+            Check(swapError != null && swapError.Contains("first and the last node"),
+                "a swap involving the opening node is refused with a reason", swapError);
+
+            ManualSearch.Build(square, NeighbourType.Swap, new[] { 1, 1 }, ThreeOptReconnection.ReverseFirst, out var sameError);
+            Check(sameError != null && sameError.Contains("distinct"), "the same node twice is refused", sameError);
+
+            ManualSearch.Build(square, NeighbourType.ThreeOpt, new[] { 1, 2 }, ThreeOptReconnection.ReverseFirst, out var countError);
+            Check(countError != null && countError.Contains("3 distinct nodes"),
+                "too few nodes for the move type is refused", countError);
+
+            /* Every move type has to be reachable from the panel on a tour of reasonable size. */
+            var wide = ManualSearch.TourOf(new ManualSearch().FindPath(Instance(8, 4)).First.Value);
+            foreach (var type in new[] { NeighbourType.Swap, NeighbourType.TwoOpt,
+                                         NeighbourType.ThreeOpt, NeighbourType.FourOpt }) {
+                var positions = type switch {
+                    NeighbourType.Swap => new[] { 1, 2 },
+                    NeighbourType.TwoOpt => new[] { 0, 2 },
+                    NeighbourType.ThreeOpt => new[] { 1, 2, 3 },
+                    _ => new[] { 1, 2, 3, 4 }
+                };
+
+                var built = ManualSearch.Build(wide, type, positions, ThreeOptReconnection.Swap, out var message);
+                Check(built != null, $"{ManualSearch.Label(type)} can be built from the panel's first choices", message);
+                Check(built == null || Math.Abs(built.Apply().Costs - wide.Costs - built.Delta) < 1e-9,
+                    $"{ManualSearch.Label(type)} preview matches what applying it does");
+            }
         }
 
         private static string Rejected(string text) {
