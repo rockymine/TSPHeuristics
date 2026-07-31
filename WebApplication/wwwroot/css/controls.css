@@ -183,8 +183,21 @@ textarea.form-control {
 .table th { color: var(--text-bright); font-weight: 600; }
 .table tbody tr:hover td { background: var(--bg-raised); }
 
-/* The renderer marks cells on the current tour by setting a class on them. */
-.table td.highlight, .table .table-active { background: var(--bg-selected); color: var(--text-strong); }
+/* Cells are marked by TableGenerator setting a class string on TableCellInfo, so these names come
+   from C# rather than from any markup - which is how they were missed when the Bootstrap
+   stylesheet went and the highlighting quietly stopped.
+
+   .table-light marks a cell that matters right now: an edge of the current tour in the distance
+   matrix, and a move that shortened the tour in the move history. */
+.table td.table-light {
+  background: var(--bg-selected);
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+/* Bootstrap 4 spelling, still used for the leading index column of the distance matrix. Kept
+   rather than renamed so the C# and the stylesheet agree; the intent is simply bold. */
+.font-weight-bold { font-weight: 700; color: var(--text-bright); }
 
 /* ══════════════════════════════════════════════════════════════════════════
    TEXT AND SMALL UTILITIES
