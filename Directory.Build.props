@@ -1,0 +1,26 @@
+<Project>
+
+  <!--
+    The repository lives on a VirtualBox shared folder: the same directory is C:\...\repos on the
+    Windows host and /media/sf_repos in the Linux guest. Both sides build it, and by default both
+    would restore into the same obj/, which does not work - the generated
+    obj/*.nuget.g.props / .targets record an absolute NuGetPackageRoot and use the host's path
+    separator, so whichever OS restored last leaves the other with imports it cannot resolve.
+
+    Two symptoms came from exactly that:
+      - Visual Studio reported "A NuGet restore loop has been detected", because each restore
+        invalidated the other side's project.assets.json and triggered another one.
+      - `dotnet run` in the guest failed with "libhostpolicy.so not found". The DevServer targets
+        are imported through a backslash path, which resolves to nothing on Linux, so RunCommand
+        was never set and the SDK fell back to executing the browser-wasm assembly directly.
+
+    Giving each OS its own intermediate and output directory keeps the two builds apart.
+    $(OS) is "Windows_NT" on the host and "Unix" in the guest. Both stay under bin/ and obj/, so
+    the existing .gitignore rules still cover them.
+  -->
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>$(MSBuildProjectDirectory)/obj/$(OS)/</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(MSBuildProjectDirectory)/bin/$(OS)/</BaseOutputPath>
+  </PropertyGroup>
+
+</Project>
