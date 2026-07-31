@@ -29,7 +29,7 @@
         <div class="app-topbar-right">
             <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="offcanvas"
                     data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions">
-                <i class="bi bi-question-lg"></i> Help
+                <Icon Name="circle-help" /> Help
             </button>
         </div>
     </Topbar>
@@ -122,36 +122,36 @@
         <div class="run-bar">
             <button class="btn btn-primary btn-sm" type="button"
                     @onclick="e => InitiateGraph(AppState.GraphSource)">
-                <i class="bi bi-play-fill"></i> Run
+                <Icon Name="play" /> Run
             </button>
             @if (hasHistory) {
                 <div class="run-bar-transport">
                     <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
                             class="btn btn-primary btn-sm" title="Jump First" @onclick="e => JumpFirst()">
-                        <i class="bi bi-chevron-double-left"></i>
+                        <Icon Name="chevrons-left" />
                     </button>
                     <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
                             class="btn btn-primary btn-sm" title="Reverse" @onclick="e => ReverseHistory()">
-                        <i class="bi bi-chevron-left"></i>
+                        <Icon Name="chevron-left" />
                     </button>
                     @if (AppState.AutoAdvance) {
                         <button type="button" class="btn btn-primary btn-sm" title="Pause"
                                 @onclick="e => AppState.AutoAdvance = false">
-                            <i class="bi bi-pause"></i>
+                            <Icon Name="pause" />
                         </button>
                     } else {
                         <button type="button" class="btn btn-primary btn-sm" title="Play"
                                 @onclick="e => AppState.AutoAdvance = true">
-                            <i class="bi bi-play"></i>
+                            <Icon Name="play" />
                         </button>
                     }
                     <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
                             class="btn btn-primary btn-sm" title="Advance" @onclick="e => AdvanceHistory()">
-                        <i class="bi bi-chevron-right"></i>
+                        <Icon Name="chevron-right" />
                     </button>
                     <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
                             class="btn btn-primary btn-sm" title="Jump Last" @onclick="e => JumpLast()">
-                        <i class="bi bi-chevron-double-right"></i>
+                        <Icon Name="chevrons-right" />
                     </button>
                 </div>
                 <div class="run-bar-readout">

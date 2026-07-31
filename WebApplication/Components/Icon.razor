@@ -1,0 +1,50 @@
+@namespace WebApplication.Components
+
+@* Icons as inline SVG. The shapes are vendored below rather than pulled from a font or a script:
+   an icon font ships every glyph to draw a dozen, and a CDN script is a dependency that fails
+   quietly offline - which the Chart.js tag at the top of index.html already demonstrates.
+
+   Inline SVG also inherits currentColor, so an icon takes the colour of whatever it sits in and
+   follows a theme without a second definition.
+
+   Shapes are from Lucide (https://lucide.dev), ISC licensed:
+     Copyright (c) Lucide Icons and Contributors
+     Permission to use, copy, modify, and/or distribute this software for any purpose with or
+     without fee is hereby granted, provided that the above copyright notice and this permission
+     notice appear in all copies.
+
+   To add one, copy the contents of the <svg> element from the Lucide source for that icon. *@
+
+<svg class="icon @Class" width="@Size" height="@Size" viewBox="0 0 24 24" fill="none"
+     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+     aria-hidden="true" focusable="false">@Shapes</svg>
+
+@code {
+    /// <summary>Lucide icon name, e.g. "play". An unknown name renders an empty square.</summary>
+    [Parameter] public string Name { get; set; }
+
+    /// <summary>Edge length in CSS pixels. 16 sits correctly on the small buttons.</summary>
+    [Parameter] public int Size { get; set; } = 16;
+
+    [Parameter] public string Class { get; set; }
+
+    private MarkupString Shapes =>
+        (MarkupString)(Name != null && Paths.TryGetValue(Name, out var shapes) ? shapes : string.Empty);
+
+    private static readonly Dictionary<string, string> Paths = new() {
+        ["chevrons-left"] = """<path d="m11 17-5-5 5-5" /><path d="m18 17-5-5 5-5" />""",
+        ["chevrons-right"] = """<path d="m6 17 5-5-5-5" /><path d="m13 17 5-5-5-5" />""",
+        ["chevron-left"] = """<path d="m15 18-6-6 6-6" />""",
+        ["chevron-right"] = """<path d="m9 18 6-6-6-6" />""",
+        ["chevron-up"] = """<path d="m18 15-6-6-6 6" />""",
+        ["chevron-down"] = """<path d="m6 9 6 6 6-6" />""",
+        ["minus"] = """<path d="M5 12h14" />""",
+        ["plus"] = """<path d="M5 12h14" /><path d="M12 5v14" />""",
+        ["download"] = """<path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" />""",
+        ["pause"] = """<rect x="14" y="3" width="5" height="18" rx="1" /><rect x="5" y="3" width="5" height="18" rx="1" />""",
+        ["play"] = """<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" />""",
+        ["circle-help"] = """<circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" />""",
+        ["ellipsis"] = """<circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" />""",
+        ["ellipsis-vertical"] = """<circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" />""",
+    };
+}

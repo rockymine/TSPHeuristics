@@ -303,6 +303,19 @@ html, body {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
+   ICONS — inline SVG, so they take the colour of whatever they sit in.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.icon {
+  display: inline-block;
+  vertical-align: -0.15em;   /* sits on the text baseline rather than above it */
+  flex-shrink: 0;
+}
+
+/* A button holding only an icon should be square, not text-width. */
+.btn .icon { vertical-align: -0.15em; }
+
+/* ══════════════════════════════════════════════════════════════════════════
    SCROLLBARS — the default light scrollbars are jarring on these surfaces.
    ══════════════════════════════════════════════════════════════════════════ */
 
