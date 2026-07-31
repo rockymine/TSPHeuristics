@@ -53,3 +53,14 @@ function ObserveCanvasStage(dotNetRef) {
 
     return MeasureCanvasStage(el);
 }
+/* Theme selection. The value is read back by the toggle so the button can show the right icon,
+   and applied to <html> where the token overrides in tokens.css hang off it. */
+function GetTheme() {
+    return document.documentElement.getAttribute("data-theme") || "dark";
+}
+
+function SetTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    try { localStorage.setItem("tsp-theme", theme); } catch (e) { /* private mode: not fatal */ }
+    return theme;
+}

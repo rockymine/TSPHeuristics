@@ -47,7 +47,7 @@
         </div>
     }
 
-    <div class="custom-input-group" id="movePreview" style="margin-bottom: 0.5rem;">
+    <div class="readout-box" id="movePreview" style="margin-bottom: 0.5rem;">
         @if (move != null) {
             <span><strong>Change</strong>: @Math.Round(move.Delta, 3)</span>
             <br />
@@ -61,7 +61,7 @@
         }
     </div>
 
-    <div class="d-grid gap-2">
+    <div class="stack">
         <button type="button" class="btn btn-primary" id="applyMove" disabled="@(move == null)"
                 @onclick="() => Apply()">
             Apply Move

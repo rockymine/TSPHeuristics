@@ -25,6 +25,10 @@
   --text-primary:   #cbd5e1;   /* body text */
   --text-bright:    #e2e8f0;   /* headings */
   --text-strong:    #ffffff;   /* active chrome */
+  --text-white:     #ffffff;   /* text on a SATURATED accent fill - stays light in every theme */
+
+  /* ── Code ────────────────────────────────────────────────────────────── */
+  --code-color: #7dd3fc;
 
   /* ── Accent ──────────────────────────────────────────────────────────── */
   --accent:       #3b82f6;
@@ -59,4 +63,39 @@
 
   /* ── Motion ──────────────────────────────────────────────────────────── */
   --transition-fast: 0.12s ease;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   LIGHT THEME — colour overrides only; the structural tokens above (spacing,
+   radii, type, widths, motion) are shared. Selected by data-theme on <html>,
+   which the inline script in index.html sets before any stylesheet loads so
+   there is no flash of the wrong theme on boot.
+   ════════════════════════════════════════════════════════════════════════════ */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Elevation inverts: a raised surface is lighter, not darker. */
+  --bg-base:     #f1f5f9;
+  --bg-panel:    #ffffff;
+  --bg-deep:     #e2e8f0;
+  --bg-raised:   #e2e8f0;
+  --bg-selected: #bfdbfe;
+
+  --border: #cbd5e1;
+
+  --text-muted:     #586780;
+  --text-secondary: #475569;
+  --text-primary:   #1e293b;
+  --text-bright:    #0f172a;
+  --text-strong:    #0f172a;
+  /* --text-white stays white: it is the text on a saturated accent fill. */
+
+  /* The lighter accent steps darken, because on a light surface they are read
+     as text rather than as a fill. */
+  --accent-light: #2563eb;
+
+  --color-error:    #b91c1c;
+  --color-error-bg: #fee2e2;
+
+  --code-color: #0369a1;
 }

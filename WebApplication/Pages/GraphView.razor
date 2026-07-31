@@ -27,6 +27,7 @@
             <span class="app-topbar-meta">@AppState.Instance.Nodes.Count nodes</span>
         }
         <div class="app-topbar-right">
+            <ThemeToggle />
             <button class="btn btn-outline-primary btn-sm" type="button" @onclick="() => helpPanel.Show()">
                 <Icon Name="circle-help" /> Help
             </button>
@@ -64,7 +65,7 @@
                     <FileInput @ref="@AppState.FileInput" />
                 }
                 @if (AppState.Instance != null) {
-                    <div class="d-grid gap-2 mx-auto" style="margin-top: 0.5rem;">
+                    <div class="stack" style="margin-top: 0.5rem;">
                         <FileOutput @ref="@AppState.FileOutput" />
                     </div>
                 }
@@ -225,16 +226,12 @@
             <Charts>
                 @if (hasCharts) {
                     @if (AppState.AlgorithmEnum is AlgorithmEnum.SA) {
-                        <div class="row">
-                            <div class="col-md-6">
-                                <ChartJS @ref="@AppState.ChartJS[0]"
-                                         Chart="@state.ChartInfo[0]" ChartID="sa_temperature" />
-                            </div>
+                        <div class="chart-grid">
+                            <ChartJS @ref="@AppState.ChartJS[0]"
+                                     Chart="@state.ChartInfo[0]" ChartID="sa_temperature" />
                             @if (state.ChartInfo.Count >= 2) {
-                                <div class="col-md-6">
-                                    <ChartJS @ref="@AppState.ChartJS[1]"
-                                             Chart="@state.ChartInfo[1]" ChartID="sa_distance" />
-                                </div>
+                                <ChartJS @ref="@AppState.ChartJS[1]"
+                                         Chart="@state.ChartInfo[1]" ChartID="sa_distance" />
                             }
                         </div>
                     }

@@ -5,10 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Master Thesis Project</title>
     <base href="/" />
-    <!--<link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />-->
-    <link href="lib/bootstrap-dark-5/dist/css/bootstrap-night.min.css" rel="stylesheet" />
+    <!-- Set the theme before any stylesheet loads, so the page never paints in one theme
+         and then flips to the other. -->
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem("tsp-theme");
+                document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
+            } catch (e) {
+                document.documentElement.setAttribute("data-theme", "dark");
+            }
+        })();
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
     <link href="css/tokens.css" rel="stylesheet" />
+    <link href="css/controls.css" rel="stylesheet" />
     <link href="css/shell.css" rel="stylesheet" />
     <link href="css/app.css" rel="stylesheet" />
 </head>

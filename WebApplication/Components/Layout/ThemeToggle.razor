@@ -1,0 +1,38 @@
+@namespace WebApplication.Components
+@inject IJSRuntime JSRuntime
+
+@* Switches between the dark and light token sets. The attribute the tokens hang off is set on
+   <html> by an inline script in index.html before any stylesheet loads, so the first paint is
+   already in the right theme; this only changes it afterwards and remembers the choice. *@
+
+<button type="button" class="btn btn-link btn-sm" title="@(theme == "light" ? "Switch to dark" : "Switch to light")"
+        aria-label="Toggle theme" @onclick="Toggle">
+    <Icon Name="@(theme == "light" ? "moon" : "sun")" />
+</button>
+
+@code {
+    private string theme = "dark";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (!firstRender)
+            return;
+
+        /* Read what the inline script decided rather than assuming, so the icon matches the theme
+         * that is actually on screen - including the one restored from a previous visit. */
+        try {
+            var current = await JSRuntime.InvokeAsync<string>("GetTheme");
+
+            if (current != theme) {
+                theme = current;
+                StateHasChanged();
+            }
+        } catch (JSException) {
+            /* Leave the default; the button still works. */
+        }
+    }
+
+    private async Task Toggle() {
+        theme = theme == "light" ? "dark" : "light";
+        await JSRuntime.InvokeVoidAsync("SetTheme", theme);
+    }
+}
