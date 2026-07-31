@@ -215,7 +215,7 @@ namespace TravellingSalesmanProblem.Graph {
     }
 
     public enum DistanceMetric {
-        /* Plain euclidean length, what the application has always used. */
+        /* Plain euclidean length; the default. */
         Euclidean,
         /* TSPLIB EUC_2D: euclidean length rounded to the nearest integer. */
         Euclidean2D,
