@@ -61,34 +61,32 @@
 	<!-- Table expansion through modal -->
 	@if (CanShowModal) {
 		@if (rows < tableInfo.Cells.GetLength(0) || cols < tableInfo.Cells.GetLength(1)) {
-			<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal"
-					@onclick="OpenModal">
-				Show Full Table
+			<button type="button" class="btn btn-primary" @onclick="OpenModal">
+				<Icon Name="maximize" /> Show Full Table
 			</button>
 		}
 
-		<!-- Modal -->
-		<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-			<div class="modal-dialog modal-full-width">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
-								@onclick="CloseModal"></button>
-					</div>
-					<div class="modal-body">
-						@if (modalOpen) {
-							<TableGenerator @ref=modalTable CanShowModal="false"
-											MaxCols="ModalMaxCols" MaxRows="ModalMaxRows" Kind="Kind" />
-						}
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-								@onclick="CloseModal">Close</button>
-					</div>
+		@* Rendered only while open. It always was built that way for cost - the full matrix is
+		   40 382 cells at 200 nodes - and the visibility now follows the same state, instead of a
+		   script toggling classes on markup that sat in the document either way. *@
+		@if (modalOpen) {
+			<div class="dialog-backdrop" @onclick="CloseModal"></div>
+			<div class="dialog" role="dialog" aria-label="Full table">
+				<div class="dialog-header">
+					<h2 class="dialog-title">Full table</h2>
+					<button type="button" class="overlay-close" aria-label="Close" @onclick="CloseModal">
+						<Icon Name="x" Size="20" />
+					</button>
+				</div>
+				<div class="dialog-body">
+					<TableGenerator @ref=modalTable CanShowModal="false"
+									MaxCols="ModalMaxCols" MaxRows="ModalMaxRows" Kind="Kind" />
+				</div>
+				<div class="dialog-footer">
+					<button type="button" class="btn btn-secondary" @onclick="CloseModal">Close</button>
 				</div>
 			</div>
-		</div>
+		}
 	}
 }
 

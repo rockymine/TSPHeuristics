@@ -27,8 +27,7 @@
             <span class="app-topbar-meta">@AppState.Instance.Nodes.Count nodes</span>
         }
         <div class="app-topbar-right">
-            <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="offcanvas"
-                    data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions">
+            <button class="btn btn-outline-primary btn-sm" type="button" @onclick="() => helpPanel.Show()">
                 <Icon Name="circle-help" /> Help
             </button>
         </div>
@@ -264,10 +263,12 @@
     </Workspace>
 </AppShell>
 
-<Help />
+<Help @ref="helpPanel" />
 
 @code {
     private AppState AppState = new();
+
+    private Help helpPanel;
 
     private FileInput subscribedFileInput;
 

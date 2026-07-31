@@ -1,0 +1,37 @@
+@namespace WebApplication.Components
+
+@* A titled section that expands and collapses, holding its own state in C#.
+
+   Bootstrap's accordion did this by toggling classes on markup Blazor does not control, which is
+   how the Help panel once came to render an empty body: the pane was missing "show active", and
+   nothing in the DOM said so - the text was present, just invisible. State the renderer owns
+   cannot drift from what is drawn.
+
+   Sections are independent rather than mutually exclusive, which the data-bs-parent grouping made
+   them. In a help panel it is reasonable to want two open at once. *@
+
+<section class="disclosure">
+    <button type="button" class="disclosure-trigger" @onclick="() => expanded = !expanded"
+            aria-expanded="@expanded.ToString().ToLowerInvariant()">
+        @Title
+        <Icon Name="@(expanded ? "chevron-up" : "chevron-down")" />
+    </button>
+    @if (expanded) {
+        <div class="disclosure-panel">
+            @ChildContent
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter] public string Title { get; set; }
+
+    /// <summary>Whether the section starts expanded.</summary>
+    [Parameter] public bool Open { get; set; }
+
+    [Parameter] public RenderFragment ChildContent { get; set; }
+
+    private bool expanded;
+
+    protected override void OnInitialized() => expanded = Open;
+}

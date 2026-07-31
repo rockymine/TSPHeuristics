@@ -303,6 +303,149 @@ html, body {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
+   OVERLAYS AND DISCLOSURE — the drawer, the dialog, tab strips, accordions.
+
+   Deliberately not named .offcanvas / .modal / .accordion / .nav-tabs: the Bootstrap stylesheet is
+   still loaded at this point, and reusing its class names would mean two sets of rules fighting
+   over the same elements.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.drawer-backdrop, .dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.5);
+  z-index: 1000;
+}
+
+/* ── Drawer: a panel down the right-hand edge (the Help panel) ───────────── */
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(560px, 92vw);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 24px rgb(0 0 0 / 0.35);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-title { margin: 0; font-size: var(--font-lg); color: var(--text-bright); }
+.drawer-body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-4); }
+
+/* ── Dialog: centred overlay (the full distance matrix) ─────────────────── */
+
+.dialog {
+  position: fixed;
+  inset: var(--space-5);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.45);
+}
+
+.dialog-header, .dialog-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-4);
+}
+.dialog-header { border-bottom: 1px solid var(--border); }
+.dialog-footer { border-top: 1px solid var(--border); justify-content: flex-end; }
+.dialog-title { margin: 0; font-size: var(--font-lg); color: var(--text-bright); }
+.dialog-body { flex: 1; min-height: 0; overflow: auto; padding: var(--space-4); }
+
+/* The close affordance shared by both. */
+.overlay-close {
+  margin-left: auto;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  line-height: 0;
+}
+.overlay-close:hover { color: var(--text-strong); background: var(--bg-raised); }
+
+/* ── Tab strip ───────────────────────────────────────────────────────────── */
+
+.tabstrip {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-4);
+}
+
+.tabstrip-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-md);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.tabstrip-tab:hover { color: var(--text-bright); }
+.tabstrip-tab--active { color: var(--text-strong); border-bottom-color: var(--accent); }
+
+/* ── Disclosure (accordion) ─────────────────────────────────────────────── */
+
+.disclosure {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.disclosure + .disclosure { margin-top: var(--space-2); }
+
+.disclosure-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  appearance: none;
+  border: 0;
+  text-align: left;
+  background: var(--bg-raised);
+  color: var(--text-bright);
+  font-size: var(--font-md);
+  font-weight: 600;
+  padding: var(--space-3) var(--space-3);
+  cursor: pointer;
+}
+.disclosure-trigger:hover { background: var(--bg-selected); }
+.disclosure-trigger .icon { margin-left: auto; }
+
+.disclosure-panel {
+  padding: var(--space-3);
+  border-top: 1px solid var(--border);
+  font-size: var(--font-base);
+  color: var(--text-primary);
+}
+.disclosure-panel h5 { font-size: var(--font-md); color: var(--text-bright); margin: 0 0 var(--space-2); }
+.disclosure-panel h6 { font-size: var(--font-base); color: var(--text-secondary); margin: var(--space-3) 0 var(--space-1); }
+.disclosure-panel p { margin: 0 0 var(--space-2); }
+
+/* ══════════════════════════════════════════════════════════════════════════
    ICONS — inline SVG, so they take the colour of whatever they sit in.
    ══════════════════════════════════════════════════════════════════════════ */
 
