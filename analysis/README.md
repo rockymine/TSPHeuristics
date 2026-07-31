@@ -170,8 +170,7 @@ reverses, and only the proportional rule ever reaches an optimum (`burma14` 3323
 ## Reproducing
 
 ```bash
-# .NET 6 is out of support; the SDK 8 build runs on the 8.0 runtime via roll-forward.
-export DOTNET_ROLL_FORWARD=Major
+# The projects target net10.0 and build on the .NET 10 SDK with no roll-forward needed.
 dotnet build -c Release
 
 python3 convert.py                       # only needed to rebuild the instance files
