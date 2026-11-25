@@ -125,6 +125,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Messages["Iteration"] = state.Iteration.ToString();
             state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
             state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
-            state.Messages["Temperature"] = state.Temperature.ToString();
+            /* Four significant digits: the schedule spans ten orders of magnitude, so a fixed number of
+             * decimals either prints sixteen digits early on or rounds to 0 late in the run. */
+            state.Messages["Temperature"] = state.Temperature.ToString("G4");
         }
     }}

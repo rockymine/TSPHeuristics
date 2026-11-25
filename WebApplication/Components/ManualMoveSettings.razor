@@ -49,7 +49,7 @@
 
     <div class="custom-input-group" id="movePreview" style="margin-bottom: 0.5rem;">
         @if (move != null) {
-            <span><strong>Change</strong>: @Math.Round(move.Delta, 3)</span>
+            <span><strong>Change</strong>: @(Math.Round(move.Delta, 3) + 0d)</span>
             <br />
             <span class="text-muted">
                 @(move.Delta < 0 ? "shortens the tour"

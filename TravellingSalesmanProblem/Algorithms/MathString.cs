@@ -29,19 +29,40 @@ namespace TravellingSalesmanProblem.Algorithms {
         public string Generate() {
             var edited = Dummy;
             foreach (var kvp in Variables) {
-                edited = edited.Replace("?" + kvp.Key + "?", kvp.Value.ToString());
+                edited = edited.Replace("?" + kvp.Key + "?", Number(kvp.Value));
             }
             return edited;
         }
 
+        /* A number as it goes into a formula. Values below 0.001 are written as m * 10^e: rounding
+         * them to three places, as every caller used to, turned a late annealing temperature into a
+         * literal 0, so the Metropolis rule was rendered as a division by zero and the temperature
+         * update as T = 0.98 * 0. Zero is written without a sign - a delta that cancels exactly
+         * comes out of the arithmetic as -0, and .NET prints that as "-0". */
+        public static string Number(double value) {
+            if (value == 0)
+                return "0";
+
+            if (Math.Abs(value) >= 0.001)
+                return value.ToString();
+
+            var exponent = (int)Math.Floor(Math.Log10(Math.Abs(value)));
+            var mantissa = Math.Round(value / Math.Pow(10, exponent), 2);
+            return $"{mantissa} \\cdot 10^{{{exponent}}}";
+        }
+
+        /* Three decimals for ordinary values; tiny ones are kept whole so Number can show them. */
+        private static double Rounded(double value) =>
+            Math.Abs(value) >= 0.001 ? Math.Round(value, 3) : value;
+
         public static MathString UpdateTemperature(GraphState state, double alpha) {
             var latex = "$T_{k+1} = f(T(k)) = \\alpha \\cdot T_{k}$";
             var dummy = "$T_{?k+1?} = ?alpha? \\cdot ?temp?$";
-            var result = $"$T_{{{state.Iteration + 1}}} = {Math.Round(state.Temperature * alpha, 3)}$";
+            var result = $"$T_{{{state.Iteration + 1}}} = {Number(Rounded(state.Temperature * alpha))}$";
 
             var mathString = new MathString(latex, dummy, result);
             mathString.SetVar("k+1", state.Iteration + 1);
-            mathString.SetVar("temp", Math.Round(state.Temperature, 3));
+            mathString.SetVar("temp", Rounded(state.Temperature));
             mathString.SetVar("alpha", alpha);
 
             return mathString;
@@ -55,7 +76,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             var mathString = new MathString(latex, dummy, result);
             mathString.SetVar("f(x)", Math.Round(x.Costs, 3));
             mathString.SetVar("f(y)", Math.Round(y.Costs, 3));
-            mathString.SetVar("temp", Math.Round(temperature, 3));
+            mathString.SetVar("temp", Rounded(temperature));
             mathString.SetVar("rand", Math.Round(random, 3));
 
             return mathString;

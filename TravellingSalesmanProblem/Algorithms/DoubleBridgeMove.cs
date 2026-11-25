@@ -66,7 +66,8 @@ namespace TravellingSalesmanProblem.Algorithms {
                 new List<int> { I, J, K, L }, Delta, calculation);
         }
 
-        private static double Round(double value) => Math.Round(value, 1);
+        /* "+ 0d" turns -0 into 0: a delta that cancels exactly can come out as -0, printed "-0". */
+        private static double Round(double value) => Math.Round(value, 1) + 0d;
 
         public GraphProblem Apply() {
             var tour = Graph.Nodes.ToArray();

@@ -56,7 +56,13 @@ namespace WebApplication.Extensions {
             await context.FillAsync(FillRule.EvenOdd);
         }
 
-        /* Circles that share a fill colour go into one path and one Fill call. */
+        /* Circles that share a fill colour go into one path and one Fill call.
+         *
+         * The fill has to be nonzero. With even-odd, two circles that overlap cancel where they
+         * overlap - and a closed tour lists its first node twice, at the start and at the end, so
+         * the start node was filled twice, cancelled out completely, and its white label vanished
+         * against the white canvas with it. Every circle is drawn in the same direction, so nonzero
+         * fills each of them whatever overlaps it. */
         public static async Task DrawCircles(this IContext2DWithoutGetters context, Brush brush,
             double radius, IReadOnlyList<Vector2> positions) {
             if (positions.Count == 0)
@@ -71,7 +77,7 @@ namespace WebApplication.Extensions {
                 await context.EllipseAsync(pos.X, pos.Y, radius, radius, 0, 0, 360);
             }
 
-            await context.FillAsync(FillRule.EvenOdd);
+            await context.FillAsync(FillRule.NonZero);
         }
 
         /* Width comes from the caller because MeasureTextAsync needs a round trip and so is not

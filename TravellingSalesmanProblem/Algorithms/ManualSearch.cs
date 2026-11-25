@@ -191,7 +191,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             if (state.MoveInfo != null) {
                 state.Messages["Last Move"] =
                     $"{Label(state.MoveInfo.Type)} on {string.Join(", ", state.MoveInfo.Nodes.Select(n => n.Index))}";
-                state.Messages["Change"] = Math.Round(state.MoveInfo.Delta, 3).ToString();
+                state.Messages["Change"] = (Math.Round(state.MoveInfo.Delta, 3) + 0d).ToString();
             } else {
                 state.Messages.Remove("Last Move");
                 state.Messages.Remove("Change");

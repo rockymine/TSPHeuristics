@@ -256,7 +256,7 @@
 			rows.Add(new[] {
 				new TableCellInfo(state.Iteration.ToString(), null),
 				new TableCellInfo("(" + string.Join('-', state.Path.Select(n => n.Index)) + ")", null),
-				new TableCellInfo(state.Distance.ToString(), null)
+				new TableCellInfo(Math.Round(state.Distance, 3).ToString(), null)
 			});
 		}
 

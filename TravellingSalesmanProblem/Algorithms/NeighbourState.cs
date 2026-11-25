@@ -25,8 +25,54 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public static GraphProblem Create(GraphProblem graph, NeighbourType type, DescentType descent) {
             graph.Reset();
+            return ApplyOrKeep(graph, Select(graph, type, descent));
+        }
 
-            var move = Select(graph, type, descent);
+        /* Random descent as Hill Climbing means it: neighbours are drawn in random order until one
+         * shortens the tour. Create(.., DescentType.Random) draws exactly one neighbour, whatever it
+         * costs - which is what Simulated Annealing wants, since it judges the draw itself - and Hill
+         * Climbing used to stop at the first draw that did not improve. From the default tour about
+         * half of all swaps lengthen it, so the default configuration usually ended on iteration 0
+         * having looked at a single neighbour, and the result was luck rather than a local optimum.
+         *
+         * Drawing without replacement keeps the termination honest: when every neighbour has been
+         * drawn and none is shorter, the tour is a local optimum of the neighbourhood, exactly as
+         * for next and steepest descent. The perturbation moves have no enumerable neighbourhood and
+         * fall back to a single draw. */
+        public static GraphProblem CreateRandomImproving(GraphProblem graph, NeighbourType type) {
+            graph.Reset();
+
+            var candidates = type switch {
+                NeighbourType.Swap => Pairs(1, graph.Nodes.Count - 3, graph.Nodes.Count - 2),
+                NeighbourType.TwoOpt => Pairs(0, graph.Nodes.Count - 3, graph.Nodes.Count - 2),
+                _ => null
+            };
+
+            if (candidates == null)
+                return ApplyOrKeep(graph, Select(graph, type, DescentType.Random));
+
+            candidates.Shuffle();
+            foreach (var (i, j) in candidates) {
+                ITourMove move = type == NeighbourType.Swap ? new SwapMove(graph, i, j) : new TwoOptMove(graph, i, j);
+                if (move.Delta < 0)
+                    return ApplyOrKeep(graph, move);
+            }
+
+            return graph;
+        }
+
+        /* Every (i, j) with first <= i <= lastI and i < j <= lastJ: the same bounds the loops
+         * below and the single random draws use, so all three descents search one neighbourhood. */
+        private static List<(int, int)> Pairs(int first, int lastI, int lastJ) {
+            var pairs = new List<(int, int)>();
+            for (int i = first; i <= lastI; i++)
+                for (int j = i + 1; j <= lastJ; j++)
+                    pairs.Add((i, j));
+
+            return pairs;
+        }
+
+        private static GraphProblem ApplyOrKeep(GraphProblem graph, ITourMove move) {
             if (move == null)
                 return graph;
 

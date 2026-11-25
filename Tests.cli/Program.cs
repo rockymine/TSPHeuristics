@@ -27,6 +27,7 @@ namespace Tests.cli {
             ApplicabilityGuards();
             GivenStartTour();
             ManualMoves();
+            RandomDescent();
 
             Console.WriteLine();
             Console.WriteLine(_failures == 0 ? "ALL PASS" : $"{_failures} FAILED");
@@ -203,6 +204,26 @@ namespace Tests.cli {
 
             Check(Route(GraphProblem.OrderedGraphProblem(given.DeepCopy())) == "0-2-1-3-0",
                 "a deep copy keeps the tour, remapped onto its own nodes");
+        }
+
+        /* Random descent has to end where next and steepest descent end: on a tour none of whose
+         * neighbours is shorter. It used to stop at the first random draw that did not improve, so
+         * the default Hill Climbing run usually finished after looking at a single neighbour. */
+        private static void RandomDescent() {
+            foreach (var type in new[] { NeighbourType.Swap, NeighbourType.TwoOpt }) {
+                var stuck = 0;
+                for (int seed = 1; seed <= 20; seed++) {
+                    var history = new HillClimbing { NeighbourEnum = type, DescentType = DescentType.Random }
+                        .FindPath(Instance(12, seed));
+                    var end = ManualSearch.TourOf(history.Last.Value);
+
+                    if (NeighbourState.Select(end, type, DescentType.Steepest) != null)
+                        stuck++;
+                }
+
+                Check(stuck == 0, $"{type} random descent always ends on a local optimum",
+                    stuck == 0 ? "" : $"{stuck} of 20 runs stopped with an improving neighbour left");
+            }
         }
 
         /* The manual mode is the one place where the move positions come from outside, and where

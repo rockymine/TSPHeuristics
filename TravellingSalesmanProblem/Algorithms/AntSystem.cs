@@ -257,7 +257,9 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Messages["Iteration"] = state.Iteration.ToString();
             state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
             state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
-            state.Messages["Ant Distances"] = string.Join(';', Colony.Select(a => Math.Round(a.Path.Costs, 3)));
+            state.Messages["Ant Distances"] = /* "; " rather than ";" so the list can wrap - one unbroken token ran out of its column and
+             * underneath the tables beside it. */
+            string.Join("; ", Colony.Select(a => Math.Round(a.Path.Costs, 3)));
         }
     }
 

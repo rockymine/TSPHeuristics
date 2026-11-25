@@ -44,7 +44,9 @@ namespace TravellingSalesmanProblem.Algorithms {
             history.AddLast(AdvanceState(state, iteration));
 
             while (true) {
-                Y = NeighbourState.Create(X, NeighbourEnum, DescentType);
+                Y = DescentType == DescentType.Random ?
+                    NeighbourState.CreateRandomImproving(X, NeighbourEnum) :
+                    NeighbourState.Create(X, NeighbourEnum, DescentType);
 
                 if (Y.Costs >= X.Costs)
                     break;
@@ -104,7 +106,7 @@ namespace TravellingSalesmanProblem.Algorithms {
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Iteration"] = state.Iteration.ToString();
             state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
-            state.Messages["Distance"] = state.Distance.ToString();
+            state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
         }
 
         private GraphState AdvanceState(GraphState state, int iteration) {
