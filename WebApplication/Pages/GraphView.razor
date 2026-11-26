@@ -23,44 +23,10 @@
     </div>
 </header>
 <div class="workspace">
-    <!-- Settings: what is solved and how. How it is drawn lives in the stage toolbar. -->
+    <!-- Settings: the instance first (what is solved), then the algorithm (how). How it is drawn
+         lives in the view bar under the canvases. -->
     <aside class="sidebar">
-        <SidebarSection Title="Heuristic">
-            <AlgorithmSettings @bind-AlgorithmEnum="@AppState.AlgorithmEnum"
-                               @bind-MultiStart="@AppState.MultiStart" />
-            <div class="sidebar-subsection">
-                @if (AppState.AlgorithmEnum == AlgorithmEnum.NN && !AppState.MultiStart) {
-                    <NearestNeighborSettings @bind-StartNode="@AppState.StartNode" />
-                }
-                @if (AppState.AlgorithmEnum == AlgorithmEnum.SA) {
-                    <SimulatedAnnealingSettings @bind-AlphaSA="@AppState.AlphaSA"
-                                                @bind-PhaseLength="@AppState.PhaseLength"
-                                                @bind-MinTemp="@AppState.MinTemp"
-                                                @bind-StartTemp="@AppState.StartTemp"
-                                                @bind-NeighbourEnum="@AppState.NeighbourEnum"
-                                                @bind-CalculateTemperature="@AppState.CalculateTemperature" />
-                }
-                @if (AppState.AlgorithmEnum == AlgorithmEnum.HC) {
-                    <HillClimbingSettings @bind-NeighbourEnum="@AppState.NeighbourEnum"
-                                          @bind-DescentType="@AppState.DescentType" />
-                }
-                @if (AppState.AlgorithmEnum == AlgorithmEnum.AS) {
-                    <AntSystemSettings @bind-Iterations="@AppState.Iterations"
-                                       @bind-AlphaACS="@AppState.AlphaACS"
-                                       @bind-AntCount="@AppState.AntCount" @bind-Beta="@AppState.Beta"
-                                       @bind-BreakWhenPathsAreEqual="@AppState.BreakWhenPathsAreEqual"
-                                       @bind-GlobalUpdatingRule="@AppState.GlobalUpdatingRule"
-                                       @bind-SelectionRule="@AppState.SelectionRule" />
-                }
-                @if (AppState.AlgorithmEnum == AlgorithmEnum.Manual) {
-                    <ManualMoveSettings Tour="@CurrentTour()" CanUndo="@CanUndoManualMove"
-                                        OnApply="ApplyManualMove" OnUndo="UndoManualMove"
-                                        OnReset="ResetManualMoves" />
-                }
-            </div>
-        </SidebarSection>
-
-        <SidebarSection Title="Graph">
+        <SidebarSection Title="Instance">
             <div class="form-group">
                 <label for="selectGraphSource">Source</label>
                 <select class="form-control" name="graphSource" id="selectGraphSource" @bind="AppState.GraphSource">
@@ -96,10 +62,45 @@
                 </div>
             }
         </SidebarSection>
+
+        <SidebarSection Title="Algorithm">
+            <AlgorithmSettings @bind-AlgorithmEnum="@AppState.AlgorithmEnum"
+                               @bind-MultiStart="@AppState.MultiStart" />
+            <div class="sidebar-subsection">
+                @if (AppState.AlgorithmEnum == AlgorithmEnum.NN && !AppState.MultiStart) {
+                    <NearestNeighborSettings @bind-StartNode="@AppState.StartNode" />
+                }
+                @if (AppState.AlgorithmEnum == AlgorithmEnum.SA) {
+                    <SimulatedAnnealingSettings @bind-AlphaSA="@AppState.AlphaSA"
+                                                @bind-PhaseLength="@AppState.PhaseLength"
+                                                @bind-MinTemp="@AppState.MinTemp"
+                                                @bind-StartTemp="@AppState.StartTemp"
+                                                @bind-NeighbourEnum="@AppState.NeighbourEnum"
+                                                @bind-CalculateTemperature="@AppState.CalculateTemperature" />
+                }
+                @if (AppState.AlgorithmEnum == AlgorithmEnum.HC) {
+                    <HillClimbingSettings @bind-NeighbourEnum="@AppState.NeighbourEnum"
+                                          @bind-DescentType="@AppState.DescentType" />
+                }
+                @if (AppState.AlgorithmEnum == AlgorithmEnum.AS) {
+                    <AntSystemSettings @bind-Iterations="@AppState.Iterations"
+                                       @bind-AlphaACS="@AppState.AlphaACS"
+                                       @bind-AntCount="@AppState.AntCount" @bind-Beta="@AppState.Beta"
+                                       @bind-BreakWhenPathsAreEqual="@AppState.BreakWhenPathsAreEqual"
+                                       @bind-GlobalUpdatingRule="@AppState.GlobalUpdatingRule"
+                                       @bind-SelectionRule="@AppState.SelectionRule" />
+                }
+                @if (AppState.AlgorithmEnum == AlgorithmEnum.Manual) {
+                    <ManualMoveSettings Tour="@CurrentTour()" CanUndo="@CanUndoManualMove"
+                                        OnApply="ApplyManualMove" OnUndo="UndoManualMove"
+                                        OnReset="ResetManualMoves" />
+                }
+            </div>
+        </SidebarSection>
     </aside>
 
     <main class="stage">
-        <!-- Toolbar: running the algorithm, moving through its states, and how they are drawn -->
+        <!-- Toolbar: the main controls - running the algorithm and moving through its states -->
         <div class="stage-toolbar">
             <div class="stage-toolbar-row">
                 <div class="toolbar-group" role="group" aria-label="Run">
@@ -149,16 +150,6 @@
             } else {
                 <span class="text-muted">Execute an algorithm to step through its states.</span>
             }
-                <label class="toolbar-field" for="animationDelay" title="Delay between states while playing">
-                    <span>Delay</span>
-                    <input type="number" step="10" min="1" id="animationDelay" class="form-control form-control-sm"
-                           @bind="AppState.AnimationDelay">
-                    <span>ms</span>
-                </label>
-                <CanvasDisplaySettings @bind-NodeRadius="@AppState.NodeRadius" @bind-NodeRadius:after="ApplyView"
-                                       @bind-ShowGrid="@AppState.ShowGrid" @bind-ShowGrid:after="ApplyView"
-                                       @bind-AnnotateEdges="@AppState.AnnotateEdges" @bind-AnnotateEdges:after="ApplyView"
-                                       @bind-ColorizeChanges="@AppState.ColorizeChanges" @bind-ColorizeChanges:after="ApplyView" />
             </div>
             @if (!string.IsNullOrEmpty(AppState.Error)) {
                 <div class="notice-error" role="alert">
@@ -199,6 +190,21 @@
                     <p class="canvas-empty text-muted">The graph is drawn here once an algorithm has been executed.</p>
                 }
             </figure>
+        </div>
+
+        <!-- View: how the run is drawn and played back, next to the canvases it changes. These used to
+             share the top bar with Run and playback, which crowded the main controls and wrapped. -->
+        <div class="view-bar" role="group" aria-label="View options">
+            <CanvasDisplaySettings @bind-NodeRadius="@AppState.NodeRadius" @bind-NodeRadius:after="ApplyView"
+                                   @bind-ShowGrid="@AppState.ShowGrid" @bind-ShowGrid:after="ApplyView"
+                                   @bind-AnnotateEdges="@AppState.AnnotateEdges" @bind-AnnotateEdges:after="ApplyView"
+                                   @bind-ColorizeChanges="@AppState.ColorizeChanges" @bind-ColorizeChanges:after="ApplyView" />
+            <label class="toolbar-field" for="animationDelay" title="Delay between states while playing">
+                <span>Delay</span>
+                <input type="number" step="10" min="1" id="animationDelay" class="form-control form-control-sm"
+                       @bind="AppState.AnimationDelay">
+                <span>ms</span>
+            </label>
         </div>
 
         <!-- Views: tables, charts and calculations for the state shown above -->

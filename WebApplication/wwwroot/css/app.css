@@ -313,11 +313,10 @@ label,
 }
 
 /* The settings that belong to the choice above them: the heuristic's parameters, the source's
-   inputs. Set off by a rule on the left so they read as one group under their select. */
+   inputs. Spacing alone sets them off from the select; an indented block with a rule beside it
+   looked like a nested panel and was not needed. */
 .sidebar-subsection {
     margin-top: var(--space-3);
-    padding-left: var(--space-3);
-    border-left: 2px solid var(--border);
 }
 
 .sidebar-subsection:empty {
@@ -409,10 +408,6 @@ label,
     gap: var(--space-2) var(--space-4);
 }
 
-/* The view options sit at the far end of the row. */
-.stage-toolbar-row > .toolbar-group:last-child {
-    margin-left: auto;
-}
 
 .stage-toolbar .btn-toolbar {
     gap: 2px;
@@ -540,6 +535,21 @@ label,
 .chart-box {
     position: relative;
     width: 100%;
+}
+
+/* ── View bar ─────────────────────────────────────────────────────────────
+   How the run is drawn and played back: grid, colours, edge lengths, node size, delay. A thin
+   strip between the canvases and the docked views, so the top bar keeps only the main controls. */
+.view-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
 }
 
 /* ── Docked views ─────────────────────────────────────────────────────── */
