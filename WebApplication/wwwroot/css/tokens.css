@@ -65,6 +65,8 @@
   --font-base: 13px;   /* buttons, tabs, labels */
   --font-sm:   12px;   /* helper text */
   --font-xs:   11px;   /* section headers */
+  --font-formula: 15px; /* derivation cards; KaTeX scales from it */
+  --canvas-label-size: 11px; /* node numbers on the graph; the nodes are sized around them */
 
   /* ── Structure ────────────────────────────────────────────────────────── */
   --sidebar-width:  300px;
@@ -77,6 +79,28 @@
   --radius-sm: 3px;
   --radius-md: 6px;
   --transition-fast: 0.12s ease;
+}
+
+/* Text size, chosen in the header (data-text-size on <html>; medium is :root). It scales the type
+ * and the graph's node numbers, and with them the nodes; spacing and layout stay as they are. */
+:root[data-text-size="small"] {
+  --font-lg: 14px;
+  --font-md: 13px;
+  --font-base: 12px;
+  --font-sm: 11px;
+  --font-xs: 10px;
+  --font-formula: 14px;
+  --canvas-label-size: 10px;
+}
+
+:root[data-text-size="large"] {
+  --font-lg: 17px;
+  --font-md: 16px;
+  --font-base: 15px;
+  --font-sm: 14px;
+  --font-xs: 12px;
+  --font-formula: 18px;
+  --canvas-label-size: 13px;
 }
 
 /* A touch screen gets fingertip-sized controls whatever the window's width. */

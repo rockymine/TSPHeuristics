@@ -14,17 +14,9 @@
             title="Write each edge's length on it" @onclick="() => AnnotateEdgesChanged.InvokeAsync(!AnnotateEdges)">
         <Icon Name="ruler" /><span>Lengths</span>
     </button>
-    <label class="toolbar-field" for="nodeSize" title="Node radius in pixels">
-        <span>Node</span>
-        <input type="number" id="nodeSize" class="form-control form-control-sm" min="1" max="10"
-               value="@NodeRadius" @onchange="SetNodeRadius">
-    </label>
 </div>
 
 @code {
-    [Parameter] public float NodeRadius { get; set; }
-    [Parameter] public EventCallback<float> NodeRadiusChanged { get; set; }
-
     [Parameter] public bool ShowGrid { get; set; }
     [Parameter] public EventCallback<bool> ShowGridChanged { get; set; }
 
@@ -35,10 +27,4 @@
     [Parameter] public EventCallback<bool> ColorizeChangesChanged { get; set; }
 
     private static string Pressed(bool on) => on ? "true" : "false";
-
-    private Task SetNodeRadius(ChangeEventArgs e) =>
-        float.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Float,
-                       System.Globalization.CultureInfo.InvariantCulture, out var radius)
-            ? NodeRadiusChanged.InvokeAsync(radius)
-            : Task.CompletedTask;
 }

@@ -61,6 +61,31 @@ namespace WebApplication.Utils {
         public bool Annotate { get; set; }
         public bool ShowGrid { get; set; }
         public CanvasTheme Theme { get; set; } = new();
-        public float NodeRadius { get; set; }
+
+        /* How far apart the nodes typically sit, in coordinate units: the distance to the nearest
+         * neighbour that 90 % of the nodes have at least. A low percentile rather than the minimum,
+         * so one close pair does not shrink every node. CanvasRenderer.NodeLayout turns it into a
+         * cap on the node size once the canvas has a scale. */
+        public double NodeSpacing { get; private set; }
+
+        public void SetNodes(IReadOnlyList<Vector2> positions) {
+            var nearest = new List<double>(positions.Count);
+
+            for (var i = 0; i < positions.Count; i++) {
+                var best = double.MaxValue;
+                for (var j = 0; j < positions.Count; j++) {
+                    if (i == j)
+                        continue;
+                    var d = Vector2.Distance(positions[i], positions[j]);
+                    if (d > 0 && d < best)
+                        best = d;
+                }
+                if (best < double.MaxValue)
+                    nearest.Add(best);
+            }
+
+            nearest.Sort();
+            NodeSpacing = nearest.Count == 0 ? 0 : nearest[nearest.Count / 10];
+        }
     }
 }

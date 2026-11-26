@@ -53,7 +53,14 @@ hr {
 
 .app-header-actions {
     display: flex;
+    align-items: center;
     gap: var(--space-2);
+}
+
+/* The header's controls share one height, the text size switch included. */
+.app-header-actions .btn {
+    min-height: 0;
+    height: 30px;
 }
 
 /* ── Workspace ────────────────────────────────────────────────────────────
@@ -250,9 +257,13 @@ hr {
     font-variant-numeric: tabular-nums;
 }
 
+/* Execute and the playback buttons share one height, so the row reads as one set of controls. */
+.stage-toolbar .btn {
+    min-height: var(--control-height);
+}
+
 .stage-toolbar .btn-toolbar .btn {
     min-width: var(--control-height);
-    min-height: var(--control-height);
 }
 
 .stage-toolbar-time {
@@ -542,7 +553,7 @@ hr {
     column-gap: var(--space-2);
     row-gap: 6px;
     align-items: baseline;
-    font-size: 15px;
+    font-size: var(--font-formula);
     overflow-x: auto;
 }
 
@@ -600,3 +611,37 @@ hr {
 /* KaTeX keeps an absolutely positioned MathML copy for screen readers. With no positioned ancestor
    it escapes every scrolling table and widens the page; anchoring it to the formula keeps it in. */
 .katex { position: relative; }
+
+/* Buttons joined into one control: the text size in the header, the playback speed. */
+.segmented {
+    display: inline-flex;
+}
+
+.segmented .btn + .btn {
+    margin-left: -1px;
+}
+
+.segmented .btn:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.segmented .btn:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.segmented .btn[aria-pressed="true"] {
+    position: relative;
+}
+
+/* Three "A"s at rising sizes, so the buttons show what they do. */
+.text-size-switch .btn {
+    min-width: 30px;
+    line-height: 1;
+    font-weight: 600;
+}
+
+.text-size-small { font-size: 11px; }
+.text-size-medium { font-size: 13px; }
+.text-size-large { font-size: 16px; }

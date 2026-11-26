@@ -12,6 +12,14 @@
 <header class="app-header">
     <h5>Interactive Visualization of Heuristics for the Traveling Salesman Problem</h5>
     <div class="app-header-actions">
+        @* Text size for the whole app, the graph's node numbers included - which is also what sizes
+           the nodes, so there is no separate node size to set. *@
+        <div class="segmented text-size-switch" role="group" aria-label="Text size">
+            @foreach (var (size, label) in TextSizes) {
+                <button type="button" class="btn btn-sm btn-toggle text-size-@size" aria-pressed="@(textSize == size ? "true" : "false")"
+                        title="@label text" aria-label="@label text" @onclick="() => SetTextSize(size)">A</button>
+            }
+        </div>
         <button class="btn btn-outline-primary btn-sm" type="button" @onclick="ToggleTheme"
                 title="@(theme == "light" ? "Switch to the dark theme" : "Switch to the light theme")">
             <Icon Name="@(theme == "light" ? "moon" : "sun")" />
@@ -57,7 +65,6 @@
             @if (AppState.Instance != null) {
                 <div class="sidebar-actions">
                     <FileOutput Content="@AppState.SourceText" />
-                    <small class="form-text text-muted">The graph of the last run, in the text format above.</small>
                 </div>
             }
         </SidebarSection>
@@ -142,9 +149,8 @@
                         <Icon Name="chevrons-right" />
                     </button>
                 </div>
-                <span class="stage-toolbar-time">
-                    Execution Time: @AppState.TimeSpan.Minutes m @AppState.TimeSpan.Seconds s
-                    @AppState.TimeSpan.Milliseconds ms (@Math.Round((double)AppState.Stopwatch.ElapsedMilliseconds / 1000, 3) s)
+                <span class="stage-toolbar-time" title="How long the heuristic took to compute the whole run">
+                    Execution Time: @FormatDuration(AppState.TimeSpan)
                 </span>
             } else {
                 <span class="text-muted">Execute an algorithm to step through its states.</span>
@@ -194,16 +200,19 @@
         <!-- View: how the run is drawn and played back, next to the canvases it changes. These used to
              share the top bar with Run and playback, which crowded the main controls and wrapped. -->
         <div class="view-bar" role="group" aria-label="View options">
-            <CanvasDisplaySettings @bind-NodeRadius="@AppState.NodeRadius" @bind-NodeRadius:after="ApplyView"
-                                   @bind-ShowGrid="@AppState.ShowGrid" @bind-ShowGrid:after="ApplyView"
+            <CanvasDisplaySettings @bind-ShowGrid="@AppState.ShowGrid" @bind-ShowGrid:after="ApplyView"
                                    @bind-AnnotateEdges="@AppState.AnnotateEdges" @bind-AnnotateEdges:after="ApplyView"
                                    @bind-ColorizeChanges="@AppState.ColorizeChanges" @bind-ColorizeChanges:after="ApplyView" />
-            <label class="toolbar-field" for="animationDelay" title="Delay between states while playing">
-                <span>Delay</span>
-                <input type="number" step="10" min="1" id="animationDelay" class="form-control form-control-sm"
-                       @bind="AppState.AnimationDelay">
-                <span>ms</span>
-            </label>
+            <div class="toolbar-field" role="group" aria-labelledby="speedLabel">
+                <span id="speedLabel">Speed</span>
+                <div class="segmented" id="playbackSpeed">
+                    @foreach (var (delay, label) in PlaybackSpeeds) {
+                        <button type="button" class="btn btn-sm btn-toggle" aria-pressed="@(AppState.AnimationDelay == delay ? "true" : "false")"
+                                title="@($"{label}: one state every {FormatDuration(TimeSpan.FromMilliseconds(delay))} while playing")"
+                                @onclick="() => AppState.AnimationDelay = delay">@label</button>
+                    }
+                </div>
+            </div>
         </div>
 
         <!-- Views: tables, charts and calculations for the state shown above -->
@@ -279,6 +288,25 @@
     /* "light" or "dark", as theme.js reports it; index.html has already applied it to the page. */
     private string theme;
 
+    /* "small", "medium" or "large": data-text-size on <html>, set by index.html before the CSS. */
+    private string textSize = "medium";
+    private static readonly (string Size, string Label)[] TextSizes = {
+        ("small", "Small"), ("medium", "Medium"), ("large", "Large")
+    };
+
+    /* Playback steps one state per delay. A free millisecond field made the default (1 ms) play a
+     * run faster than it can be followed; these are the speeds worth choosing between. The fastest
+     * is one state per frame. */
+    private static readonly (int Delay, string Label)[] PlaybackSpeeds = {
+        (1000, "Slow"), (400, "Normal"), (150, "Fast"), (16, "Fastest")
+    };
+
+    /* One unit, the one that reads best: "425 ms", "3.27 s", "2 min 05 s". */
+    private static string FormatDuration(TimeSpan t) =>
+        t.TotalSeconds < 1 ? $"{t.TotalMilliseconds:0} ms"
+        : t.TotalMinutes < 1 ? $"{t.TotalSeconds:0.00} s"
+        : $"{(int)t.TotalMinutes} min {t.Seconds:00} s";
+
     /* The box the canvases are fitted to, as canvas.js last reported it, and whether the last fit
      * resized them. A resized canvas is cleared by the browser, and the new size only reaches the
      * element in the render after the fit, so the redraw waits for OnAfterRenderAsync. */
@@ -292,6 +320,7 @@
             _ = RunAnimationLoop();
 
             theme = await JS.InvokeAsync<string>("tspTheme.get");
+            textSize = await JS.InvokeAsync<string>("tspTheme.getTextSize");
             AppState.CanvasSettings.Theme = await JS.InvokeAsync<CanvasTheme>("tspTheme.canvasColors");
 
             pageReference = DotNetObjectReference.Create(this);
@@ -331,13 +360,12 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    /* The view options in the toolbar apply to what is on the canvas now. ShowGrid and NodeRadius
+    /* The view options in the toolbar apply to what is on the canvas now. ShowGrid and the node size
      * used to be copied over only when a graph was executed, so toggling them did nothing until
      * the next run. */
     private void SyncView() {
         var settings = AppState.CanvasSettings;
         settings.ShowGrid = AppState.ShowGrid;
-        settings.NodeRadius = AppState.NodeRadius;
         settings.Annotate = AppState.AnnotateEdges;
         settings.Colorize = AppState.ColorizeChanges;
     }
@@ -370,6 +398,16 @@
      * the new theme's tokens resolve to. The charts are re-coloured by their own interop. */
     private async Task ToggleTheme() {
         theme = await JS.InvokeAsync<string>("tspTheme.set", theme == "light" ? "dark" : "light");
+        AppState.CanvasSettings.Theme = await JS.InvokeAsync<CanvasTheme>("tspTheme.canvasColors");
+
+        if (AppState.GraphHistory != null && AppState.CurrentHistoryNode != null)
+            await Redraw();
+    }
+
+    /* The node numbers are drawn at the page's label size (--canvas-label-size), and the nodes are
+     * sized around their numbers, so the canvas is redrawn with the new size. */
+    private async Task SetTextSize(string size) {
+        textSize = await JS.InvokeAsync<string>("tspTheme.setTextSize", size);
         AppState.CanvasSettings.Theme = await JS.InvokeAsync<CanvasTheme>("tspTheme.canvasColors");
 
         if (AppState.GraphHistory != null && AppState.CurrentHistoryNode != null)
@@ -443,6 +481,7 @@
         AppState.Error = null;
         AppState.CanvasSettings.MinPos = AppState.Instance.FindMin();
         AppState.CanvasSettings.MaxPos = AppState.Instance.FindMax();
+        AppState.CanvasSettings.SetNodes(AppState.Instance.Nodes.Select(n => n.Position).ToList());
         FitCanvases();
         SyncView();
 
@@ -574,7 +613,7 @@
 
         /* Measure in the font the labels are actually drawn in, not whatever the context happens
          * to carry - otherwise the box is sized for the 10px default and the text overflows it. */
-        await context.FontAsync(CanvasRenderer.EdgeTextFont);
+        await context.FontAsync(CanvasRenderer.EdgeTextFont(AppState.CanvasSettings.Theme));
 
         foreach (var annotation in annotations) {
             if (!measured.TryGetValue(annotation.Text, out var size)) {

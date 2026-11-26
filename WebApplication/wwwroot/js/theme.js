@@ -21,6 +21,22 @@ window.tspTheme = (function () {
             return this.get();
         },
 
+        /* "small", "medium" or "large", on <html> as data-text-size; tokens.css scales the type. */
+        getTextSize() {
+            const s = root.getAttribute("data-text-size");
+            return s === "small" || s === "large" ? s : "medium";
+        },
+
+        setTextSize(size) {
+            if (size === "small" || size === "large")
+                root.setAttribute("data-text-size", size);
+            else
+                root.removeAttribute("data-text-size");
+            try { localStorage.setItem("tsp-text-size", this.getTextSize()); } catch (e) { }
+            window.dispatchEvent(new CustomEvent("tsp-themechange"));
+            return this.getTextSize();
+        },
+
         canvasColors() {
             return {
                 background: css("--canvas-bg"),
@@ -33,7 +49,8 @@ window.tspTheme = (function () {
                 moveFirst: css("--canvas-move-first"),
                 moveSecond: css("--canvas-move-second"),
                 labelBackground: css("--canvas-label-bg"),
-                labelText: css("--canvas-label-text")
+                labelText: css("--canvas-label-text"),
+                labelSize: parseFloat(css("--canvas-label-size")) || 11
             };
         },
 

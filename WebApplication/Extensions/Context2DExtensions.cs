@@ -64,12 +64,10 @@ namespace WebApplication.Extensions {
          * against the white canvas with it. Every circle is drawn in the same direction, so nonzero
          * fills each of them whatever overlaps it. */
         public static async Task DrawCircles(this IContext2DWithoutGetters context, Brush brush,
-            double radius, IReadOnlyList<Vector2> positions) {
+            double radius, IReadOnlyList<Vector2> positions, string haloColor = null, double haloWidth = 0) {
             if (positions.Count == 0)
                 return;
 
-            await context.FillStyleAsync(brush.Color);
-            await context.LineWidthAsync(brush.Width);
             await context.BeginPathAsync();
 
             foreach (var pos in positions) {
@@ -77,6 +75,15 @@ namespace WebApplication.Extensions {
                 await context.EllipseAsync(pos.X, pos.Y, radius, radius, 0, 0, 360);
             }
 
+            /* The halo is the outer half of a stroke along the circle; the fill covers the inner
+             * half, so the node keeps its radius and gains a ring outside it. */
+            if (haloColor != null && haloWidth > 0) {
+                await context.StrokeStyleAsync(haloColor);
+                await context.LineWidthAsync(haloWidth * 2);
+                await context.StrokeAsync();
+            }
+
+            await context.FillStyleAsync(brush.Color);
             await context.FillAsync(FillRule.NonZero);
         }
 
@@ -86,10 +93,11 @@ namespace WebApplication.Extensions {
         public static async Task DrawTextBox(this IContext2DWithoutGetters context, Brush brush,
             Vector2 pos, string text, double width, double height) {
             /* The caller measures the glyphs exactly, so pad before drawing: a box tight against
-             * the text reads as a slab. Rounded corners keep the annotation legible where several
-             * labels crowd together. */
-            var boxWidth = width * 1.2;
-            var boxHeight = height * 1.2;
+             * the text reads as a slab. The padding follows the line height, not the text width -
+             * scaling the width by 20 % left a single digit no room at all - and the box is a pill
+             * as tall as the line, which stays legible where several labels crowd together. */
+            var boxHeight = height;
+            var boxWidth = Math.Max(width + height * 0.7, height * 1.4);
 
             var left = pos.X - (boxWidth / 2);
             var bottom = pos.Y - (boxHeight / 2);
@@ -97,7 +105,7 @@ namespace WebApplication.Extensions {
             var top = bottom + boxHeight;
 
             /* A radius wider than half the shorter side would make the arcs overlap. */
-            var radius = Math.Min(10, Math.Min(boxWidth, boxHeight) / 2);
+            var radius = Math.Min(boxWidth, boxHeight) / 2;
 
             await context.FillStyleAsync(brush.Color);
             await context.LineWidthAsync(2);

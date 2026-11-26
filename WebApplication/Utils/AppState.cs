@@ -12,20 +12,8 @@ namespace WebApplication.Utils {
     public class AppState {
         public GraphProblem Instance { get; set; }
 
-        private float _nodeRadius = 8;
-        public float NodeRadius {
-            get => _nodeRadius;
-            set {
-                if (value == _nodeRadius)
-                    return;
-                if (value < 1 || value > 10)
-                    return;
-
-                _nodeRadius = value;
-            }
-        }
-
-        private int _animationDelay = 1;
+        /* One of GraphView.PlaybackSpeeds: "Fast". */
+        private int _animationDelay = 150;
         public int AnimationDelay {
             get => _animationDelay;
             set {

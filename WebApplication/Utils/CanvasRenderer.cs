@@ -24,29 +24,64 @@ namespace WebApplication.Utils {
             }
         }
 
+        /* No quoted family names: Excubo hands the font string to the page through eval, and a quote
+         * inside it ends the string early. */
+        private const string FontFamily = "system-ui, -apple-system, sans-serif";
+
         /* GraphView has to select this font on the context before measuring the annotations, or
          * MeasureTextAsync reports the canvas default (10px sans-serif) and every label box comes
-         * out too small for the text it is drawn behind. */
-        public const string EdgeTextFont = "15px serif";
+         * out too small for the text it is drawn behind. It follows the page's text size. */
+        public static string EdgeTextFont(CanvasTheme theme) =>
+            $"500 {Math.Round(theme.LabelSize * 1.15, 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}px {FontFamily}";
 
-        /* Was "15px serif bold", which is not a valid font: the weight has to come first. The
-         * context ignores an invalid font, so the node numbers were written in whatever font was
-         * set last - the 10px sans-serif default on most frames. Sized to sit inside the default
-         * 8px node radius with two digits. */
-        private const string NodeTextFont = "600 11px system-ui, sans-serif";
+        /* The weight has to come first: "15px serif bold" was invalid, and the context ignores an
+         * invalid font, so the node numbers were once written in the 10px default. */
+        private static string NodeTextFont(double size) =>
+            $"600 {Math.Round(size, 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}px {FontFamily}";
+
         private const double EdgeWidth = 2;
+
+        /* Below this the numbers are no longer readable, and the nodes are drawn as plain dots. */
+        private const double MinNodeFont = 8;
+        /* A node may take this share of the typical distance to its nearest neighbour on screen,
+         * so neighbours keep a gap between them. */
+        private const double SpacingShare = 0.42;
+        /* A ring in the canvas colour around each node, so edges stop short of it instead of
+         * running into the number. */
+        private const double HaloWidth = 1.5;
+
+        /* The node size used to be a setting (8 px by default, 1-10). Now it follows from what a
+         * node has to hold: its number, at the page's label size, so the nodes grow and shrink with
+         * the text size. Only where the graph is too crowded on screen for that - many nodes, a small
+         * canvas, a phone - are the nodes made smaller, numbers and all, and below a readable size
+         * the numbers are left out. */
+        public static (double Radius, double FontSize) NodeLayout(CanvasSettings settings, int maxIndex) {
+            var font = settings.Theme.LabelSize;
+            var digits = Math.Max(1, maxIndex.ToString().Length);
+
+            /* A digit of a semibold system font is about 0.62 em wide; the circle leaves 2 px
+             * around the number, and at least 0.75 em of radius so single digits are not tiny. */
+            double RadiusFor(double size) => Math.Max(0.75 * size, 0.31 * size * digits + 2);
+
+            var radius = RadiusFor(font);
+            var cap = settings.NodeSpacing * settings.Scale * SpacingShare;
+            if (cap <= 0 || cap >= radius)
+                return (radius, font);
+
+            var shrunk = font * cap / radius;
+            return shrunk >= MinNodeFont ? (cap, shrunk) : (Math.Max(2.5, cap), 0);
+        }
 
         /* The colours come from the theme (settings.Theme), so every brush is built per frame. */
         private static Brush GridBrush(CanvasTheme theme) => new() {
             Color = theme.Grid, Width = 0.75, TextFont = "", TextStyle = ""
         };
         private static Brush NodeBrush(CanvasTheme theme) => new() {
-            Color = theme.Node, Width = 2, Style = FillStyle.Fill,
-            TextFont = NodeTextFont, TextStyle = theme.NodeLabel
+            Color = theme.Node, Width = 2, Style = FillStyle.Fill, TextStyle = theme.NodeLabel
         };
         private static Brush LabelBrush(CanvasTheme theme) => new() {
             Color = theme.LabelBackground, Width = 2, Style = FillStyle.Fill,
-            TextFont = EdgeTextFont, TextStyle = theme.LabelText
+            TextFont = EdgeTextFont(theme), TextStyle = theme.LabelText
         };
 
         /* One grid line used to be one DrawLine, i.e. seven interop calls each. A 90x90 instance
@@ -84,6 +119,8 @@ namespace WebApplication.Utils {
             /* "Changes" off: no highlighted nodes either. Colorize used to be set and never read. */
             var moveInfo = settings.Colorize ? currentStateNode.Value.MoveInfo : null;
 
+            var (radius, fontSize) = NodeLayout(settings, nodes.Count == 0 ? 0 : nodes.Max(n => n.Index));
+
             var byColor = new Dictionary<string, List<Vector2>>();
             var labels = new List<(string, Vector2)>(nodes.Count);
 
@@ -102,10 +139,11 @@ namespace WebApplication.Utils {
 
             foreach (var group in byColor) {
                 brush.Color = group.Key;
-                await context.DrawCircles(brush, settings.NodeRadius, group.Value);
+                await context.DrawCircles(brush, radius, group.Value, theme.Background, HaloWidth);
             }
 
-            await context.WriteTexts(brush.TextFont, brush.TextStyle, labels);
+            if (fontSize > 0)
+                await context.WriteTexts(NodeTextFont(fontSize), brush.TextStyle, labels);
         }
 
         private static string NodeColor(MoveInfo moveInfo, Node node, CanvasTheme theme) {
@@ -155,7 +193,7 @@ namespace WebApplication.Utils {
                 group.Add((Manipulate(edge.Node1.Position, settings), Manipulate(edge.Node2.Position, settings)));
             }
 
-            var brush = new Brush { TextFont = EdgeTextFont, TextStyle = theme.Edge };
+            var brush = new Brush { TextFont = EdgeTextFont(theme), TextStyle = theme.Edge };
             foreach (var group in groups) {
                 brush.Color = group.Key.Color;
                 brush.Width = group.Key.Width;
