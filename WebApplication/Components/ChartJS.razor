@@ -9,6 +9,12 @@
 	public ChartInfo Chart { get; set; }
 	[Parameter]
 	public string ChartID { get; set; }
+	/* The point to highlight (GraphState.ChartCursor), or -1. */
+	[Parameter]
+	public int Cursor { get; set; } = -1;
+
+	/* The data last sent. A chart shared by all states of a run only needs its cursor moved. */
+	private ChartInfo sent;
 
 	private Task<IJSObjectReference> _module;
     private Task<IJSObjectReference> Module => _module
@@ -17,7 +23,8 @@
 	protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
 			var module = await Module;
-			await module.InvokeVoidAsync("LineChart", ChartID, Chart);
+			await module.InvokeVoidAsync("LineChart", ChartID, Chart, Cursor);
+			sent = Chart;
         }
 
         await base.OnAfterRenderAsync(firstRender);
@@ -26,9 +33,16 @@
 	/* Takes the state's chart data from the caller. It used to send its Chart parameter, which
 	 * is only refreshed when the page renders - and the playback loop updates the charts before
 	 * that render, so during playback the chart showed the previous state. */
-	public async Task UpdateFromGraphState(ChartInfo chart) {
+	public async Task UpdateFromGraphState(ChartInfo chart, int cursor = -1) {
 		var module = await Module;
-		await module.InvokeVoidAsync("LineChart", ChartID, chart ?? Chart);
+		chart ??= Chart;
+
+		if (ReferenceEquals(chart, sent) && cursor >= 0 &&
+			await module.InvokeAsync<bool>("SetCursor", ChartID, cursor))
+			return;
+
+		await module.InvokeVoidAsync("LineChart", ChartID, chart, cursor);
+		sent = chart;
 		StateHasChanged();
 	}
 }

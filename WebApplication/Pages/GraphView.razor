@@ -1,6 +1,4 @@
-﻿@using Excubo.Blazor.Canvas
-@using Excubo.Blazor.Canvas.Contexts
-@using System.Diagnostics
+﻿@using System.Diagnostics
 @using Newtonsoft.Json
 @using TravellingSalesmanProblem.Algorithms
 @using TravellingSalesmanProblem.Graph
@@ -174,23 +172,23 @@
         <div class="stage-canvases @(ShowsPreviousCanvas ? "pair" : null)">
             @if (ShowsPreviousCanvas) {
                 <figure class="canvas-frame">
-                    <figcaption>@(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Previous (Before the Move)" : "Previous (Iteration Start)")</figcaption>
-                    <Canvas @ref="@AppState.PreviousCanvas"
+                    <figcaption>@PreviousCaption</figcaption>
+                    <canvas id="@PreviousCanvasId"
                             width="@AppState.CanvasSettings.BufferWidth"
                             height="@AppState.CanvasSettings.BufferHeight"
                             style="@AppState.CanvasSettings.CssSize"
-                            hidden="@(AppState.Instance == null)" />
+                            hidden="@(AppState.Instance == null)"></canvas>
                 </figure>
             }
             @* The frame around the current canvas is the one measured for the fit (canvas.js): it
                is in the markup in every mode, and it has the same width as the previous one. *@
             <figure class="canvas-frame" @ref="currentFrame">
-                <figcaption>@(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Current (After the Move)" : "Current (Iteration End)")</figcaption>
-                <Canvas @ref="@AppState.CurrentCanvas"
+                <figcaption>@CurrentCaption</figcaption>
+                <canvas id="@CurrentCanvasId"
                         width="@AppState.CanvasSettings.BufferWidth"
                         height="@AppState.CanvasSettings.BufferHeight"
                         style="@AppState.CanvasSettings.CssSize"
-                        hidden="@(AppState.Instance == null)" />
+                        hidden="@(AppState.Instance == null)"></canvas>
                 @if (AppState.Instance == null) {
                     <p class="canvas-empty text-muted">The graph is drawn here once an algorithm has been executed.</p>
                 }
@@ -236,6 +234,7 @@
                             <div>
                                 <ChartJS @ref="@AppState.ChartJS[0]"
                                          Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[0]"
+                                         Cursor="@AppState.CurrentHistoryNode.Value.ChartCursor"
                                          ChartID="sa_temperature">
                                 </ChartJS>
                             </div>
@@ -243,6 +242,7 @@
                                 <div>
                                     <ChartJS @ref="@AppState.ChartJS[1]"
                                              Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[1]"
+                                             Cursor="@AppState.CurrentHistoryNode.Value.ChartCursor"
                                              ChartID="sa_distance">
                                     </ChartJS>
                                 </div>
@@ -572,98 +572,60 @@
             /* Stepping back to the first state left the "Previous" canvas showing whatever frame
              * was drawn last, because it was only ever painted when a previous state existed. */
             if (AppState.CurrentHistoryNode.Previous != null)
-                await FillCanvas(AppState.PreviousCanvas, AppState.CurrentHistoryNode.Previous.Value);
+                await FillCanvas(PreviousCanvasId, AppState.CurrentHistoryNode.Previous.Value);
             else
-                await ResetCanvasOf(AppState.PreviousCanvas);
+                await ResetCanvasOf(PreviousCanvasId);
         }
 
-        await FillCanvas(AppState.CurrentCanvas, AppState.CurrentHistoryNode.Value);
+        await FillCanvas(CurrentCanvasId, AppState.CurrentHistoryNode.Value);
     }
 
-    /* Clear, grid, edges and nodes all go into one Batch2D, which flushes as a single JS interop
-     * call. Previously each of them issued its own round trip per primitive - a 30 node instance
-     * with the grid on was several thousand calls per canvas, twice per animation frame. */
-    private async Task FillCanvas(Canvas canvas, GraphState state) {
-        if (canvas == null)
-            return;
+    private const string PreviousCanvasId = "previousCanvas";
+    private const string CurrentCanvasId = "currentCanvas";
 
+    /* The whole frame is described in .NET (CanvasRenderer fills a CanvasScene) and painted by
+     * canvas.js in one interop call. It went through Excubo's Batch2D before, which serialised
+     * every canvas call one by one: about 25 ms per canvas and step for twelve nodes. The length
+     * labels are measured by the page as it draws them, so that round trip is gone as well. */
+    private async Task FillCanvas(string canvasId, GraphState state) {
         var settings = AppState.CanvasSettings;
-        await using var context = await canvas.GetContext2DAsync();
+        var scene = NewScene(settings);
 
-        /* Text metrics need a value back from the browser, so they cannot be taken inside a
-         * batch; they are measured up front and only when annotations are actually drawn. */
-        var annotations = await MeasureAnnotations(context, state);
+        if (settings.ShowGrid)
+            CanvasRenderer.DrawGrid(scene, settings);
+        CanvasRenderer.DrawEdges(scene, state, AppState.CurrentHistoryNode, settings);
+        CanvasRenderer.DrawNodes(scene, state, AppState.CurrentHistoryNode, settings);
 
-        await using (var batch = context.CreateBatch()) {
-            await ResetCanvas(batch, settings);
-            await CanvasRenderer.DrawEdges(batch, state, AppState.CurrentHistoryNode, settings, annotations);
-            await CanvasRenderer.DrawNodes(batch, state, AppState.CurrentHistoryNode, settings);
-        }
-    }
-
-    private async Task<List<TextMetric>> MeasureAnnotations(Context2D context, GraphState state) {
-        /* Ant runs put a pheromone level on every edge of the complete graph; annotating all of
-         * them is unreadable, which is why this is suppressed. The renderer used to do it by
-         * assigning to the shared CanvasSettings mid-draw. */
-        if (!AppState.CanvasSettings.Annotate || state.PathEdges.Any(e => e.Pheromone != 0))
-            return null;
-
-        var annotations = CanvasRenderer.BuildAnnotations(state);
-        var measured = new Dictionary<string, (double Width, double Height)>();
-
-        /* Measure in the font the labels are actually drawn in, not whatever the context happens
-         * to carry - otherwise the box is sized for the 10px default and the text overflows it. */
-        await context.FontAsync(CanvasRenderer.EdgeTextFont(AppState.CanvasSettings.Theme));
-
-        foreach (var annotation in annotations) {
-            if (!measured.TryGetValue(annotation.Text, out var size)) {
-                var metrics = await context.MeasureTextAsync(annotation.Text);
-                size = (metrics.Width, metrics.FontBoundingBoxAscent + metrics.FontBoundingBoxDescent);
-                measured[annotation.Text] = size;
-            }
-
-            annotation.Width = size.Width;
-            annotation.Height = size.Height;
-        }
-
-        return annotations;
+        await JS.InvokeVoidAsync("tspCanvas.draw", canvasId, scene.ToJson());
     }
 
     private async Task ResetCanvases() {
-        /* The "Previous" canvas is only in the markup for SA and HC. After switching away from
-         * them AppState.PreviousCanvas still holds the removed component, and asking it for a
-         * context throws because its element is no longer in the document - so the algorithm has
-         * to be checked as well as the reference. */
+        /* The "Previous" canvas is only in the markup for SA, HC and the manual mode; canvas.js
+         * skips a canvas that is not in the document. */
         if (ShowsPreviousCanvas)
-            await ResetCanvasOf(AppState.PreviousCanvas);
+            await ResetCanvasOf(PreviousCanvasId);
 
-        await ResetCanvasOf(AppState.CurrentCanvas);
+        await ResetCanvasOf(CurrentCanvasId);
     }
 
-    private async Task ResetCanvasOf(Canvas canvas) {
-        if (canvas == null)
-            return;
-
-        await using var context = await canvas.GetContext2DAsync();
-        await using var batch = context.CreateBatch();
-        await ResetCanvas(batch, AppState.CanvasSettings);
-    }
-
-    private async Task ResetCanvas(IContext2DWithoutGetters context, CanvasSettings settings) {
-        /* The cleared and repainted rectangle started at the graph's minimum coordinate rather
-         * than at the canvas origin, so with a graph whose smallest coordinate was not zero a
-         * strip along the top and left kept the previous frame's pixels. */
-        /* Everything is drawn in CSS pixels; the transform maps them onto the buffer, which is
-         * PixelRatio times larger. Setting it absolutely each frame also discards whatever a
-         * previous frame left on the context. */
-        await context.SetTransformAsync(settings.PixelRatio, 0, 0, settings.PixelRatio, 0, 0);
-        await context.ClearRectAsync(0, 0, settings.Width, settings.Height);
-        await context.FillStyleAsync(settings.Theme.Background);
-        await context.FillRectAsync(0, 0, settings.Width, settings.Height);
-
+    /* The canvas cleared to the background, with the grid if it is on. */
+    private async Task ResetCanvasOf(string canvasId) {
+        var settings = AppState.CanvasSettings;
+        var scene = NewScene(settings);
         if (settings.ShowGrid)
-            await CanvasRenderer.DrawGrid(context, settings);
+            CanvasRenderer.DrawGrid(scene, settings);
+
+        await JS.InvokeVoidAsync("tspCanvas.draw", canvasId, scene.ToJson());
     }
+
+    /* Everything is drawn in CSS pixels; the page's transform maps them onto the buffer, which is
+     * PixelRatio times larger, and the whole canvas - not only the graph's extent - is cleared. */
+    private static CanvasScene NewScene(CanvasSettings settings) => new() {
+        Width = settings.Width,
+        Height = settings.Height,
+        Ratio = settings.PixelRatio,
+        Background = settings.Theme.Background
+    };
 
     /* The "Previous" canvas shows the state a step is taken from. Simulated Annealing and Hill
      * Climbing use it for the iteration boundary, the manual mode for the tour before and after
@@ -672,6 +634,20 @@
      * put there - so after switching away it still points at a component that is no longer in the
      * document. Same trap as the charts: the reference has to be checked together with the mode. */
     private bool ShowsDistanceTable => AppState.AlgorithmEnum == AlgorithmEnum.Manual;
+
+    /* Annealing records a state per draw, so its canvases are the tour before and after one draw
+     * (a rejected draw leaves it as it was, with the neighbour it turned down drawn dashed). */
+    private string PreviousCaption => AppState.AlgorithmEnum switch {
+        AlgorithmEnum.Manual => "Previous (Before the Move)",
+        AlgorithmEnum.SA => "Previous (Before the Draw)",
+        _ => "Previous (Iteration Start)"
+    };
+
+    private string CurrentCaption => AppState.AlgorithmEnum switch {
+        AlgorithmEnum.Manual => "Current (After the Move)",
+        AlgorithmEnum.SA => "Current (After the Draw)",
+        _ => "Current (Iteration End)"
+    };
 
     private bool ShowsPreviousCanvas =>
         AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC or AlgorithmEnum.Manual;
@@ -793,7 +769,8 @@
         for (int i = 0; i < ChartCount(); i++) {
             var chart = AppState.ChartJS[i];
             if (chart != null)
-                await chart.UpdateFromGraphState(AppState.CurrentHistoryNode.Value.ChartInfo[i]);
+                await chart.UpdateFromGraphState(AppState.CurrentHistoryNode.Value.ChartInfo[i],
+                    AppState.CurrentHistoryNode.Value.ChartCursor);
         }
     }
 

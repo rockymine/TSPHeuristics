@@ -29,6 +29,7 @@ namespace Tests.cli {
             ManualMoves();
             RandomDescent();
             ReviewFixes();
+            AnnealingRecordsEveryDraw();
 
             Console.WriteLine();
             Console.WriteLine(_failures == 0 ? "ALL PASS" : $"{_failures} FAILED");
@@ -370,6 +371,60 @@ namespace Tests.cli {
                 .FindPath(Instance(10, 3));
             Check(ants.Skip(1).All(s => s.Path.Count > 0), "every Ant System state keeps its tour",
                 $"{ants.Skip(1).Count(s => s.Path.Count == 0)} of {ants.Count - 1} empty");
+        }
+
+        /* Simulated Annealing records every draw: the start, one state per draw, and the best tour at
+         * the end. A rejected draw leaves the tour as it was; the charts are one pair for the run. */
+        private static void AnnealingRecordsEveryDraw() {
+            var graph = Instance(12, 7);
+            var sa = new SimulatedAnnealing {
+                StartTemp = 100, MinTemp = 0.01, Alpha = 0.9, PhaseLength = 3, NeighbourEnum = NeighbourType.TwoOpt
+            };
+            var history = sa.FindPath(graph);
+
+            var phases = 0;
+            for (var t = 100d; t >= 0.01; t *= 0.9)
+                phases++;
+            var draws = history.Where(s => s.Outcome != null).ToList();
+            Check(draws.Count == phases * 3, "annealing: one state per draw", $"{draws.Count} of {phases * 3}");
+            Check(history.Count == draws.Count + 2, "annealing: plus the start and the final best tour");
+
+            var unchanged = true;
+            var outcomes = true;
+            for (var node = history.First.Next; node != null; node = node.Next) {
+                var state = node.Value;
+                if (state.Outcome == DrawOutcome.LongerRejected)
+                    unchanged &= state.Path.Select(n => n.Index).SequenceEqual(node.Previous.Value.Path.Select(n => n.Index));
+                if (state.Outcome == DrawOutcome.Shorter)
+                    outcomes &= state.Distance <= node.Previous.Value.Distance + 1e-9;
+                if (state.Outcome == DrawOutcome.LongerAccepted)
+                    outcomes &= state.Distance > node.Previous.Value.Distance;
+            }
+            Check(unchanged, "annealing: a rejected draw keeps the tour");
+            Check(outcomes, "annealing: shorter and longer outcomes match the lengths");
+            Check(draws.Any(s => s.Outcome == DrawOutcome.LongerAccepted), "annealing: a hot run takes longer tours too");
+            Check(draws.Where(s => s.Outcome != DrawOutcome.Shorter).All(s => s.Derivations.Any(d => d.Title == "Metropolis rule")),
+                "annealing: every longer draw explains its Metropolis test");
+
+            var sameDelta = draws.Where(s => s.Outcome != DrawOutcome.Shorter).All(s => {
+                var move = s.Derivations.First(d => d.Title == "Change in length");
+                var metropolis = s.Derivations.First(d => d.Title == "Metropolis rule");
+                return move.Steps[2].Rhs == metropolis.Steps[2].Rhs;
+            });
+            Check(sameDelta, "annealing: the move and the Metropolis card show the same delta");
+
+            var best = history.Min(s => s.Distance);
+            Check(Math.Abs(history.Last.Value.Distance - best) < 1e-9, "annealing: ends on the best tour found");
+            Check(history.All(s => ReferenceEquals(s.ChartInfo, history.First.Value.ChartInfo)), "annealing: one chart pair shared by all states");
+            Check(history.First.Value.ChartInfo[0].YAxis[0].Values.Count == phases + 1, "annealing: one chart point per phase, plus the end");
+
+            /* A schedule of about 46,000 phases is recorded once per phase-group instead of per draw. */
+            var slow = new SimulatedAnnealing {
+                StartTemp = 100, MinTemp = 0.01, Alpha = 0.9998, PhaseLength = 2, NeighbourEnum = NeighbourType.Swap
+            };
+            var thinned = slow.FindPath(Instance(8, 3));
+            Check(thinned.Count <= SimulatedAnnealing.MaxRecordedDraws + 2 && thinned.Count > 1000,
+                "annealing: a very long run is thinned to the recording limit", thinned.Count.ToString());
         }
 
         private static string Rejected(string text) {

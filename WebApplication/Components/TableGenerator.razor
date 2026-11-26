@@ -340,7 +340,9 @@
 		GraphState previous = null;
 
 		foreach (var state in HistoryUpTo(node)) {
-			if (state.MoveInfo == null || state.MoveInfo.Nodes.Count < 2) {
+			/* Annealing records every draw now; a rejected one did not change the tour, so its y would
+			   only repeat x. The table lists the moves that were made. */
+			if (state.MoveInfo == null || state.MoveInfo.Nodes.Count < 2 || state.Outcome == DrawOutcome.LongerRejected) {
 				previous = state;
 				continue;
 			}

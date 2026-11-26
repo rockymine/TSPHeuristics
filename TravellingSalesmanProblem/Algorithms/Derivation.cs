@@ -70,6 +70,14 @@ namespace TravellingSalesmanProblem.Algorithms {
     public static class Derivations {
         private static string D(MoveEdge e) => $"d({e.A.Index},{e.B.Index})";
 
+        /* Δ as the move card shows it: the sum of the rounded edge lengths, which is not always the
+         * difference of the rounded tour lengths. A card shown next to it uses this one. */
+        public static double MoveDelta(MoveInfo move) =>
+            Tex.Len(move.Added.Sum(e => Tex.Len(e.Length)) - move.Removed.Sum(e => Tex.Len(e.Length)));
+
+        /* f(y) as the move card arrives at it: f(x) + Δ, both as shown. */
+        public static double MoveResult(MoveInfo move, double fx) => Tex.Len(Tex.Len(fx) + MoveDelta(move));
+
         /* Δ for a move: the edges put in minus the edges taken out, then f(y) = f(x) + Δ. */
         public static Derivation Move(MoveInfo move, double fx, string context, string caption) {
             if (move?.Added == null || move.Removed == null || move.Added.Count == 0)
@@ -78,8 +86,8 @@ namespace TravellingSalesmanProblem.Algorithms {
             var symbolic = string.Join(" + ", move.Added.Select(D)) + string.Concat(move.Removed.Select(e => " - " + D(e)));
             var values = string.Join(" + ", move.Added.Select(e => Tex.LenText(e.Length))) +
                          string.Concat(move.Removed.Select(e => " - " + Tex.LenText(e.Length)));
-            var delta = Tex.Len(move.Added.Sum(e => Tex.Len(e.Length)) - move.Removed.Sum(e => Tex.Len(e.Length)));
-            var fy = Tex.Len(Tex.Len(fx) + delta);
+            var delta = MoveDelta(move);
+            var fy = MoveResult(move, fx);
 
             var verdict = delta < 0 ? $"Shorter by {Tex.LenText(-delta)}"
                         : delta > 0 ? $"Longer by {Tex.LenText(delta)}" : "No change";

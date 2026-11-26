@@ -59,7 +59,8 @@ window.tspTheme = (function () {
                 text: css("--text-secondary"),
                 grid: css("--border"),
                 line: css("--chart-line"),
-                fill: css("--chart-fill")
+                fill: css("--chart-fill"),
+                cursor: css("--accent-text")
             };
         }
     };

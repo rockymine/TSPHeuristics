@@ -1,4 +1,3 @@
-using Excubo.Blazor.Canvas.Contexts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,13 +23,9 @@ namespace WebApplication.Utils {
             }
         }
 
-        /* No quoted family names: Excubo hands the font string to the page through eval, and a quote
-         * inside it ends the string early. */
         private const string FontFamily = "system-ui, -apple-system, sans-serif";
 
-        /* GraphView has to select this font on the context before measuring the annotations, or
-         * MeasureTextAsync reports the canvas default (10px sans-serif) and every label box comes
-         * out too small for the text it is drawn behind. It follows the page's text size. */
+        /* The edge length labels' font; it follows the page's text size. */
         public static string EdgeTextFont(CanvasTheme theme) =>
             $"500 {Math.Round(theme.LabelSize * 1.15, 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}px {FontFamily}";
 
@@ -79,15 +74,11 @@ namespace WebApplication.Utils {
         private static Brush NodeBrush(CanvasTheme theme) => new() {
             Color = theme.Node, Width = 2, Style = FillStyle.Fill, TextStyle = theme.NodeLabel
         };
-        private static Brush LabelBrush(CanvasTheme theme) => new() {
-            Color = theme.LabelBackground, Width = 2, Style = FillStyle.Fill,
-            TextFont = EdgeTextFont(theme), TextStyle = theme.LabelText
-        };
 
         /* One grid line used to be one DrawLine, i.e. seven interop calls each. A 90x90 instance
          * meant well over a thousand round trips per canvas clear, and the canvas is cleared on
          * every animation frame. The whole grid is one path with one stroke now. */
-        public static async Task DrawGrid(IContext2DWithoutGetters context, CanvasSettings settings) {
+        public static void DrawGrid(CanvasScene scene, CanvasSettings settings) {
             var segments = new List<(Vector2, Vector2)>();
 
             /* One line per whole coordinate meant 5,000 lines for a 0..5000 graph (6.4 s per
@@ -106,12 +97,12 @@ namespace WebApplication.Utils {
                     Manipulate(new Vector2((float)x, settings.MaxPos.Y), settings)));
             }
 
-            await context.DrawLines(GridBrush(settings.Theme), segments);
+            scene.Lines(GridBrush(settings.Theme), segments);
         }
 
         /* Nodes are grouped by fill colour so each colour is a single path, and all the index
          * labels share one font/style setup instead of re-sending it per node. */
-        public static async Task DrawNodes(IContext2DWithoutGetters context, GraphState state,
+        public static void DrawNodes(CanvasScene scene, GraphState state,
             LinkedListNode<GraphState> currentStateNode, CanvasSettings settings) {
             var nodes = state.Nodes;
             var theme = settings.Theme;
@@ -139,11 +130,11 @@ namespace WebApplication.Utils {
 
             foreach (var group in byColor) {
                 brush.Color = group.Key;
-                await context.DrawCircles(brush, radius, group.Value, theme.Background, HaloWidth);
+                scene.Circles(group.Key, radius, group.Value, theme.Background, HaloWidth);
             }
 
             if (fontSize > 0)
-                await context.WriteTexts(NodeTextFont(fontSize), brush.TextStyle, labels);
+                scene.Texts(NodeTextFont(fontSize), brush.TextStyle, labels);
         }
 
         private static string NodeColor(MoveInfo moveInfo, Node node, CanvasTheme theme) {
@@ -157,8 +148,8 @@ namespace WebApplication.Utils {
             return theme.Node;
         }
 
-        public static async Task DrawEdges(IContext2DWithoutGetters context, GraphState state,
-            LinkedListNode<GraphState> stateNode, CanvasSettings settings, IReadOnlyList<TextMetric> annotations) {
+        public static void DrawEdges(CanvasScene scene, GraphState state,
+            LinkedListNode<GraphState> stateNode, CanvasSettings settings) {
             var edges = state.PathEdges;
 
             /* Pheromone weighted edges each need their own width, so they cannot share a path;
@@ -198,11 +189,27 @@ namespace WebApplication.Utils {
                 brush.Color = group.Key.Color;
                 brush.Width = group.Key.Width;
                 brush.Dashed = group.Key.Dashed;
-                await context.DrawLines(brush, group.Value);
+                scene.Lines(brush, group.Value);
             }
 
-            if (annotations != null)
-                await DrawEdgeTextBoxes(context, annotations, settings);
+            /* A rejected draw leaves the tour as it was, so there is nothing to colour - which would
+             * make it look as if nothing had happened. The edges the neighbour would have put in
+             * are drawn thin and dashed instead: the move that was turned down. */
+            if (current && settings.Colorize && state.Outcome == DrawOutcome.LongerRejected &&
+                state.MoveInfo?.Added is { Count: > 0 } added) {
+                brush.Color = theme.Removed;
+                brush.Width = 1.5;
+                brush.Dashed = true;
+                scene.Lines(brush, added.Select(e =>
+                    (Manipulate(e.A.Position, settings), Manipulate(e.B.Position, settings))).ToList());
+            }
+
+            /* Ant runs put a pheromone level on every edge of the complete graph; annotating all of
+             * them is unreadable, which is why this is suppressed. */
+            if (settings.Annotate && !state.PathEdges.Any(e => e.Pheromone != 0)) {
+                var labels = BuildAnnotations(state).Select(a => (a.Text, Manipulate(a.Position, settings))).ToList();
+                scene.Boxes(EdgeTextFont(theme), theme.LabelBackground, theme.LabelText, labels);
+            }
         }
 
         /* Membership was tested with compare.Find(e => e.IsEqual(edge)) - a linear scan of the
@@ -221,8 +228,7 @@ namespace WebApplication.Utils {
             return a < b ? (a, b) : (b, a);
         }
 
-        /* Label placement and the text measurements are computed by the caller, which still has an
-         * unbatched context; only the drawing happens here. */
+        /* Where each edge's length goes; the page measures and draws the labels (CanvasScene.Boxes). */
         public static List<TextMetric> BuildAnnotations(GraphState state) {
             var positions = new HashSet<Vector2>();
             var annotations = new List<TextMetric>(state.PathEdges.Count);
@@ -247,15 +253,6 @@ namespace WebApplication.Utils {
             return annotations;
         }
 
-        private static async Task DrawEdgeTextBoxes(IContext2DWithoutGetters context,
-            IReadOnlyList<TextMetric> annotations, CanvasSettings settings) {
-            var brush = LabelBrush(settings.Theme);
-
-            foreach (var annotation in annotations) {
-                await context.DrawTextBox(brush, Manipulate(annotation.Position, settings),
-                    annotation.Text, annotation.Width, annotation.Height);
-            }
-        }
 
         private static Vector2 Manipulate(Vector2 vector, CanvasSettings settings) {
             return ((vector - settings.MinPos) * settings.Scale + settings.Offset).InverseY(settings.Height);
@@ -265,7 +262,5 @@ namespace WebApplication.Utils {
     public class TextMetric {
         public string Text { get; set; }
         public Vector2 Position { get; set; }
-        public double Width { get; set; }
-        public double Height { get; set; }
     }
 }

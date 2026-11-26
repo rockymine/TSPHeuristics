@@ -1,5 +1,4 @@
-﻿using Excubo.Blazor.Canvas;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -239,8 +238,6 @@ namespace WebApplication.Utils {
         public LinkedList<GraphState> GraphHistory;
         public LinkedListNode<GraphState> CurrentHistoryNode;
 
-        public Canvas PreviousCanvas;
-        public Canvas CurrentCanvas;
 
         public TableGenerator TableGenerator;
         /* Only the manual mode shows a second table - the distance matrix the moves are read off. */
