@@ -1,99 +1,45 @@
-﻿<div class="col">
-    <div class="form-group">
-        <label for="nodeSize">Node Size</label>
-        <input type="number" id="nodeSize" class="form-control" @bind="NodeRadius">
-    </div>
-    <div class="form-group">
-        <label for="animationDelay">Animation Delay (ms)</label>
-        <input type="number" step="10" id="animationDelay" class="form-control" @bind="@AnimationDelay">
-    </div>
-    <div class="form-check"  style="margin-top: 0.5rem;">
-        <input type="checkbox" class="form-check-input" id="showGrid" @bind="ShowGrid">
-        <label class="form-check-label" for="showGrid">Show Grid</label>
-    </div>
-    <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="switchColor" @bind="@ColorizeChanges">
-        <label class="form-check-label" for="switchColor">Colorize Changes</label>
-    </div>
-    <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="switchAnnotate" @bind="@AnnotateEdges">
-        <label class="form-check-label" for="switchAnnotate">Annotate Edges</label>
-    </div>
+﻿@* How the graph is drawn - not what is solved or how. These sit in the stage toolbar next to the
+   canvases they change, and take effect on the canvas at once (GraphView.ApplyView); in the sidebar
+   they were mixed in with the instance's limits and only applied on the next Execute. *@
+<div class="toolbar-group" role="group" aria-label="View">
+    <button type="button" class="btn btn-sm btn-toggle" aria-pressed="@Pressed(ShowGrid)" id="showGrid"
+            title="Grid lines at every whole coordinate" @onclick="() => ShowGridChanged.InvokeAsync(!ShowGrid)">
+        <i class="bi bi-grid-3x3"></i><span>Grid</span>
+    </button>
+    <button type="button" class="btn btn-sm btn-toggle" aria-pressed="@Pressed(ColorizeChanges)" id="switchColor"
+            title="Colour the edges a step adds and removes, and the nodes it moves"
+            @onclick="() => ColorizeChangesChanged.InvokeAsync(!ColorizeChanges)">
+        <i class="bi bi-palette"></i><span>Changes</span>
+    </button>
+    <button type="button" class="btn btn-sm btn-toggle" aria-pressed="@Pressed(AnnotateEdges)" id="switchAnnotate"
+            title="Write each edge's length on it" @onclick="() => AnnotateEdgesChanged.InvokeAsync(!AnnotateEdges)">
+        <i class="bi bi-rulers"></i><span>Lengths</span>
+    </button>
+    <label class="toolbar-field" for="nodeSize" title="Node radius in pixels">
+        <span>Node</span>
+        <input type="number" id="nodeSize" class="form-control form-control-sm" min="1" max="30"
+               value="@NodeRadius" @onchange="SetNodeRadius">
+    </label>
 </div>
 
 @code {
-    private float _nodeRadius;
-    [Parameter]
-    public float NodeRadius {
-        get => _nodeRadius;
-        set {
-            if (value == _nodeRadius)
-                return;
+    [Parameter] public float NodeRadius { get; set; }
+    [Parameter] public EventCallback<float> NodeRadiusChanged { get; set; }
 
-            _nodeRadius = value;
-            NodeRadiusChanged.InvokeAsync(value);
-        }
-    }
-    [Parameter]
-    public EventCallback<float> NodeRadiusChanged { get; set; }
+    [Parameter] public bool ShowGrid { get; set; }
+    [Parameter] public EventCallback<bool> ShowGridChanged { get; set; }
 
-    private bool _showGrid;
-    [Parameter]
-    public bool ShowGrid {
-        get => _showGrid;
-        set {
-            if (value == _showGrid)
-                return;
+    [Parameter] public bool AnnotateEdges { get; set; }
+    [Parameter] public EventCallback<bool> AnnotateEdgesChanged { get; set; }
 
-            _showGrid = value;
-            ShowGridChanged.InvokeAsync(value);
-        }
-    }
-    [Parameter]
-    public EventCallback<bool> ShowGridChanged { get; set; }
+    [Parameter] public bool ColorizeChanges { get; set; }
+    [Parameter] public EventCallback<bool> ColorizeChangesChanged { get; set; }
 
-    private bool _annotateEdges;
-    [Parameter]
-    public bool AnnotateEdges {
-        get => _annotateEdges;
-        set {
-            if (value == _annotateEdges)
-                return;
+    private static string Pressed(bool on) => on ? "true" : "false";
 
-                _annotateEdges = value;
-                AnnotateEdgesChanged.InvokeAsync(value);
-        }
-    }
-    [Parameter]
-    public EventCallback<bool> AnnotateEdgesChanged { get; set; }
-
-    private bool _colorizeChanges;
-    [Parameter]
-    public bool ColorizeChanges {
-        get => _colorizeChanges;
-        set {
-            if (value == _colorizeChanges)
-                return;
-
-                _colorizeChanges = value;
-                ColorizeChangesChanged.InvokeAsync(value);
-        }
-    }
-    [Parameter]
-    public EventCallback<bool> ColorizeChangesChanged { get; set; }
-
-    private int _animationDelay;
-    [Parameter]
-    public int AnimationDelay {
-        get => _animationDelay;
-        set {
-            if (value == _animationDelay)
-                return;
-
-                _animationDelay = value;
-                AnimationDelayChanged.InvokeAsync(value);
-        }
-    }
-    [Parameter]
-    public EventCallback<int> AnimationDelayChanged { get; set; }
+    private Task SetNodeRadius(ChangeEventArgs e) =>
+        float.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Float,
+                       System.Globalization.CultureInfo.InvariantCulture, out var radius)
+            ? NodeRadiusChanged.InvokeAsync(radius)
+            : Task.CompletedTask;
 }

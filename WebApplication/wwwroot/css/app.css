@@ -293,11 +293,62 @@ label,
     border-right: 1px solid var(--border);
 }
 
+.sidebar {
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-section {
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    border-bottom: 1px solid var(--border);
+}
+
+.sidebar-section-title {
+    margin: 0 0 var(--space-3);
+    font-size: var(--font-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+/* The settings that belong to the choice above them: the heuristic's parameters, the source's
+   inputs. Set off by a rule on the left so they read as one group under their select. */
+.sidebar-subsection {
+    margin-top: var(--space-3);
+    padding-left: var(--space-3);
+    border-left: 2px solid var(--border);
+}
+
+.sidebar-subsection:empty {
+    display: none;
+}
+
 .sidebar h5 {
     margin-bottom: var(--space-2);
     font-size: var(--font-base);
     font-weight: 600;
     color: var(--text-strong);
+}
+
+/* Execute stays at the foot of the sidebar however long the settings above it run. */
+.sidebar-footer {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border);
+}
+
+.sidebar-footer .notice-error {
+    margin: 0 0 var(--space-3);
+}
+
+.graph-text {
+    height: 200px;
+    font-family: var(--font-mono);
+    font-size: var(--font-sm);
 }
 
 .sidebar .form-group + .form-group,
@@ -356,8 +407,64 @@ label,
     font-size: var(--font-base);
 }
 
+.stage-toolbar-row {
+    flex-basis: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+}
+
+/* The view options sit at the far end of the row. */
+.stage-toolbar-row > .toolbar-group:last-child {
+    margin-left: auto;
+}
+
 .stage-toolbar .btn-toolbar {
     gap: 2px;
+}
+
+.toolbar-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.btn-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: var(--control-height);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+}
+
+.btn-toggle:hover {
+    background: var(--bg-raised);
+    color: var(--text-strong);
+}
+
+.btn-toggle[aria-pressed="true"] {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent-text);
+}
+
+.toolbar-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--font-base);
+}
+
+.toolbar-field input {
+    width: 4.5rem;
+    min-height: var(--control-height);
+    font-variant-numeric: tabular-nums;
 }
 
 .stage-toolbar .btn-toolbar .btn {

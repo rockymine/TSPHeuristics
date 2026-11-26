@@ -21,7 +21,7 @@ const load = name => fs.readFileSync(path.join(INSTANCES, name + '.txt'), 'utf8'
   page.on('pageerror', e => console.log('  [pageerror] ' + e.message.split('\n')[0]));
 
   await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'networkidle' });
-  await page.waitForSelector('text=Algorithm Settings', { timeout: 60000 });
+  await page.waitForSelector('#selectHeuristics', { timeout: 60000 });
 
   // Keep the animation loop from competing with the measured run.
   await page.fill('#animationDelay', '5000').catch(() => {});

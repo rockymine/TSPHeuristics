@@ -62,7 +62,8 @@ namespace WebApplication.Utils {
             var nodes = state.Nodes;
             var theme = settings.Theme;
             var brush = NodeBrush(theme);
-            var moveInfo = currentStateNode.Value.MoveInfo;
+            /* "Changes" off: no highlighted nodes either. Colorize used to be set and never read. */
+            var moveInfo = settings.Colorize ? currentStateNode.Value.MoveInfo : null;
 
             var byColor = new Dictionary<string, List<Vector2>>();
             var labels = new List<(string, Vector2)>(nodes.Count);
@@ -114,7 +115,7 @@ namespace WebApplication.Utils {
             var current = state == stateNode.Value;
             var compare = current ? stateNode.Previous?.Value.PathEdges : stateNode.Value.PathEdges;
             var changeColor = current ? theme.Added : theme.Removed;
-            var compareKeys = compare == null ? null : PathKeys(compare);
+            var compareKeys = compare == null || !settings.Colorize ? null : PathKeys(compare);
 
             foreach (var edge in edges) {
                 var color = theme.Edge;

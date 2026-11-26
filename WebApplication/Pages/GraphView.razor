@@ -23,19 +23,12 @@
     </div>
 </header>
 <div class="workspace">
-    <!-- Settings: everything that configures a run -->
+    <!-- Settings: what is solved and how. How it is drawn lives in the stage toolbar. -->
     <aside class="sidebar">
-        <!-- Algorithm Settings -->
-        <div class="custom-input-group">
-            <h5 class="font-weight-bold">Algorithm Settings</h5>
+        <SidebarSection Title="Heuristic">
             <AlgorithmSettings @bind-AlgorithmEnum="@AppState.AlgorithmEnum"
                                @bind-MultiStart="@AppState.MultiStart" />
-        </div>
-        <hr class="custom-hr" />
-        <!-- Heuristic Settings -->
-        <div class="custom-input-group">
-            <h5 class="font-weight-bold">Heuristic Settings</h5>
-            <form>
+            <div class="sidebar-subsection">
                 @if (AppState.AlgorithmEnum == AlgorithmEnum.NN && !AppState.MultiStart) {
                     <NearestNeighborSettings @bind-StartNode="@AppState.StartNode" />
                 }
@@ -64,34 +57,22 @@
                                         OnApply="ApplyManualMove" OnUndo="UndoManualMove"
                                         OnReset="ResetManualMoves" />
                 }
-            </form>
-        </div>
-        <hr class="custom-hr" />
-        <!-- Canvas Settings -->
-        <div class="custom-input-group">
-            <h5 class="font-weigth-bold">Canvas Settings</h5>
-            <CanvasDisplaySettings @bind-NodeRadius="@AppState.NodeRadius"
-                                   @bind-ShowGrid="@AppState.ShowGrid"
-                                   @bind-AnnotateEdges="@AppState.AnnotateEdges"
-                                   @bind-ColorizeChanges="@AppState.ColorizeChanges"
-                                   @bind-AnimationDelay="@AppState.AnimationDelay" />
-        </div>
-        <hr class="custom-hr" />
-        <!-- Graph Settings -->
-        <div class="custom-input-group">
-            <h5 class="font-weight-bold">Graph Settings</h5>
+            </div>
+        </SidebarSection>
+
+        <SidebarSection Title="Graph">
             <div class="form-group">
-                <label for="selectGraphSource">Graph Source</label>
+                <label for="selectGraphSource">Source</label>
                 <select class="form-control" name="graphSource" id="selectGraphSource" @bind="AppState.GraphSource">
                     <option value="Text" @onselect="e => AppState.GraphSource = GraphSource.Text">Text</option>
                     <option value="File" @onselect="e => AppState.GraphSource = GraphSource.File">File</option>
                     <option value="Random" @onselect="e => AppState.GraphSource = GraphSource.Random">Random</option>
                 </select>
             </div>
-            <div style="margin-top: 0.5rem;">
+            <div class="sidebar-subsection">
                 @if (AppState.GraphSource == GraphSource.Text) {
                     <div class="form-group">
-                        <textarea class="form-control" @bind="AppState.DefaultGraph" style="height: 200px;"></textarea>
+                        <textarea class="form-control graph-text" @bind="AppState.DefaultGraph" aria-label="Graph definition"></textarea>
                         <small class="form-text text-muted">
                             <code>n,index,x,y</code> per node. Simulated Annealing and Hill Climbing
                             start from the order the nodes are listed in; add
@@ -105,27 +86,30 @@
                 } else if (AppState.GraphSource == GraphSource.File) {
                     <FileInput @ref="@AppState.FileInput" />
                 }
-                <div class="d-grid gap-2 mx-auto" style="margin-top: 0.5rem;">
-                    <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(AppState.GraphSource)">Execute Algorithm</button>
-                    @if (AppState.Instance != null) {
-                        <FileOutput @ref="@AppState.FileOutput" />
-                    }
+            </div>
+        </SidebarSection>
+
+        <!-- Run: always in reach at the foot of the sidebar -->
+        <div class="sidebar-footer">
+            @if (!string.IsNullOrEmpty(AppState.Error)) {
+                <div class="notice-error" role="alert">
+                    <h5 class="font-weight-bold">Error</h5>
+                    <p>@AppState.Error</p>
                 </div>
+            }
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary" type="button" @onclick="e => InitiateGraph(AppState.GraphSource)">Execute Algorithm</button>
+                @if (AppState.Instance != null) {
+                    <FileOutput @ref="@AppState.FileOutput" />
+                }
             </div>
         </div>
-        <!-- Error -->
-        @if (!string.IsNullOrEmpty(AppState.Error)) {
-            <hr class="custom-hr" />
-            <div class="notice-error" role="alert">
-                <h5 class="font-weight-bold">Error</h5>
-                <p>@AppState.Error</p>
-            </div>
-        }
     </aside>
 
     <main class="stage">
-        <!-- Toolbar: moving through the states of the run -->
+        <!-- Toolbar: moving through the states of the run, and how they are drawn -->
         <div class="stage-toolbar">
+            <div class="stage-toolbar-row">
             @if (AppState.GraphHistory != null) {
                 <div class="btn-toolbar">
                     <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
@@ -164,15 +148,26 @@
                     Execution Time: @AppState.TimeSpan.Minutes m @AppState.TimeSpan.Seconds s
                     @AppState.TimeSpan.Milliseconds ms (@Math.Round((double)AppState.Stopwatch.ElapsedMilliseconds / 1000, 3) s)
                 </span>
-                @if (AppState.CurrentHistoryNode != null) {
-                    <div class="stage-toolbar-state">
-                        @foreach (var kvp in AppState.CurrentHistoryNode.Value.Messages) {
-                            <span><strong>@kvp.Key</strong>: @kvp.Value</span>
-                        }
-                    </div>
-                }
             } else {
                 <span class="text-muted">Execute an algorithm to step through its states.</span>
+            }
+                <label class="toolbar-field" for="animationDelay" title="Delay between states while playing">
+                    <span>Delay</span>
+                    <input type="number" step="10" min="1" id="animationDelay" class="form-control form-control-sm"
+                           @bind="AppState.AnimationDelay">
+                    <span>ms</span>
+                </label>
+                <CanvasDisplaySettings @bind-NodeRadius="@AppState.NodeRadius" @bind-NodeRadius:after="ApplyView"
+                                       @bind-ShowGrid="@AppState.ShowGrid" @bind-ShowGrid:after="ApplyView"
+                                       @bind-AnnotateEdges="@AppState.AnnotateEdges" @bind-AnnotateEdges:after="ApplyView"
+                                       @bind-ColorizeChanges="@AppState.ColorizeChanges" @bind-ColorizeChanges:after="ApplyView" />
+            </div>
+            @if (AppState.GraphHistory != null && AppState.CurrentHistoryNode != null) {
+                <div class="stage-toolbar-state">
+                    @foreach (var kvp in AppState.CurrentHistoryNode.Value.Messages) {
+                        <span><strong>@kvp.Key</strong>: @kvp.Value</span>
+                    }
+                </div>
             }
         </div>
 
@@ -330,6 +325,24 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
+    /* The view options in the toolbar apply to what is on the canvas now. ShowGrid and NodeRadius
+     * used to be copied over only when a graph was executed, so toggling them did nothing until
+     * the next run. */
+    private void SyncView() {
+        var settings = AppState.CanvasSettings;
+        settings.ShowGrid = AppState.ShowGrid;
+        settings.NodeRadius = AppState.NodeRadius;
+        settings.Annotate = AppState.AnnotateEdges;
+        settings.Colorize = AppState.ColorizeChanges;
+    }
+
+    private async Task ApplyView() {
+        SyncView();
+
+        if (AppState.GraphHistory != null && AppState.CurrentHistoryNode != null)
+            await Redraw();
+    }
+
     [JSInvokable]
     public void OnCanvasBox(double width, double viewportHeight, double pixelRatio) {
         canvasBox = (width, viewportHeight, pixelRatio);
@@ -421,8 +434,7 @@
         AppState.CanvasSettings.MinPos = AppState.Instance.FindMin();
         AppState.CanvasSettings.MaxPos = AppState.Instance.FindMax();
         FitCanvases();
-        AppState.CanvasSettings.NodeRadius = AppState.NodeRadius;
-        AppState.CanvasSettings.ShowGrid = AppState.ShowGrid;
+        SyncView();
 
         await UpdateEnumerator();
     }
@@ -494,8 +506,7 @@
     }
 
     private async Task Redraw() {
-        AppState.CanvasSettings.Annotate = AppState.AnnotateEdges;
-        AppState.CanvasSettings.Colorize = AppState.ColorizeChanges;
+        SyncView();
 
         await FillCanvases();
         await UpdateVisualsFromGraphState();
