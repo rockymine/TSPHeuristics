@@ -134,7 +134,7 @@ namespace WebApplication.Utils {
             set {
                 if (value == _minTemp)
                     return;
-                if (value < 0.0000001 || value >= _startTemp)
+                if (value < 0.00000001 || value >= _startTemp)
                     return;
 
                 _minTemp = value;

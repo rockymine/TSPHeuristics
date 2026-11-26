@@ -410,3 +410,24 @@ code {
 
 /* Focus is moved onto the panel itself so Escape reaches it; the panel needs no ring for that. */
 .drawer:focus, .dialog:focus { outline: none; }
+
+/* The lecture's symbol next to a plain label ("Cooling factor α"): set apart, quieter than the
+ * words, in the formula face so it matches the calculations. */
+.sym {
+  margin-left: var(--space-1);
+  padding: 0 5px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  color: var(--text-secondary);
+  font-family: KaTeX_Math, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.05em;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.sym sub { font-size: 0.8em; font-style: italic; vertical-align: -0.3em; line-height: 0; }
+
+/* A hint under a checkbox lines up with the checkbox's label, not its box. */
+.form-check-hint { margin-left: 22px; margin-top: 2px; }

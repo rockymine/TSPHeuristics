@@ -268,10 +268,12 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public override void UpdateStateMessages(GraphState state) {
+            /* The readout's vocabulary is the same in every mode: tour, tour length (not route and
+             * distance), and the mode's own counter. */
             state.Messages["Iteration"] = state.Iteration.ToString();
-            state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
-            state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
-            state.Messages["Ant Distances"] = /* "; " rather than ";" so the list can wrap - one unbroken token ran out of its column and
+            state.Messages["Tour"] = string.Join("-", state.Path.Select(n => n.Index));
+            state.Messages["Tour length"] = Math.Round(state.Distance, 3).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            state.Messages["Ant tour lengths"] = /* "; " rather than ";" so the list can wrap - one unbroken token ran out of its column and
              * underneath the tables beside it. */
             string.Join("; ", Colony.Select(a => Math.Round(a.Path.Costs, 3)));
         }

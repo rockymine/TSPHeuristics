@@ -24,10 +24,10 @@ namespace TravellingSalesmanProblem.Algorithms {
             var tour = GraphProblem.OrderedGraphProblem(graph);
 
             var chartInfo = new ChartInfo {
-                Title = "Distance Progress",
+                Title = "Tour length per move",
                 XAxis = new ChartSet { Title = "Move" },
                 YAxis = new List<ChartSet> {
-                    new ChartSet { Title = "Distance" }
+                    new ChartSet { Title = "Tour length" }
                 }
             };
 
@@ -204,16 +204,18 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Move"] = state.Iteration.ToString();
-            state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
-            state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
+            state.Messages["Tour"] = string.Join("-", state.Path.Select(n => n.Index));
+            state.Messages["Tour length"] = Math.Round(state.Distance, 3).ToString(System.Globalization.CultureInfo.InvariantCulture);
 
+            /* "Last move" and its signed change, so it is not read as the preview of the move
+             * selected in the sidebar, which is labelled "If applied". */
             if (state.MoveInfo != null) {
-                state.Messages["Last Move"] =
+                state.Messages["Last move"] =
                     $"{Label(state.MoveInfo.Type)} on {string.Join(", ", state.MoveInfo.Nodes.Select(n => n.Index))}";
-                state.Messages["Change"] = (Math.Round(state.MoveInfo.Delta, 3) + 0d).ToString();
+                state.Messages["\u0394"] = Tex.Signed(state.MoveInfo.Delta).Replace("-", "\u2212");
             } else {
-                state.Messages.Remove("Last Move");
-                state.Messages.Remove("Change");
+                state.Messages.Remove("Last move");
+                state.Messages.Remove("\u0394");
             }
         }
 

@@ -1,12 +1,15 @@
-﻿<div class="form-group">
-    <label for="startnodeselect">Start Node</label>
+﻿@* The value is a position in the node list, not a node's number - the label says so, since the
+   default graph's first node is number 1 at position 0. Minus before plus, as on any stepper. *@
+<div class="form-group">
+    <label for="startnodeselect">Start position</label>
     <div id="startnodeselect" class="input-group">
-        <button class="btn btn-primary btn-sm" type="button"
-            title="Increase start node position" @onclick="() => StartNodeChanged.InvokeAsync(StartNode + 1)"><Icon Name="plus" /></button>
-        <button class="btn btn-primary btn-sm" type="button"
+        <button class="btn btn-outline-secondary btn-sm" type="button" aria-label="Decrease start position"
             title="Decrease start node position" @onclick="() => StartNodeChanged.InvokeAsync(StartNode - 1)"><Icon Name="minus" /></button>
         <div class="input-group-text">@StartNode</div>
+        <button class="btn btn-outline-secondary btn-sm" type="button" aria-label="Increase start position"
+            title="Increase start node position" @onclick="() => StartNodeChanged.InvokeAsync(StartNode + 1)"><Icon Name="plus" /></button>
     </div>
+    <small class="form-text">Position in the node list, 0 for the first node. The tour begins and ends there.</small>
 </div>
 
 @code {

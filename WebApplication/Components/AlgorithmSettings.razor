@@ -1,22 +1,40 @@
 ﻿@using TravellingSalesmanProblem.Algorithms
+@* Sentence case and one name per method throughout the app. The ant algorithm is the ACS variant
+   (Dorigo & Gambardella 1997, as in the thesis), so it is no longer called "Ant System", which
+   names the other global update rule. *@
 <div class="form-group">
     <label for="selectHeuristics">Heuristic</label>
     <select class="form-control" name="heuristics" id="selectHeuristics" @bind:get="AlgorithmEnum" @bind:set="v => AlgorithmEnumChanged.InvokeAsync(v)">
-        <option value="NN">Nearest Neighbor</option>
-        <option value="SA">Simulated Annealing</option>
-        <option value="AS">Ant System</option>
-        <option value="HC">Hill Climbing</option>
-        <option value="Manual">Manual Search</option>
+        <option value="NN">Nearest neighbor</option>
+        <option value="SA">Simulated annealing</option>
+        <option value="AS">Ant colony (ACS)</option>
+        <option value="HC">Hill climbing</option>
+        <option value="Manual">Manual moves</option>
     </select>
+    <small class="form-text">@Description</small>
 </div>
 @if (AlgorithmEnum is AlgorithmEnum.NN or AlgorithmEnum.HC) {
     <div class="form-check">
         <input type="checkbox" class="form-check-input" id="multi" @bind:get="MultiStart" @bind:set="v => MultiStartChanged.InvokeAsync(v)">
-        <label class="form-check-label" for="multi">Multi Start</label>
+        <label class="form-check-label" for="multi">@(AlgorithmEnum == AlgorithmEnum.NN ? "Try every start node" : "Multi-start")</label>
     </div>
+    <small class="form-text form-check-hint">
+        @(AlgorithmEnum == AlgorithmEnum.NN
+            ? "Runs once from each node and keeps the shortest tour."
+            : "Climbs from one random tour per node and keeps the shortest.")
+    </small>
 }
 
 @code {
+    /* What the method does, in one line under the select. */
+    private string Description => AlgorithmEnum switch {
+        AlgorithmEnum.NN => "From the start node, always go to the closest unvisited node.",
+        AlgorithmEnum.SA => "Local search that sometimes accepts a longer tour, less often as it cools.",
+        AlgorithmEnum.AS => "Ants build tours; short edges collect pheromone and attract later ants.",
+        AlgorithmEnum.HC => "Takes only moves that shorten the tour; stops at a local optimum.",
+        _ => "Apply swap, 2-opt, 3-opt and double-bridge moves yourself and check \u0394."
+    };
+
     [Parameter]
     public AlgorithmEnum AlgorithmEnum { get; set; }
     [Parameter]

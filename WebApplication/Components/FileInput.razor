@@ -1,9 +1,9 @@
 ﻿@using System.IO
-<p>
-    <label>
-        <InputFile OnChange="@LoadFile"/>
-    </label>
-</p>
+<div class="form-group">
+    <label for="graphFile">Graph file (.txt)</label>
+    <InputFile id="graphFile" accept=".txt,text/plain" class="form-control" OnChange="@LoadFile" />
+    <small class="form-text">The same format as the Text source: one node per line, n,index,x,y.</small>
+</div>
 
 @code {
     public string LoadedFile { get; private set; }

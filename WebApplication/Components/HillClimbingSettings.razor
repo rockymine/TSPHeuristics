@@ -1,12 +1,17 @@
 ﻿@using TravellingSalesmanProblem.Algorithms
 <div>
     <div class="form-group">
-        <label for="selectDescentType">Descent Type</label>
+        <label for="selectDescentType">Move selection</label>
         <select class="form-control" name="descentType" id="selectDescentType" @bind:get="DescentType" @bind:set="v => DescentTypeChanged.InvokeAsync(v)">
-            <option value="Random">Random Descent</option>
-            <option value="Next">Next Descent</option>
-            <option value="Steepest">Steepest Descent</option>
+            <option value="Random">Random improving move</option>
+            <option value="Next">First improvement (next descent)</option>
+            <option value="Steepest">Best improvement (steepest descent)</option>
         </select>
+        <small class="form-text">@(DescentType switch {
+            DescentType.Random => "Draws neighbors at random and takes the first shorter one.",
+            DescentType.Next => "Scans the neighborhood in order and takes the first shorter tour.",
+            _ => "Checks the whole neighborhood and takes the shortest tour."
+        })</small>
     </div>
     <NeighborFunctionSettings NeighbourEnum="@NeighbourEnum" NeighbourEnumChanged="@NeighbourEnumChanged"></NeighborFunctionSettings>
 </div>

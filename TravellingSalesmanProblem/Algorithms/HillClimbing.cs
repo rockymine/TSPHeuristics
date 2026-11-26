@@ -18,17 +18,22 @@ namespace TravellingSalesmanProblem.Algorithms {
         private GraphState XBestState = new();
         private static readonly Random Random = new();
 
-        public override LinkedList<GraphState> FindPath(GraphProblem graph) => FindPath(graph, false);
+        public override LinkedList<GraphState> FindPath(GraphProblem graph) {
+            multiStartRun = false;
+            return FindPath(graph, false);
+        }
+
+        private bool multiStartRun;
 
         private LinkedList<GraphState> FindPath(GraphProblem graph, bool randomizeStart) {
             var history = new LinkedList<GraphState>();
             X = GraphProblem.OrderedGraphProblem(randomizeStart ? Shuffled(graph) : graph);
 
             var chartInfo = new ChartInfo {
-                Title = "Distance Progress",
-                XAxis = new ChartSet { Title = "Iteration" },
+                Title = "Tour length per improving move",
+                XAxis = new ChartSet { Title = "Improving move" },
                 YAxis = new List<ChartSet> {
-                    new ChartSet { Title = "Distance" }
+                    new ChartSet { Title = "Tour length" }
                 }
             };
 
@@ -70,6 +75,7 @@ namespace TravellingSalesmanProblem.Algorithms {
          * run repeated n times. Each restart now begins from its own random permutation. */
         public LinkedList<GraphState> MultiStart(GraphProblem graph) {
             graph.Reset();
+            multiStartRun = true;
 
             var state = new GraphState { Nodes = graph.Nodes };
             var history = new LinkedList<GraphState>();
@@ -111,9 +117,11 @@ namespace TravellingSalesmanProblem.Algorithms {
         };
 
         public override void UpdateStateMessages(GraphState state) {
-            state.Messages["Iteration"] = state.Iteration.ToString();
-            state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
-            state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
+            /* One counter, named for what it counts: improving moves in a run, new bests in a
+             * multi-start run. Both used to be "Iteration". */
+            state.Messages[multiStartRun ? "New best" : "Improving move"] = state.Iteration.ToString();
+            state.Messages["Tour"] = string.Join("-", state.Path.Select(n => n.Index));
+            state.Messages["Tour length"] = Math.Round(state.Distance, 3).ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
 
         private GraphState AdvanceState(GraphState state, int iteration, double? fx = null) {

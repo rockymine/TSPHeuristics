@@ -2,17 +2,17 @@
    they change, and take effect at once (GraphView.ApplyView). *@
 <div class="toolbar-group" role="group" aria-label="View">
     <button type="button" class="btn btn-sm btn-toggle" aria-pressed="@Pressed(ShowGrid)" id="showGrid"
-            title="Grid lines at every whole coordinate" @onclick="() => ShowGridChanged.InvokeAsync(!ShowGrid)">
+            title="Grid lines behind the graph" @onclick="() => ShowGridChanged.InvokeAsync(!ShowGrid)">
         <Icon Name="grid-3x3" /><span>Grid</span>
     </button>
     <button type="button" class="btn btn-sm btn-toggle" aria-pressed="@Pressed(ColorizeChanges)" id="switchColor"
-            title="Colour the edges a step adds and removes, and the nodes it moves"
+            title="Color the edges a step adds (green) and removes (red, dashed), and the nodes it moves"
             @onclick="() => ColorizeChangesChanged.InvokeAsync(!ColorizeChanges)">
-        <Icon Name="palette" /><span>Changes</span>
+        <Icon Name="palette" /><span>Highlight changes</span>
     </button>
     <button type="button" class="btn btn-sm btn-toggle" aria-pressed="@Pressed(AnnotateEdges)" id="switchAnnotate"
             title="Write each edge's length on it" @onclick="() => AnnotateEdgesChanged.InvokeAsync(!AnnotateEdges)">
-        <Icon Name="ruler" /><span>Lengths</span>
+        <Icon Name="ruler" /><span>Edge lengths</span>
     </button>
 </div>
 

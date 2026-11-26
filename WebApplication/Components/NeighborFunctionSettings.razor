@@ -1,11 +1,11 @@
 ﻿@using TravellingSalesmanProblem.Algorithms
 <div class="form-group">
-    <label for="selectNeighbourType">Neighbour Function</label>
+    <label for="selectNeighbourType">Neighborhood <span class="sym">N(x)</span></label>
     <select class="form-control" name="neighbourType" id="selectNeighbourType" @bind:get="NeighbourEnum" @bind:set="v => NeighbourEnumChanged.InvokeAsync(v)">
-        <option value="TwoOpt">2-Opt</option>
+        <option value="TwoOpt">2-opt (reverse a segment)</option>
         @*<option value="ThreeOpt">3-Opt</option>
         <option value="FourOpt">Double-bridge 4-Opt</option>*@
-        <option value="Swap">Swap</option>
+        <option value="Swap">Swap two nodes</option>
     </select>
 </div>
 

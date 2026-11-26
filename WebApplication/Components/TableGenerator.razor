@@ -191,17 +191,17 @@
 		tableInfo.Header.Clear();
 
 		if (Kind == TableKind.DistanceMatrix || (Kind == TableKind.Auto && algorithmEnum == AlgorithmEnum.NN)) {
-			title = "Distance Matrix";
+			title = "Distance matrix d(i, j)";
 			CreateDistanceMatrix(node);
 		} else if (algorithmEnum == AlgorithmEnum.Manual) {
-			title = "Move History";
+			title = "Moves";
 			CreateMoveHistory(node);
 		} else if (algorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC &&
 			neighbourType is NeighbourType.Swap or NeighbourType.TwoOpt) {
-			title = "Neighbor Function History";
+			title = algorithmEnum == AlgorithmEnum.SA ? "Moves taken" : "Improving moves";
 			CreateSwapSummary(node, neighbourType);
 		} else {
-			title = "Tour History";
+			title = algorithmEnum == AlgorithmEnum.AS ? "Best tour per iteration" : "Best tour per restart";
 			CreateIterationTable(node);
 		}
 
@@ -265,7 +265,7 @@
 	 * TableInfo.AddRow also reallocated and copied the whole array per row, making the build
 	 * quadratic in the number of iterations; rows are collected in a list and converted once. */
 	private void CreateIterationTable(LinkedListNode<GraphState> node) {
-		tableInfo.Header = new List<string> { "Iteration", "Tour", "Distance" };
+		tableInfo.Header = new List<string> { lastAlgorithm == AlgorithmEnum.AS ? "Iteration" : "Restart", "Tour", "Tour length" };
 
 		var rows = new List<TableCellInfo[]>();
 		foreach (var state in HistoryUpTo(node)) {
@@ -308,7 +308,7 @@
 	 * calculation column holds the numbers that move actually used. That is the column a student
 	 * checks their own arithmetic against. */
 	private void CreateMoveHistory(LinkedListNode<GraphState> node) {
-		tableInfo.Header = new List<string> { "#", "Move", "Nodes", "Tour", "$\\triangle$", "f(x)" };
+		tableInfo.Header = new List<string> { "#", "Move", "Nodes", "Tour after", "$\\Delta$", "f(x)" };
 
 		var rows = new List<TableCellInfo[]>();
 		foreach (var state in HistoryUpTo(node)) {
@@ -329,12 +329,12 @@
 	}
 
 	private void CreateSwapSummary(LinkedListNode<GraphState> node, NeighbourType neighbourType) {
-		var formula = "$\\triangle=d_{i,j}+d_{i+1,j+1}-d_{i,i+1}-d_{j,j+1}$";
+		var formula = "$\\Delta=d_{i,j}+d_{i+1,j+1}-d_{i,i+1}-d_{j,j+1}$";
 
 		if (neighbourType == NeighbourType.Swap)
-			formula = "$\\triangle_{i,j}=\\begin{cases}d_{i,j-1}+d_{i,j+1}-d_{i,i-1}-d_{j,j+1},&i=j-1\\parallel j-1=i+1\\\\d_{j-1,i}+d_{j,i+1}-d_{j-1,j}-d_{i,i+1},&i=j+1 \\parallel j+1=i-1\\\\d_{i-1,j}+d_{j,i+1}+d_{j-1,i}+d_{i,j+1}-d_{i-1,i}-d_{i,i+1}-d_{j-1,j}-d_{j,j+1},&else\\end{cases}$";
+			formula = "$\\Delta_{i,j}=\\begin{cases}d_{i,j-1}+d_{i,j+1}-d_{i,i-1}-d_{j,j+1},&i=j-1\\parallel j-1=i+1\\\\d_{j-1,i}+d_{j,i+1}-d_{j-1,j}-d_{i,i+1},&i=j+1 \\parallel j+1=i-1\\\\d_{i-1,j}+d_{j,i+1}+d_{j-1,i}+d_{i,j+1}-d_{i-1,i}-d_{i,i+1}-d_{j-1,j}-d_{j,j+1},&else\\end{cases}$";
 
-		tableInfo.Header = new List<string> { "It.", "$i$", "$j$", "x", formula, "y" , "f(y)"};
+		tableInfo.Header = new List<string> { lastAlgorithm == AlgorithmEnum.SA ? "Phase" : "Move", "$i$", "$j$", "x", formula, "y" , "f(y)"};
 
 		var rows = new List<TableCellInfo[]>();
 		GraphState previous = null;

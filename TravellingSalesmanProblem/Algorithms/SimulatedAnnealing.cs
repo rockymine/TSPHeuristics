@@ -46,14 +46,14 @@ namespace TravellingSalesmanProblem.Algorithms {
              * which phase it is in (ChartCursor). Point k is the temperature of phase k and the
              * length of x when that phase starts. */
             var temperatureChart = new ChartInfo {
-                Title = "Temperature Progress",
+                Title = "Temperature per phase",
                 XAxis = new ChartSet { Title = "Phase" },
                 YAxis = new List<ChartSet> { new ChartSet { Title = "Temperature" } }
             };
             var distanceChart = new ChartInfo {
-                Title = "Distance Progress",
+                Title = "Tour length per phase",
                 XAxis = new ChartSet { Title = "Phase" },
-                YAxis = new List<ChartSet> { new ChartSet { Title = "Distance of x" } }
+                YAxis = new List<ChartSet> { new ChartSet { Title = "Tour length of x" } }
             };
             var charts = new List<ChartInfo> { temperatureChart, distanceChart };
 
@@ -225,8 +225,8 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public override void UpdateStateMessages(GraphState state) {
-            state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
-            state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString(CultureInfo.InvariantCulture);
+            state.Messages["Tour"] = string.Join("-", state.Path.Select(n => n.Index));
+            state.Messages["Tour length"] = Math.Round(state.Distance, 3).ToString(CultureInfo.InvariantCulture);
             state.Messages["Best"] = Math.Round(XBest.Costs, 3).ToString(CultureInfo.InvariantCulture);
             /* Four significant digits: the schedule spans ten orders of magnitude, so a fixed number of
              * decimals either prints sixteen digits early on or rounds to 0 late in the run. */

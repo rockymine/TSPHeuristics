@@ -86,8 +86,8 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Iteration"] = state.Iteration.ToString();
-            state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
-            state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
+            state.Messages["Tour"] = string.Join("-", state.Path.Select(n => n.Index));
+            state.Messages["Tour length"] = Math.Round(state.Distance, 3).ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
 
         /* The normalising sum is over the same candidate set for every call within one step, so

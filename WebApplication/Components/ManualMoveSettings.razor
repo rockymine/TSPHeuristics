@@ -7,18 +7,18 @@
    is applied, so a hand calculation can be checked against it. *@
 
 <div class="form-group">
-    <label for="selectMoveType">Move</label>
+    <label for="selectMoveType">Move type</label>
     <select class="form-control" name="moveType" id="selectMoveType" @bind="MoveType">
         <option value="Swap">Swap two nodes</option>
-        <option value="TwoOpt">2-opt exchange</option>
-        <option value="ThreeOpt">3-opt reconnection</option>
+        <option value="TwoOpt">2-opt (reverse a segment)</option>
+        <option value="ThreeOpt">3-opt (reconnect three segments)</option>
         <option value="FourOpt">Double bridge (4-opt)</option>
     </select>
     <small class="form-text text-muted">@Explanation</small>
 </div>
 
 @if (Tour == null || !Choices.Any()) {
-    <p class="text-muted">Press Execute Algorithm to start a manual session on the graph.</p>
+    <p class="form-text">Press Start to start a manual session on the graph.</p>
 } else {
     var move = BuildMove(out var message);
 
@@ -38,7 +38,7 @@
 
     @if (MoveType == NeighbourType.ThreeOpt) {
         <div class="form-group">
-            <label for="selectReconnection">Reconnection</label>
+            <label for="selectReconnection">Reconnect as</label>
             <select class="form-control" id="selectReconnection" @bind="Reconnection">
                 @foreach (ThreeOptReconnection option in Enum.GetValues(typeof(ThreeOptReconnection))) {
                     <option value="@option">@ReconnectionLabel(option)</option>
@@ -49,12 +49,14 @@
 
     <div class="custom-input-group" id="movePreview" style="margin-bottom: 0.5rem;">
         @if (move != null) {
-            <span><strong>Change</strong>: @(Math.Round(move.Delta, 3) + 0d)</span>
+            @* "If applied", so it cannot be read as the change of the move already made, which the
+               readout shows at the same time. Signed, with a real minus sign. *@
+            <span><strong>If applied</strong>: &Delta; = @SignedDelta(move.Delta)</span>
             <br />
             <span class="text-muted">
-                @(move.Delta < 0 ? "shortens the tour"
-                  : move.Delta > 0 ? "lengthens the tour"
-                  : "leaves the length unchanged")
+                @(Math.Round(move.Delta, 2) < 0 ? "the tour gets shorter"
+                  : Math.Round(move.Delta, 2) > 0 ? "the tour gets longer"
+                  : "the length stays the same")
             </span>
         } else {
             <span class="text-danger">@message</span>
@@ -64,22 +66,28 @@
     <div class="stack">
         <button type="button" class="btn btn-primary" id="applyMove" disabled="@(move == null)"
                 @onclick="() => Apply()">
-            Apply Move
+            Apply move
         </button>
         <div class="btn-group">
             <button type="button" class="btn btn-outline-secondary btn-sm" id="undoMove"
                     disabled="@(!CanUndo)" @onclick="() => OnUndo.InvokeAsync()">
-                Undo
+                Undo last move
             </button>
             <button type="button" class="btn btn-outline-secondary btn-sm" id="resetMoves"
                     disabled="@(!CanUndo)" @onclick="() => OnReset.InvokeAsync()">
-                Back to start
+                Reset to start tour
             </button>
         </div>
     </div>
 }
 
 @code {
+    /* Two decimals and U+2212 for negative values, as in the calculation cards. */
+    private static string SignedDelta(double delta) {
+        var d = Math.Round(delta, 2) + 0d;
+        return (d > 0 ? "+" : d < 0 ? "\u2212" : "") + Math.Abs(d).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
     /* The tour of the state currently shown, not of the last one: applying a move after stepping
      * back has to build on what is on screen. */
     [Parameter]
@@ -126,26 +134,26 @@
                      : Tour.Nodes.Take(Math.Max(0, Tour.Nodes.Count - 1));
 
     private string Explanation => MoveType switch {
-        NeighbourType.Swap => "Exchanges the two nodes; the four edges around them are rebuilt.",
-        NeighbourType.TwoOpt => "Removes the edge leaving each node and reverses the piece between them.",
-        NeighbourType.ThreeOpt => "Cuts the tour in front of each node and reconnects the three pieces.",
-        _ => "Cuts the tour in front of each node and reassembles the pieces as a-d-c-b-a."
+        NeighbourType.Swap => "The two nodes trade places; the edges around them are rebuilt.",
+        NeighbourType.TwoOpt => "Removes the edge after each node and reverses the segment between them.",
+        NeighbourType.ThreeOpt => "Cuts the tour before each node and reconnects the three segments.",
+        _ => "Cuts the tour before each node and rejoins the segments as A-D-C-B-A."
     };
 
     private string SlotLabel(int slot) => MoveType switch {
-        NeighbourType.Swap => slot == 0 ? "Exchange node" : "with node",
-        NeighbourType.TwoOpt => slot == 0 ? "Remove the edge leaving" : "and the edge leaving",
-        _ => slot == 0 ? "Cut in front of" : "and in front of"
+        NeighbourType.Swap => slot == 0 ? "Swap node" : "with node",
+        NeighbourType.TwoOpt => slot == 0 ? "Remove the edge after node" : "and the edge after node",
+        _ => slot == 0 ? "Cut before node" : "and before node"
     };
 
     private static string ReconnectionLabel(ThreeOptReconnection reconnection) => reconnection switch {
-        ThreeOptReconnection.ReverseFirst => "reverse the first piece",
-        ThreeOptReconnection.ReverseSecond => "reverse the second piece",
-        ThreeOptReconnection.SwapReverseFirst => "swap the pieces, reverse the first",
-        ThreeOptReconnection.Swap => "swap the pieces",
-        ThreeOptReconnection.SwapReverseBoth => "swap the pieces, reverse both",
-        ThreeOptReconnection.SwapReverseSecond => "swap the pieces, reverse the second",
-        _ => "reverse both pieces"
+        ThreeOptReconnection.ReverseFirst => "reverse the first segment",
+        ThreeOptReconnection.ReverseSecond => "reverse the second segment",
+        ThreeOptReconnection.SwapReverseFirst => "swap the segments, reverse the first",
+        ThreeOptReconnection.Swap => "swap the segments",
+        ThreeOptReconnection.SwapReverseBoth => "swap the segments, reverse both",
+        ThreeOptReconnection.SwapReverseSecond => "swap the segments, reverse the second",
+        _ => "reverse both segments"
     };
 
     private ITourMove BuildMove(out string message) {

@@ -45,9 +45,9 @@
                     <div class="form-group">
                         <textarea class="form-control graph-text" @bind="AppState.DefaultGraph" aria-label="Graph definition"></textarea>
                         <small class="form-text text-muted">
-                            <code>n,index,x,y</code> per node. Simulated Annealing and Hill Climbing
-                            start from the order the nodes are listed in; add
-                            <code>t,index,index,&hellip;</code> to give an explicit starting tour.
+                            One node per line as <code>n,index,x,y</code>. Simulated annealing, hill
+                            climbing and manual moves start from the listed order; a line
+                            <code>t,index,index,&hellip;</code> gives another start tour.
                         </small>
                     </div>
                 } else if (AppState.GraphSource == GraphSource.Random) {
@@ -109,60 +109,69 @@
             <div class="stage-toolbar-row">
                 <div class="toolbar-group" role="group" aria-label="Run">
                     <button class="btn btn-primary btn-sm" type="button" id="executeAlgorithm"
-                            title="Run the heuristic on the graph" @onclick="e => InitiateGraph(AppState.GraphSource)">
-                        Execute Algorithm
+                            title="@(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Start a manual session on the graph" : "Run the heuristic on the graph")"
+                            @onclick="e => InitiateGraph(AppState.GraphSource)">
+                        @(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Start" : "Run")
                     </button>
                 </div>
             @if (AppState.GraphHistory != null) {
                 <div class="btn-toolbar" role="group" aria-label="Playback">
                     <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
-                            class="btn btn-outline-secondary btn-sm" title="Jump First"
+                            class="btn btn-outline-secondary btn-sm" title="First step" aria-label="First step"
                             @onclick="e => JumpFirst()">
                         <Icon Name="chevrons-left" />
                     </button>
                     <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
-                            class="btn btn-outline-secondary btn-sm" title="Reverse"
+                            class="btn btn-outline-secondary btn-sm" title="Previous step" aria-label="Previous step"
                             @onclick="e => ReverseHistory()">
                         <Icon Name="chevron-left" />
                     </button>
                     @if (AppState.AutoAdvance) {
                         <button type="button" class="btn btn-outline-secondary btn-sm"
-                                title="Pause" @onclick="e => AppState.AutoAdvance = false">
+                                title="Pause" aria-label="Pause" @onclick="e => AppState.AutoAdvance = false">
                             <Icon Name="pause" />
                         </button>
                     } else {
                         <button type="button" class="btn btn-outline-secondary btn-sm"
-                                title="Play" @onclick="e => AppState.AutoAdvance = true">
+                                title="Play" aria-label="Play" @onclick="e => AppState.AutoAdvance = true">
                             <Icon Name="play" />
                         </button>
                     }
                     <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
-                            class="btn btn-outline-secondary btn-sm" title="Advance"
+                            class="btn btn-outline-secondary btn-sm" title="Next step" aria-label="Next step"
                             @onclick="e => AdvanceHistory()">
                         <Icon Name="chevron-right" />
                     </button>
                     <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
-                            class="btn btn-outline-secondary btn-sm" title="Jump Last"
+                            class="btn btn-outline-secondary btn-sm" title="Last step" aria-label="Last step"
                             @onclick="e => JumpLast()">
                         <Icon Name="chevrons-right" />
                     </button>
                 </div>
                 <span class="stage-toolbar-time" title="How long the heuristic took to compute the whole run">
-                    Execution Time: @FormatDuration(AppState.TimeSpan)
+                    Computed in @FormatDuration(AppState.TimeSpan)
                 </span>
             } else {
-                <span class="text-muted">Execute an algorithm to step through its states.</span>
+                <span class="text-muted">@(AppState.AlgorithmEnum == AlgorithmEnum.Manual
+                    ? "Press Start, then apply moves in the sidebar."
+                    : "Press Run to step through the heuristic.")</span>
             }
             </div>
             @if (!string.IsNullOrEmpty(AppState.Error)) {
                 <div class="notice-error" role="alert">
-                    <strong>Error</strong>: @AppState.Error
+                    @AppState.Error
                 </div>
             }
             @if (AppState.GraphHistory != null && AppState.CurrentHistoryNode != null) {
                 <div class="stage-toolbar-state">
                     @foreach (var kvp in AppState.CurrentHistoryNode.Value.Messages) {
-                        <span><strong>@kvp.Key</strong>: @kvp.Value</span>
+                        @if (kvp.Key == "Tour" && TourNodeCount(kvp.Value) > MaxListedTour) {
+                            @* The order of a long tour is unreadable in a line (200 nodes took six), so
+                               only its size is shown, with the order in the tooltip. *@
+                            <span title="@kvp.Value"><strong>Tour</strong>: @TourNodeCount(kvp.Value) nodes, order hidden</span>
+                        } else {
+                            <span><strong>@kvp.Key</strong>: @kvp.Value</span>
+                        }
                     }
                 </div>
             }
@@ -190,7 +199,7 @@
                         style="@AppState.CanvasSettings.CssSize"
                         hidden="@(AppState.Instance == null)"></canvas>
                 @if (AppState.Instance == null) {
-                    <p class="canvas-empty text-muted">The graph is drawn here once an algorithm has been executed.</p>
+                    <p class="canvas-empty text-muted">The graph is drawn here once you press @(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Start" : "Run").</p>
                 }
             </figure>
         </div>
@@ -215,20 +224,20 @@
 
         <!-- Views: tables, charts and calculations for the state shown above -->
         <DockTabs>
-            <DockTab Title="History" Order="0">
+            <DockTab Title="@HistoryTitle" Order="0">
                 <TableGenerator @ref="@AppState.TableGenerator" MaxCols="12" MaxRows="12" />
             </DockTab>
             @* Playing the search by hand means reading distances off the matrix, so it has to be
                one click away from the log of what has been played. *@
             @if (AppState.AlgorithmEnum == AlgorithmEnum.Manual && AppState.GraphHistory != null) {
-                <DockTab Title="Distance Matrix" Order="1">
+                <DockTab Title="Distance matrix" Order="1">
                     <TableGenerator @ref="@AppState.DistanceTable" Kind="TableKind.DistanceMatrix"
                                     MaxCols="12" MaxRows="12" />
                 </DockTab>
             }
             @if (AppState.GraphHistory != null &&
                  AppState.CurrentHistoryNode.Value.ChartInfo.Count >= 1) {
-                <DockTab Title="Charts" Order="2">
+                <DockTab Title="Progress" Order="2">
                     @if (AppState.AlgorithmEnum is AlgorithmEnum.SA) {
                         <div class="chart-grid">
                             <div>
@@ -300,6 +309,12 @@
     private static readonly (int Delay, string Label)[] PlaybackSpeeds = {
         (1000, "Slow"), (400, "Normal"), (150, "Fast"), (16, "Fastest")
     };
+
+    /* Tours with more nodes than this are summarised in the readout instead of listed. */
+    private const int MaxListedTour = 20;
+
+    /* "1-8-10-…-1" lists the start node twice; the count is of distinct nodes. */
+    private static int TourNodeCount(string tour) => Math.Max(0, tour.Split('-').Length - 1);
 
     /* One unit, the one that reads best: "425 ms", "3.27 s", "2 min 05 s". */
     private static string FormatDuration(TimeSpan t) =>
@@ -635,18 +650,32 @@
      * document. Same trap as the charts: the reference has to be checked together with the mode. */
     private bool ShowsDistanceTable => AppState.AlgorithmEnum == AlgorithmEnum.Manual;
 
-    /* Annealing records a state per draw, so its canvases are the tour before and after one draw
-     * (a rejected draw leaves it as it was, with the neighbour it turned down drawn dashed). */
+    /* The captions say what each canvas actually shows. "Previous (Iteration Start)" and "Current
+     * (Iteration End)" described a timeline that no mode had: nearest neighbor shows one tour
+     * growing, annealing one draw (a rejected draw leaves the tour as it was, with the neighbor it
+     * turned down drawn dashed), hill climbing one improving move, a multi-start run one restart. */
+    private bool IsMultiStart => AppState.MultiStart && AppState.AlgorithmEnum is AlgorithmEnum.NN or AlgorithmEnum.HC;
+
     private string PreviousCaption => AppState.AlgorithmEnum switch {
-        AlgorithmEnum.Manual => "Previous (Before the Move)",
-        AlgorithmEnum.SA => "Previous (Before the Draw)",
-        _ => "Previous (Iteration Start)"
+        AlgorithmEnum.SA => "Before the draw",
+        AlgorithmEnum.HC when IsMultiStart => "Previous best",
+        _ => "Before the move"
     };
 
     private string CurrentCaption => AppState.AlgorithmEnum switch {
-        AlgorithmEnum.Manual => "Current (After the Move)",
-        AlgorithmEnum.SA => "Current (After the Draw)",
-        _ => "Current (Iteration End)"
+        AlgorithmEnum.SA => "After the draw",
+        AlgorithmEnum.NN => IsMultiStart ? "Best tour so far" : "Tour so far",
+        AlgorithmEnum.AS => "Best tour and pheromone (line width)",
+        AlgorithmEnum.HC when IsMultiStart => "New best",
+        _ => "After the move"
+    };
+
+    /* The first tab is named after the table it holds, which differs per mode. */
+    private string HistoryTitle => AppState.AlgorithmEnum switch {
+        AlgorithmEnum.NN or AlgorithmEnum.HC when IsMultiStart => "Restarts",
+        AlgorithmEnum.NN => "Distance matrix",
+        AlgorithmEnum.AS => "Iterations",
+        _ => "Moves"
     };
 
     private bool ShowsPreviousCanvas =>
