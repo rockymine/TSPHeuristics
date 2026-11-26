@@ -195,37 +195,13 @@ hr {
 
 .stage {
     min-width: 0;
-    padding: 0 var(--space-4) var(--space-4);
+    padding: var(--space-3) var(--space-4) var(--space-4);
 }
 
 /* ── Toolbar ──────────────────────────────────────────────────────────── */
-.stage-toolbar {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-1) var(--space-4);
-    margin: 0 calc(-1 * var(--space-4));
-    padding: var(--space-2) var(--space-4);
-    background: var(--bg-panel);
-    border-bottom: 1px solid var(--border);
-    font-size: var(--font-base);
-}
-
-.stage-toolbar-row {
-    flex-basis: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2) var(--space-4);
-}
 
 
-.stage-toolbar .btn-toolbar {
-    gap: 2px;
-}
+
 
 .toolbar-group {
     display: flex;
@@ -271,50 +247,14 @@ hr {
 }
 
 /* Execute and the playback buttons share one height, so the row reads as one set of controls. */
-.stage-toolbar .btn {
-    min-height: var(--control-height);
-}
 
-.stage-toolbar .btn-toolbar .btn {
-    min-width: var(--control-height);
-}
 
-.stage-toolbar-time {
-    color: var(--text-muted);
-    font-variant-numeric: tabular-nums;
-}
 
-.stage-toolbar .notice-error {
-    flex-basis: 100%;
-    margin: 0;
-    padding: var(--space-2) var(--space-3);
-}
 
-.stage-toolbar-state {
-    flex-basis: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0 var(--space-5);
-    color: var(--text-secondary);
-    overflow-wrap: anywhere;
-}
 
-.stage-toolbar-state strong {
-    color: var(--text-bright);
-    font-weight: 600;
-}
 
 /* ── Canvases ─────────────────────────────────────────────────────────── */
-.stage-canvases {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-4);
-    padding: var(--space-4) 0;
-}
 
-.stage-canvases.pair {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-}
 
 .canvas-frame {
     margin: 0;
@@ -322,10 +262,7 @@ hr {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: var(--space-3);
-    background: var(--bg-deep);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-3) 0;
 }
 
 .canvas-frame figcaption {
@@ -363,7 +300,7 @@ hr {
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-2) var(--space-4);
-    margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+    margin: 0 0 var(--space-4);
     padding: var(--space-2) var(--space-3);
     background: var(--bg-panel);
     border: 1px solid var(--border);
@@ -472,9 +409,6 @@ hr {
 
 /* ── Narrow screens ───────────────────────────────────────────────────── */
 @media (max-width: 1100px) {
-    .stage-canvases.pair {
-        grid-template-columns: minmax(0, 1fr);
-    }
 }
 
 @media (max-width: 800px) {
@@ -494,10 +428,6 @@ hr {
         padding: 0 var(--space-3) var(--space-4);
     }
 
-    .stage-toolbar {
-        margin: 0 calc(-1 * var(--space-3));
-        padding: var(--space-2) var(--space-3);
-    }
 }
 
 /* ── Derivation cards (Calculations tab) ──────────────────────────────────
@@ -664,4 +594,312 @@ hr {
     width: auto;
     min-height: var(--control-height);
     padding-right: 28px;
+}
+
+/* ── Tiles ────────────────────────────────────────────────────────────────
+   The step's figures, one line each: label and symbol left, value right. A row that wraps on a
+   wide stage and scrolls sideways on a phone. */
+.tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.tile {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: 7px var(--space-3);
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+}
+
+/* When a row runs short of room the label gives way, never the value. */
+.tile-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: var(--font-sm);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.tile-label .tile-sym { margin-left: 4px; }
+
+.tile-sym {
+    font-family: KaTeX_Math, "Times New Roman", serif;
+    font-size: 1.1em;
+    color: var(--text-secondary);
+}
+
+.tile-value {
+    flex: none;
+    font-size: var(--font-lg);
+    font-weight: 600;
+    color: var(--text-strong);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tone-good { color: var(--canvas-added); }
+.tone-bad { color: var(--color-error); }
+.tone-warn { color: var(--canvas-move-second); }
+.tone-accent { color: var(--accent-text); }
+
+/* ── Player ───────────────────────────────────────────────────────────────
+   The canvas and its controls as one card: the step plays on the canvas, the scrubber under it
+   shows where it is in the run, and Replay, playback and speed sit under the scrubber. */
+.player-card {
+    margin-bottom: var(--space-3);
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.player {
+    padding: var(--space-2) var(--space-3) var(--space-3);
+    --player-side: 160px;
+}
+
+.player-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    font-size: var(--font-base);
+}
+
+.player-step-name {
+    color: var(--text-strong);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-label-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.player-count { font-variant-numeric: tabular-nums; }
+
+.legend {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px var(--space-3);
+    font-size: var(--font-sm);
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.legend-mark {
+    display: inline-block;
+    width: 16px;
+    height: 0;
+    border-top: 2.5px solid var(--canvas-added);
+}
+
+.legend-removed { border-top: 2px dashed var(--canvas-removed); }
+.legend-pheromone { border-top: 5px solid var(--canvas-pheromone); opacity: 0.6; }
+.legend-tour { border-top: 2px solid var(--canvas-edge); }
+.legend-i, .legend-j { width: 10px; height: 10px; border: none; border-radius: 50%; background: var(--canvas-move-first); }
+.legend-j { background: var(--canvas-move-second); }
+
+/* The tour length over the run behind the track, new bests ticked. */
+.scrubber {
+    position: relative;
+    height: 30px;
+    margin-top: 2px;
+}
+
+.sparkline {
+    position: absolute;
+    inset: 0 0 auto;
+    width: 100%;
+    height: 20px;
+}
+
+.sparkline path {
+    fill: none;
+    stroke: var(--text-muted);
+    stroke-width: 1.1;
+    vector-effect: non-scaling-stroke;
+}
+
+.spark-best {
+    stroke: var(--accent-text);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+}
+
+.scrubber input[type="range"] {
+    position: absolute;
+    inset: auto 0 -4px;
+    width: 100%;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.player-note {
+    margin: var(--space-2) 0 0;
+    font-size: var(--font-base);
+    color: var(--text-muted);
+}
+
+.player-note-empty { text-align: center; }
+
+/* Replay as wide as the speed select, playback centred between them. */
+.player-controls {
+    display: grid;
+    grid-template-columns: var(--player-side) minmax(0, 1fr) var(--player-side);
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+}
+
+.player-side {
+    width: 100%;
+    min-height: var(--control-height);
+}
+
+.playback {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+}
+
+.playback .btn {
+    min-width: var(--control-height);
+    min-height: var(--control-height);
+    padding: 0;
+}
+
+.btn.play-big {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--text-strong);
+    border-color: var(--text-strong);
+    color: var(--bg-panel);
+}
+
+.btn.play-big:hover:not(:disabled) { background: var(--text-bright); }
+
+.step-details {
+    margin-top: var(--space-2);
+    font-size: var(--font-sm);
+    color: var(--text-muted);
+}
+
+.step-details summary { cursor: pointer; width: max-content; }
+
+.step-details dl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-5);
+    margin: var(--space-2) 0 0;
+    overflow-wrap: anywhere;
+}
+
+.step-details dl div { display: flex; gap: 6px; }
+.step-details dt { color: var(--text-bright); font-weight: 600; }
+.step-details dt::after { content: ":"; }
+.step-details dd { margin: 0; color: var(--text-secondary); }
+
+/* Settings changed since the run on show: its figures fade until Run computes them anew. */
+.stage.is-stale .tiles,
+.stage.is-stale .scrubber { opacity: 0.45; }
+
+.stage.is-empty .tile-value { color: var(--text-muted); }
+
+/* ── Run ──────────────────────────────────────────────────────────────────
+   The sidebar's apply button, pinned to its foot. */
+.sidebar-run {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    padding: var(--space-3) var(--space-4) var(--space-3);
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border);
+    z-index: 2;
+}
+
+.sidebar-run .notice-error { margin: 0 0 var(--space-2); }
+
+.run-button {
+    position: relative;
+    width: 100%;
+    min-height: 38px;
+    font-size: var(--font-md);
+    font-weight: 600;
+}
+
+.run-dot {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fbbf24;
+    box-shadow: 0 0 0 2px var(--accent);
+}
+
+.run-time {
+    margin: 6px 0 0;
+    text-align: center;
+    font-size: var(--font-sm);
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+#newRandomGraph { margin-top: var(--space-2); }
+
+/* ── App shell on a desktop ───────────────────────────────────────────────
+   The header stays, and the sidebar and the stage scroll on their own under it: the sidebar's Run
+   stays at its foot on screen and the player stays beside the settings it plays. A page-length
+   sidebar sized to the window had its foot, and Run, pushed below the screen by the header. */
+@media (min-width: 801px) {
+    html, body { height: 100%; }
+
+    #app {
+        height: 100vh;
+        min-height: 0;
+    }
+
+    .workspace {
+        flex: 1 1 auto;
+        min-height: 0;
+        align-items: stretch;
+    }
+
+    .sidebar {
+        position: static;
+        max-height: none;
+        height: 100%;
+        overflow-y: auto;
+    }
+
+    .stage {
+        height: 100%;
+        overflow-y: auto;
+    }
 }

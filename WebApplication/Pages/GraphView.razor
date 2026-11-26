@@ -54,6 +54,12 @@
                     <RandomGraphSettings @bind-NodeCount="AppState.NodeCount"
                                          @bind-MaxX="AppState.MaxX"
                                          @bind-MaxY="AppState.MaxY" />
+                    @* Run keeps the random graph it has, so another heuristic or setting can be tried
+                       on the same instance; this rolls a new one. *@
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="newRandomGraph"
+                            @onclick="NewRandomGraph">
+                        <Icon Name="shuffle" /> New random graph
+                    </button>
                 } else if (AppState.GraphSource == GraphSource.File) {
                     <FileInput @ref="@AppState.FileInput" />
                 }
@@ -101,100 +107,43 @@
                 }
             </div>
         </SidebarSection>
+
+        @* Run computes the whole run from the settings above, so it is the sidebar's apply button,
+           pinned to its foot. A dot marks settings that have changed since the run on show. *@
+        <div class="sidebar-run">
+            @if (!string.IsNullOrEmpty(AppState.Error)) {
+                <div class="notice-error" role="alert">@AppState.Error</div>
+            }
+            <button class="btn btn-primary run-button" type="button" id="executeAlgorithm"
+                    title="@(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Start a manual session on the graph" : "Compute the run with these settings")"
+                    @onclick="e => InitiateGraph(AppState.GraphSource)">
+                @RunLabel
+                @if (SettingsChanged || AppState.GraphHistory == null) {
+                    <span class="run-dot" title="@(SettingsChanged ? "Settings changed since the last run" : "Not run yet")"></span>
+                }
+            </button>
+            <p class="run-time" title="How long the heuristic took to compute the whole run">
+                @(AppState.GraphHistory == null ? "Not run yet" : $"Computed in {FormatDuration(AppState.TimeSpan)}")
+            </p>
+        </div>
     </aside>
 
-    <main class="stage">
-        <!-- Toolbar: the main controls - running the algorithm and moving through its states -->
-        <div class="stage-toolbar">
-            <div class="stage-toolbar-row">
-                <div class="toolbar-group" role="group" aria-label="Run">
-                    <button class="btn btn-primary btn-sm" type="button" id="executeAlgorithm"
-                            title="@(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Start a manual session on the graph" : "Run the heuristic on the graph")"
-                            @onclick="e => InitiateGraph(AppState.GraphSource)">
-                        @(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Start" : "Run")
-                    </button>
-                </div>
-            @if (AppState.GraphHistory != null) {
-                <div class="btn-toolbar" role="group" aria-label="Playback">
-                    <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
-                            class="btn btn-outline-secondary btn-sm" title="First step" aria-label="First step"
-                            @onclick="e => JumpFirst()">
-                        <Icon Name="chevrons-left" />
-                    </button>
-                    <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
-                            class="btn btn-outline-secondary btn-sm" title="Previous step" aria-label="Previous step"
-                            @onclick="e => ReverseHistory()">
-                        <Icon Name="chevron-left" />
-                    </button>
-                    @if (AppState.AutoAdvance) {
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                                title="Pause" aria-label="Pause" @onclick="e => AppState.AutoAdvance = false">
-                            <Icon Name="pause" />
-                        </button>
-                    } else {
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                                title="Play" aria-label="Play" @onclick="e => AppState.AutoAdvance = true">
-                            <Icon Name="play" />
-                        </button>
-                    }
-                    <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
-                            class="btn btn-outline-secondary btn-sm" title="Next step" aria-label="Next step"
-                            @onclick="e => AdvanceHistory()">
-                        <Icon Name="chevron-right" />
-                    </button>
-                    <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
-                            class="btn btn-outline-secondary btn-sm" title="Last step" aria-label="Last step"
-                            @onclick="e => JumpLast()">
-                        <Icon Name="chevrons-right" />
-                    </button>
-                </div>
-                <button type="button" class="btn btn-outline-secondary btn-sm" id="replayStep"
-                        disabled="@(AppState.CurrentHistoryNode?.Previous == null)"
-                        title="Replay this step. Hold to see the tour before it (or hold B).">
-                    <Icon Name="rotate-ccw" /><span>Replay step</span>
-                </button>
-                @* One choice, so one control: a select next to Play, which it belongs to, instead of four
-                   buttons in the view bar. *@
-                <select class="form-control form-control-sm speed-select" id="playbackSpeed" aria-label="Playback speed"
-                        title="How fast Play steps through the run"
-                        @bind:get="AppState.AnimationDelay" @bind:set="v => AppState.AnimationDelay = v">
-                    @foreach (var (delay, label) in PlaybackSpeeds) {
-                        <option value="@delay">@label (@FormatDuration(TimeSpan.FromMilliseconds(delay)) per step)</option>
-                    }
-                </select>
-                <span class="stage-toolbar-time" title="How long the heuristic took to compute the whole run">
-                    Computed in @FormatDuration(AppState.TimeSpan)
-                </span>
-            } else {
-                <span class="text-muted">@(AppState.AlgorithmEnum == AlgorithmEnum.Manual
-                    ? "Press Start, then apply moves in the sidebar."
-                    : "Press Run to step through the heuristic.")</span>
-            }
-            </div>
-            @if (!string.IsNullOrEmpty(AppState.Error)) {
-                <div class="notice-error" role="alert">
-                    @AppState.Error
-                </div>
-            }
-            @if (AppState.GraphHistory != null && AppState.CurrentHistoryNode != null) {
-                <div class="stage-toolbar-state">
-                    @foreach (var kvp in AppState.CurrentHistoryNode.Value.Messages) {
-                        @if (kvp.Key == "Tour" && TourNodeCount(kvp.Value) > MaxListedTour) {
-                            @* The order of a long tour is unreadable in a line (200 nodes took six), so
-                               only its size is shown, with the order in the tooltip. *@
-                            <span title="@kvp.Value"><strong>Tour</strong>: @TourNodeCount(kvp.Value) nodes, order hidden</span>
-                        } else {
-                            <span><strong>@kvp.Key</strong>: @kvp.Value</span>
-                        }
-                    }
+    <main class="stage @(SettingsChanged ? "is-stale" : null) @(AppState.GraphHistory == null ? "is-empty" : null)">
+        @* The figures of the step, one line each. They replace the "Key: value" readout that wrapped
+           over several lines; everything it listed is still under Step details in the player. *@
+        <div class="tiles" role="group" aria-label="This step">
+            @foreach (var tile in StepView.Tiles(RunAlgorithm, RunMultiStart, AppState.CurrentHistoryNode)) {
+                <div class="tile" title="@tile.Hint">
+                    <span class="tile-label">@tile.Label @if (tile.Symbol != null) {<i class="tile-sym">@tile.Symbol</i>}</span>
+                    <span class="tile-value @(tile.Tone != null ? "tone-" + tile.Tone : null)">@tile.Value</span>
                 </div>
             }
         </div>
 
-        <!-- One canvas: the step's change is played on it (canvas.js) instead of being split over
-             a "before" and an "after" canvas; Replay step plays it again. -->
-        <div class="stage-canvases">
-            @* The frame is the one measured for the fit (canvas.js). *@
+        @* The canvas and the player are one object, like a video and its controls: the step is
+           played on the canvas, the scrubber under it shows where in the run it is, and the
+           controls sit under the scrubber. *@
+        <section class="player-card" aria-label="Run player">
             <figure class="canvas-frame" @ref="currentFrame">
                 <canvas id="@CurrentCanvasId"
                         width="@AppState.CanvasSettings.BufferWidth"
@@ -202,13 +151,108 @@
                         style="@AppState.CanvasSettings.CssSize"
                         hidden="@(AppState.Instance == null)"></canvas>
                 @if (AppState.Instance == null) {
-                    <p class="canvas-empty text-muted">The graph is drawn here once you press @(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Start" : "Run").</p>
+                    <p class="canvas-empty text-muted">Choose settings and press @RunLabel.</p>
                 }
             </figure>
-        </div>
 
-        <!-- View: how the run is drawn and played back, next to the canvases it changes. These used to
-             share the top bar with Run and playback, which crowded the main controls and wrapped. -->
+            <div class="player">
+                @if (AppState.GraphHistory != null && AppState.CurrentHistoryNode != null) {
+                    var count = AppState.GraphHistory.Count;
+                    var index = CurrentIndex();
+                    <div class="player-label">
+                        <strong class="player-step-name">@StepView.Label(RunAlgorithm, RunMultiStart, AppState.CurrentHistoryNode, index, count)</strong>
+                        <span class="player-label-right">
+                            <span class="legend" aria-label="Legend">
+                                @foreach (var item in StepView.Legend(RunAlgorithm, RunMultiStart)) {
+                                    <span class="legend-item"><i class="legend-mark legend-@item.Kind"></i>@item.Label</span>
+                                }
+                            </span>
+                            <span class="player-count">Step @((index + 1).ToString("N0")) of @count.ToString("N0")</span>
+                        </span>
+                    </div>
+                    <div class="scrubber">
+                        <svg class="sparkline" viewBox="0 0 1000 20" preserveAspectRatio="none" aria-hidden="true">
+                            <path d="@Spark.Path" />
+                            @foreach (var x in Spark.Ticks) {
+                                <line class="spark-best" x1="@x.ToString(System.Globalization.CultureInfo.InvariantCulture)" x2="@x.ToString(System.Globalization.CultureInfo.InvariantCulture)" y1="17" y2="20" />
+                            }
+                        </svg>
+                        <input type="range" id="stepScrubber" min="0" max="@(count - 1)" value="@index"
+                               aria-label="Step" aria-valuetext="@($"Step {index + 1} of {count}")"
+                               @oninput="e => JumpTo(e.Value?.ToString())" />
+                    </div>
+                }
+                @if (SettingsChanged) {
+                    <p class="player-note">Settings changed: press @RunLabel to compute the run again. The steps shown are from the last run.</p>
+                }
+                <div class="player-controls">
+                    <button type="button" class="btn btn-outline-secondary player-side" id="replayStep"
+                            disabled="@(AppState.CurrentHistoryNode?.Previous == null)"
+                            title="Replay this step. Hold to see the tour before it (or hold B).">
+                        <Icon Name="rotate-ccw" /><span class="player-side-text">Replay step</span>
+                    </button>
+                    <div class="playback" role="group" aria-label="Playback">
+                        <button type="button" disabled="@(AppState.GraphHistory == null || AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
+                                class="btn btn-outline-secondary" title="First step" aria-label="First step"
+                                @onclick="e => JumpFirst()">
+                            <Icon Name="chevrons-left" />
+                        </button>
+                        <button type="button" disabled="@(AppState.GraphHistory == null || AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
+                                class="btn btn-outline-secondary" title="Previous step" aria-label="Previous step"
+                                @onclick="e => ReverseHistory()">
+                            <Icon Name="chevron-left" />
+                        </button>
+                        @if (AppState.AutoAdvance) {
+                            <button type="button" class="btn play-big" title="Pause" aria-label="Pause"
+                                    @onclick="e => AppState.AutoAdvance = false">
+                                <Icon Name="pause" Size="20" />
+                            </button>
+                        } else {
+                            <button type="button" class="btn play-big" title="Play" aria-label="Play"
+                                    disabled="@(AppState.GraphHistory == null)" @onclick="e => AppState.AutoAdvance = true">
+                                <Icon Name="play" Size="20" />
+                            </button>
+                        }
+                        <button type="button" disabled="@(AppState.GraphHistory == null || AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
+                                class="btn btn-outline-secondary" title="Next step" aria-label="Next step"
+                                @onclick="e => AdvanceHistory()">
+                            <Icon Name="chevron-right" />
+                        </button>
+                        <button type="button" disabled="@(AppState.GraphHistory == null || AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
+                                class="btn btn-outline-secondary" title="Last step" aria-label="Last step"
+                                @onclick="e => JumpLast()">
+                            <Icon Name="chevrons-right" />
+                        </button>
+                    </div>
+                    @* One choice, so one control: a select beside Play, which it belongs to. *@
+                    <select class="form-control speed-select player-side" id="playbackSpeed" aria-label="Playback speed"
+                            title="How fast Play steps through the run" disabled="@(AppState.GraphHistory == null)"
+                            @bind:get="AppState.AnimationDelay" @bind:set="v => AppState.AnimationDelay = v">
+                        @foreach (var (delay, label) in PlaybackSpeeds) {
+                            <option value="@delay">@label (@FormatDuration(TimeSpan.FromMilliseconds(delay)))</option>
+                        }
+                    </select>
+                </div>
+                @if (AppState.GraphHistory != null && AppState.CurrentHistoryNode != null) {
+                    @* Every value the heuristic records for the step, the tour order included - only
+                       listed up to MaxListedTour nodes, the size above that. *@
+                    <details class="step-details">
+                        <summary>Step details</summary>
+                        <dl class="stage-toolbar-state">
+                            @foreach (var kvp in AppState.CurrentHistoryNode.Value.Messages) {
+                                @if (kvp.Key == "Tour" && TourNodeCount(kvp.Value) > MaxListedTour) {
+                                    <div title="@kvp.Value"><dt>Tour</dt><dd>@TourNodeCount(kvp.Value) nodes, order hidden</dd></div>
+                                } else {
+                                    <div><dt>@kvp.Key</dt><dd>@kvp.Value</dd></div>
+                                }
+                            }
+                        </dl>
+                    </details>
+                }
+            </div>
+        </section>
+
+        <!-- View: how the run is drawn, under the player it belongs to. -->
         <div class="view-bar" role="group" aria-label="View options">
             <CanvasDisplaySettings @bind-ShowGrid="@AppState.ShowGrid" @bind-ShowGrid:after="ApplyView"
                                    @bind-AnnotateEdges="@AppState.AnnotateEdges" @bind-AnnotateEdges:after="ApplyView"
@@ -397,7 +441,9 @@
     /* The height limit keeps a tall graph, or a single canvas in a wide column, from pushing the
      * toolbar and the views off the screen. */
     private bool FitCanvases() {
-        var maxHeight = Math.Max(240, canvasBox.ViewportHeight * 0.65);
+        /* The header, the tile row and the player take about 270 px; the canvas gets the rest of
+           the window, so the graph and its controls are on screen together. */
+        var maxHeight = Math.Max(240, canvasBox.ViewportHeight - 270);
         var resized = AppState.CanvasSettings.Fit(canvasBox.Width, maxHeight, canvasBox.PixelRatio);
         canvasResized |= resized;
         return resized;
@@ -463,7 +509,17 @@
                 }
                 break;
             case GraphSource.Random:
-                AppState.Instance = GraphProblem.RandomGraphProblem(AppState.MaxX, AppState.MaxY, AppState.NodeCount);
+                /* The same random graph until New random graph or other limits ask for another,
+                   so heuristics and settings can be compared on one instance. It is kept as text
+                   and read afresh each time, as the Text source is, so no run sees another's
+                   marks on the graph. */
+                var limits = (AppState.MaxX, AppState.MaxY, AppState.NodeCount);
+                if (randomGraph == null || randomLimits != limits) {
+                    randomGraph = GraphProblem.SerializeGraph(
+                        GraphProblem.RandomGraphProblem(AppState.MaxX, AppState.MaxY, AppState.NodeCount));
+                    randomLimits = limits;
+                }
+                AppState.Instance = GraphProblem.FromText(randomGraph);
                 break;
             case GraphSource.File:
                 try {
@@ -496,6 +552,88 @@
 
         await UpdateEnumerator();
     }
+
+    /* ── The run on show ──────────────────────────────────────────────────────────────────────
+       The tiles, the player and the captions describe the run that was computed, not the
+       heuristic now selected in the sidebar: changing the select used to relabel a run that had
+       been made by another heuristic. */
+    private bool runMultiStart;
+    private string runSignature;
+    private AlgorithmEnum RunAlgorithm => runAlgorithm ?? AppState.AlgorithmEnum;
+    private bool RunMultiStart => runAlgorithm == null ? AppState.MultiStart : runMultiStart;
+    private string RunLabel => AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Start" : "Run";
+
+    /* Every setting the run depends on. Run records it; when it differs, the sidebar's Run shows a
+       dot and the player says the steps are from the last run. */
+    private string SettingsSignature() {
+        var a = AppState;
+        var source = a.GraphSource switch {
+            GraphSource.Text => "text:" + a.DefaultGraph,
+            GraphSource.Random => $"random:{a.MaxX},{a.MaxY},{a.NodeCount},{randomVersion}",
+            _ => "file:" + (a.FileInput?.LoadedFile?.GetHashCode() ?? 0)
+        };
+        var algorithm = a.AlgorithmEnum switch {
+            AlgorithmEnum.NN => $"nn:{a.MultiStart},{a.StartNode}",
+            AlgorithmEnum.SA => $"sa:{a.StartTemp},{a.MinTemp},{a.AlphaSA},{a.PhaseLength},{a.CalculateTemperature},{a.NeighbourEnum}",
+            AlgorithmEnum.HC => $"hc:{a.MultiStart},{a.DescentType},{a.NeighbourEnum}",
+            AlgorithmEnum.AS => $"as:{a.Iterations},{a.AntCount},{a.AlphaACS},{a.Beta},{a.SelectionRule},{a.GlobalUpdatingRule},{a.BreakWhenPathsAreEqual}",
+            _ => "manual"
+        };
+        return source + "|" + algorithm;
+    }
+
+    /* A manual session changes the run on purpose, move by move, so only its graph and mode
+       count as settings. */
+    private bool SettingsChanged => AppState.GraphHistory != null && runSignature != null && runSignature != SettingsSignature();
+
+    private string randomGraph;
+    private (int, int, int) randomLimits;
+    private int randomVersion;
+
+    private void NewRandomGraph() {
+        randomGraph = null;
+        randomVersion++;
+    }
+
+    /* Position of the step on show; the history is a linked list, walked once per render. */
+    private int CurrentIndex() {
+        var i = 0;
+        for (var node = AppState.GraphHistory?.First; node != null; node = node.Next, i++)
+            if (node == AppState.CurrentHistoryNode)
+                return i;
+        return 0;
+    }
+
+    /* The scrubber: jump to a step, at rest. */
+    private async Task JumpTo(string value) {
+        if (AppState.GraphHistory == null || !int.TryParse(value, out var target))
+            return;
+
+        AppState.AutoAdvance = false;
+        var node = AppState.GraphHistory.First;
+        for (var i = 0; i < target && node?.Next != null; i++)
+            node = node.Next;
+        if (node == null || node == AppState.CurrentHistoryNode)
+            return;
+
+        AppState.CurrentHistoryNode = node;
+        await Redraw();
+    }
+
+    /* The tour length over the run behind the scrubber, computed once per run. */
+    private LinkedList<GraphState> sparkFor;
+    private (string Path, List<double> Ticks) spark = ("", new());
+    private (string Path, List<double> Ticks) Spark {
+        get {
+            if (!ReferenceEquals(sparkFor, AppState.GraphHistory) || sparkCount != AppState.GraphHistory?.Count) {
+                sparkFor = AppState.GraphHistory;
+                sparkCount = AppState.GraphHistory?.Count ?? 0;
+                spark = AppState.GraphHistory == null ? ("", new()) : StepView.Sparkline(AppState.GraphHistory, RunAlgorithm);
+            }
+            return spark;
+        }
+    }
+    private int sparkCount;
 
     private async Task JumpFirst() {
         AppState.AutoAdvance = false;
@@ -708,6 +846,8 @@
 
     private async Task UpdateEnumerator() {
         runAlgorithm = AppState.AlgorithmEnum;
+        runMultiStart = AppState.MultiStart;
+        runSignature = SettingsSignature();
         AppState.Instance.Reset();
         AppState.TableGenerator.Reset();
         if (ShowsDistanceTable)
