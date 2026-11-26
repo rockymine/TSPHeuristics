@@ -129,8 +129,8 @@ namespace WebApplication.Utils {
                         new("Best so far", null, any ? Len(bestSoFar) : dash, foundNow ? "accent" : null),
                         new("Mean ant", null, any ? Len(lengths.Average()) : dash),
                         new("Worst ant", null, any ? Len(lengths.Max()) : dash),
-                        new("Distinct tours", null, any ? $"{lengths.Select(v => Math.Round(v, 3)).Distinct().Count()} of {lengths.Count}" : dash,
-                            null, "counted by length"),
+                        new("Distinct tours", null, any && s.Messages.TryGetValue("Distinct tours", out var distinct) ? distinct : dash,
+                            null, "different tours walked by the ants this iteration"),
                         new("Max pheromone", null, tau > 0 ? tau.ToString("0.0000", Inv) : dash, null, "the highest pheromone level τ on any edge")
                     };
                 }

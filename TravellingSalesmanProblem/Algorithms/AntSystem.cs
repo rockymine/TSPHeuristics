@@ -276,6 +276,26 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.Messages["Ant tour lengths"] = /* "; " rather than ";" so the list can wrap - one unbroken token ran out of its column and
              * underneath the tables beside it. */
             string.Join("; ", Colony.Select(a => Math.Round(a.Path.Costs, 3)));
+            /* How far the colony has converged: the number of different tours its ants walked. Two
+             * ants walk the same tour when their cycles match from any start and in either
+             * direction; counting equal lengths only approximated that. */
+            state.Messages["Distinct tours"] = $"{Colony.Select(a => CycleKey(a.Path.Nodes)).Distinct().Count()} of {Colony.Count}";
+        }
+
+        /* A cycle written from its smallest node, in the direction whose second node is smaller. */
+        public static string CycleKey(IReadOnlyList<Node> tour) {
+            var nodes = tour.Count > 1 && tour[0] == tour[^1] ? tour.Take(tour.Count - 1).ToList() : tour.ToList();
+            if (nodes.Count == 0)
+                return "";
+
+            var start = 0;
+            for (var i = 1; i < nodes.Count; i++)
+                if (nodes[i].Index < nodes[start].Index)
+                    start = i;
+
+            int At(int offset) => nodes[((start + offset) % nodes.Count + nodes.Count) % nodes.Count].Index;
+            var forward = nodes.Count < 3 || At(1) <= At(-1);
+            return string.Join("-", Enumerable.Range(0, nodes.Count).Select(k => At(forward ? k : -k)));
         }
     }
 

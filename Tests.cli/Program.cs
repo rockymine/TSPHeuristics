@@ -30,6 +30,7 @@ namespace Tests.cli {
             RandomDescent();
             ReviewFixes();
             AnnealingRecordsEveryDraw();
+            AntsCountDistinctTours();
 
             Console.WriteLine();
             Console.WriteLine(_failures == 0 ? "ALL PASS" : $"{_failures} FAILED");
@@ -425,6 +426,18 @@ namespace Tests.cli {
             var thinned = slow.FindPath(Instance(8, 3));
             Check(thinned.Count <= SimulatedAnnealing.MaxRecordedDraws + 2 && thinned.Count > 1000,
                 "annealing: a very long run is thinned to the recording limit", thinned.Count.ToString());
+        }
+
+        /* A tour is the same cycle from any start node and in either direction. */
+        private static void AntsCountDistinctTours() {
+            var g = Instance(5, 1);
+            var n = g.Nodes;
+            var a = AntSystem.CycleKey(new List<Node> { n[0], n[1], n[2], n[3], n[4], n[0] });
+            var rotated = AntSystem.CycleKey(new List<Node> { n[2], n[3], n[4], n[0], n[1], n[2] });
+            var reversed = AntSystem.CycleKey(new List<Node> { n[0], n[4], n[3], n[2], n[1], n[0] });
+            var other = AntSystem.CycleKey(new List<Node> { n[0], n[2], n[1], n[3], n[4], n[0] });
+            Check(a == rotated && a == reversed, "ants: a cycle matches itself rotated and reversed", $"{a} {rotated} {reversed}");
+            Check(a != other, "ants: a different cycle does not match", other);
         }
 
         private static string Rejected(string text) {
