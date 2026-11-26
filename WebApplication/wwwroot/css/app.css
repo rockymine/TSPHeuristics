@@ -1,37 +1,519 @@
-﻿@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
+﻿/* app.css — the application's styles. Colours, sizes and spacing come from tokens.css; nothing
+ * here names a colour of its own, so both themes are covered by the token blocks alone.
+ *
+ * Bootstrap 5.1 is the base for forms, buttons, tables, the help panel and the table modal. It
+ * has no colour modes of its own and hard-codes most of its colours, so the "Bootstrap bridge"
+ * section points each component the page uses at the tokens. */
+
+/* ── Base ───────────────────────────────────────────────────────────────── */
+:root {
+    --bs-body-bg: var(--bg-base);
+    --bs-body-color: var(--text-primary);
+    --bs-body-font-family: var(--font-sans);
+    --bs-font-sans-serif: var(--font-sans);
+    --bs-font-monospace: var(--font-mono);
+}
 
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--font-lg);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-bright);
 }
 
 a, .btn-link {
-    color: #0366d6;
+    color: var(--accent-text);
+}
+
+code {
+    color: var(--code-color);
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    opacity: 1;
+}
+
+::selection {
+    background: var(--accent-soft);
+}
+
+/* ── Bootstrap bridge ─────────────────────────────────────────────────── */
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+.text-danger {
+    color: var(--color-error) !important;
+}
+
+.form-control,
+.form-select {
+    background-color: var(--bg-raised);
+    border-color: var(--border);
+    color: var(--text-primary);
+    font-size: var(--font-md);
+    min-height: var(--control-height);
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: var(--bg-raised);
+    border-color: var(--accent);
+    color: var(--text-strong);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.form-control:disabled {
+    background-color: var(--bg-deep);
+    color: var(--text-muted);
+}
+
+/* The selects carry .form-control, which has no arrow of its own. */
+select.form-control {
+    appearance: auto;
+}
+
+.form-check-input {
+    background-color: var(--bg-raised);
+    border-color: var(--border-strong);
+}
+
+.form-check-input:checked {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+
+.form-check-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.form-text {
+    color: var(--text-muted);
+    font-size: var(--font-sm);
+}
+
+label,
+.form-check-label {
+    color: var(--text-secondary);
+    font-size: var(--font-base);
+}
+
+.input-group-text {
+    background-color: var(--bg-raised);
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+.btn {
+    font-size: var(--font-base);
+    border-radius: var(--radius-md);
 }
 
 .btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
 }
 
-.content {
-    padding-top: 1.1rem;
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--accent-hover);
+    border-color: var(--accent-hover);
+    color: var(--on-accent);
 }
 
+.btn-primary:disabled,
+.btn-primary.disabled {
+    background-color: var(--bg-raised);
+    border-color: var(--border);
+    color: var(--text-muted);
+    opacity: 1;
+}
+
+.btn-secondary,
+.btn-outline-secondary {
+    background-color: transparent;
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+.btn-secondary:hover,
+.btn-outline-secondary:hover:not(:disabled) {
+    background-color: var(--bg-raised);
+    border-color: var(--border-strong);
+    color: var(--text-strong);
+}
+
+.btn-outline-secondary:disabled {
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+
+.btn-outline-primary {
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--bg-raised);
+    border-color: var(--border-strong);
+    color: var(--text-strong);
+}
+
+.table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-primary);
+    --bs-table-striped-bg: var(--bg-raised);
+    --bs-table-hover-bg: var(--bg-raised);
+    color: var(--text-primary);
+    border-color: var(--border);
+    font-size: var(--font-md);
+}
+
+.table > :not(:first-child) {
+    border-top-color: var(--border-strong);
+}
+
+/* Highlighted cells: the tour's edges in the distance matrix, improving moves in the histories. */
+.table .table-light {
+    --bs-table-bg: var(--bg-selected);
+    --bs-table-accent-bg: transparent;
+    color: var(--text-strong);
+    border-color: var(--border);
+}
+
+.offcanvas,
+.modal-content {
+    background-color: var(--bg-panel);
+    color: var(--text-primary);
+    border-color: var(--border);
+}
+
+.modal-header,
+.modal-footer {
+    border-color: var(--border);
+}
+
+.nav-tabs {
+    border-bottom-color: var(--border);
+}
+
+.nav-tabs .nav-link {
+    color: var(--text-secondary);
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: var(--border) var(--border) transparent;
+    color: var(--text-strong);
+}
+
+.nav-tabs .nav-link.active {
+    background-color: var(--bg-panel);
+    border-color: var(--border) var(--border) var(--bg-panel);
+    color: var(--text-strong);
+}
+
+.accordion-item {
+    background-color: var(--bg-panel);
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+.accordion-button {
+    background-color: var(--bg-panel);
+    color: var(--text-bright);
+    font-size: var(--font-md);
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: var(--bg-selected);
+    color: var(--text-strong);
+    box-shadow: inset 0 -1px 0 var(--border);
+}
+
+.accordion-button:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* Bootstrap draws the chevron and the close cross as dark SVG; the dark theme needs them light. */
+:root:not([data-theme="light"]) .accordion-button::after,
+:root:not([data-theme="light"]) .btn-close {
+    filter: invert(1) grayscale(1) brightness(1.6);
+}
+
+/* ── Header ───────────────────────────────────────────────────────────── */
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-2) var(--space-4);
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+}
+
+.app-header h5 {
+    margin: 0;
+    font-size: var(--font-lg);
+    font-weight: 600;
+}
+
+.app-header-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+/* ── Workspace ────────────────────────────────────────────────────────────
+   Settings on the left, the stage on the right: a toolbar for moving through the run's states,
+   the two canvases side by side, and the docked views below them. */
+.workspace {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+    align-items: start;
+    /* The sidebar is one screen tall and sticky, so on a long page its column would end below it;
+       the column's panel colour and edge are painted by the workspace instead. */
+    background: linear-gradient(to right, var(--bg-panel) calc(var(--sidebar-width) - 1px),
+        var(--border) calc(var(--sidebar-width) - 1px), var(--border) var(--sidebar-width), transparent 0);
+}
+
+.sidebar {
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+}
+
+.sidebar h5 {
+    margin-bottom: var(--space-2);
+    font-size: var(--font-base);
+    font-weight: 600;
+    color: var(--text-strong);
+}
+
+.sidebar .form-group + .form-group,
+.sidebar .form-group + .form-check {
+    margin-top: var(--space-2);
+}
+
+.sidebar label {
+    margin-bottom: 2px;
+}
+
+.custom-input-group {
+    padding: var(--space-3) var(--space-4);
+}
+
+.custom-hr,
+.custom-hr-2 {
+    margin: 0;
+}
+
+.notice-error {
+    margin: var(--space-3) var(--space-4);
+    padding: var(--space-3);
+    border: 1px solid color-mix(in srgb, var(--color-error) 40%, transparent);
+    border-radius: var(--radius-md);
+    background: var(--color-error-bg);
+    color: var(--color-error);
+}
+
+.notice-error h5 {
+    color: var(--color-error);
+}
+
+.notice-error p {
+    margin: 0;
+}
+
+.stage {
+    min-width: 0;
+    padding: 0 var(--space-4) var(--space-4);
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────────── */
+.stage-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-4);
+    margin: 0 calc(-1 * var(--space-4));
+    padding: var(--space-2) var(--space-4);
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    font-size: var(--font-base);
+}
+
+.stage-toolbar .btn-toolbar {
+    gap: 2px;
+}
+
+.stage-toolbar .btn-toolbar .btn {
+    min-width: var(--control-height);
+    min-height: var(--control-height);
+}
+
+.stage-toolbar-time {
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.stage-toolbar-state {
+    flex-basis: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-5);
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.stage-toolbar-state strong {
+    color: var(--text-bright);
+    font-weight: 600;
+}
+
+/* ── Canvases ─────────────────────────────────────────────────────────── */
+.stage-canvases {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    padding: var(--space-4) 0;
+}
+
+.stage-canvases.pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.canvas-frame {
+    margin: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-3);
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+}
+
+.canvas-frame figcaption {
+    align-self: stretch;
+    margin-bottom: var(--space-2);
+    font-size: var(--font-base);
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+/* The canvas keeps its pixel size as a buffer and is scaled down to fit its column. */
+.canvas-frame canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm);
+}
+
+.chart-box {
+    position: relative;
+    width: 100%;
+}
+
+/* ── Docked views ─────────────────────────────────────────────────────── */
+.dock {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.dock-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+}
+
+.dock-tab {
+    position: relative;
+    padding: var(--space-2) var(--space-4);
+    border: 0;
+    border-right: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: var(--font-base);
+    transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.dock-tab:hover {
+    background: var(--bg-raised);
+    color: var(--text-strong);
+}
+
+.dock-tab.active {
+    background: var(--bg-base);
+    color: var(--text-strong);
+}
+
+/* The active tab carries the accent along its top edge, as a tool window's does. */
+.dock-tab.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 2px;
+    background: var(--accent);
+}
+
+.dock-body {
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-base);
+}
+
+.dock-body h5 {
+    font-size: var(--font-lg);
+    font-weight: 600;
+}
+
+/* ── Help panel and table modal ───────────────────────────────────────── */
+.modal-full-width {
+    margin: 1.75rem;
+    max-width: unset !important;
+}
+
+.word-break {
+    text-align: justify;
+    hyphens: auto;
+}
+
+/* ── Blazor ───────────────────────────────────────────────────────────── */
 .valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
+    outline: 1px solid var(--canvas-added);
 }
 
 .invalid {
-    outline: 1px solid red;
+    outline: 1px solid var(--color-error);
 }
 
 .validation-message {
-    color: red;
+    color: var(--color-error);
 }
 
 #blazor-error-ui {
-    background: lightyellow;
+    background: var(--color-error-bg);
+    color: var(--color-error);
     bottom: 0;
     box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
     display: none;
@@ -49,188 +531,7 @@ a, .btn-link {
     top: 0.5rem;
 }
 
-.bg-custom-light {
-    background-color: #333333;
-}
-
-.custom-input-group {
-    margin: 5px;
-    padding: 10px;
-    border-radius: 8px;
-}
-
-.custom-column-style {
-    padding: 0;
-    height: 100%;
-    border-radius: 8px;
-}
-
-.custom-hr {
-    margin: 0 1rem 0 1rem;
-    height: 2px !important;
-}
-
-.custom-hr-2 {
-    margin: 0 0.5rem 0 0.5rem;
-    height: 2px !important;
-}
-
-.modal-full-width {
-    margin: 1.75rem;
-    max-width: unset !important;
-}
-
-.word-break {
-    text-align: justify;
-    -webkit-hyphens: auto;
-    -ms-hyphens: auto;
-    hyphens: auto;
-}
-
-.settings {
-    color: #4ec9b0;
-}
-
-.output {
-    color: #b8d7a3;
-}
-
-.header {
-    color: #a699e6;
-}
-/* ── Workspace layout ───────────────────────────────────────────────────────
-   Settings on the left, the stage on the right: a toolbar for moving through the run's states,
-   the two canvases side by side, and the docked views below them. */
-.app-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.6rem 1rem;
-    border-bottom: 1px solid #3a3a3a;
-}
-
-.app-header h5 {
-    margin: 0;
-}
-
-.workspace {
-    display: grid;
-    grid-template-columns: 300px minmax(0, 1fr);
-    align-items: start;
-}
-
-.sidebar {
-    position: sticky;
-    top: 0;
-    max-height: 100vh;
-    overflow-y: auto;
-    background-color: #333333;
-    border-right: 1px solid #3a3a3a;
-}
-
-.stage {
-    min-width: 0;
-    padding: 0 1rem 1rem;
-}
-
-.stage-toolbar {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.4rem 1rem;
-    padding: 0.6rem 0;
-    background-color: var(--bs-body-bg, #222);
-    border-bottom: 1px solid #3a3a3a;
-}
-
-.stage-toolbar .btn-toolbar {
-    gap: 2px;
-}
-
-.stage-toolbar-state {
-    flex-basis: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.1rem 1.25rem;
-    overflow-wrap: anywhere;
-}
-
-.stage-canvases {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
-    padding: 1rem 0;
-}
-
-.stage-canvases.pair {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.canvas-frame {
-    margin: 0;
-    min-width: 0;
-}
-
-.canvas-frame figcaption {
-    margin-bottom: 0.3rem;
-    font-weight: 500;
-}
-
-/* The canvas keeps its pixel size as a buffer and is scaled down to fit its column. */
-.canvas-frame canvas {
-    display: block;
-    max-width: 100%;
-    height: auto;
-}
-
-.chart-box {
-    position: relative;
-    width: 100%;
-}
-
-/* ── Docked views ─────────────────────────────────────────────────────── */
-.dock {
-    border: 1px solid #3a3a3a;
-    border-radius: 6px;
-    background-color: #333333;
-}
-
-.dock-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2px;
-    padding: 4px 4px 0;
-    border-bottom: 1px solid #3a3a3a;
-}
-
-.dock-tab {
-    padding: 0.35rem 0.9rem;
-    border: 1px solid transparent;
-    border-bottom: none;
-    border-radius: 4px 4px 0 0;
-    background: transparent;
-    color: inherit;
-    opacity: 0.75;
-}
-
-.dock-tab:hover {
-    opacity: 1;
-}
-
-.dock-tab.active {
-    opacity: 1;
-    background-color: #222;
-    border-color: #3a3a3a;
-}
-
-.dock-body {
-    padding: 0.75rem 1rem;
-}
-
+/* ── Narrow screens ───────────────────────────────────────────────────── */
 @media (max-width: 1100px) {
     .stage-canvases.pair {
         grid-template-columns: minmax(0, 1fr);
@@ -240,16 +541,22 @@ a, .btn-link {
 @media (max-width: 800px) {
     .workspace {
         grid-template-columns: minmax(0, 1fr);
+        background: none;
     }
 
     .sidebar {
         position: static;
         max-height: none;
         border-right: none;
-        border-bottom: 1px solid #3a3a3a;
+        border-bottom: 1px solid var(--border);
     }
 
     .stage {
-        padding: 0 0.75rem 1rem;
+        padding: 0 var(--space-3) var(--space-4);
+    }
+
+    .stage-toolbar {
+        margin: 0 calc(-1 * var(--space-3));
+        padding: var(--space-2) var(--space-3);
     }
 }

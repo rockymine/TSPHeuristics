@@ -1,0 +1,127 @@
+/* tokens.css — CSS custom properties only: no selectors other than :root, no component rules.
+ *
+ * Dark is the default; the light theme overrides the colour tokens at the foot of this file, and
+ * the two blocks have to be kept in step. The theme is chosen by data-theme on <html>, set before
+ * any CSS loads by the inline script in index.html (the reader's stored choice, else the system's).
+ *
+ * The --canvas-* tokens are read by the canvas renderer through theme.js, so the drawing follows
+ * the theme as well: change one here and the graph changes with it. */
+
+:root {
+  color-scheme: dark;
+
+  /* ── Surfaces ─────────────────────────────────────────────────────────── */
+  --bg-deep:     #0b0b0e;   /* recessed: the canvas well, the active tab's body */
+  --bg-base:     #0e0e11;   /* page */
+  --bg-panel:    #16161a;   /* sidebar, toolbar, dock */
+  --bg-raised:   #1c1c21;   /* inputs, hover */
+  --bg-selected: #24304f;   /* selected tab, highlighted table cell */
+
+  --border:        #2e2e35;
+  --border-strong: #3f3f46;
+
+  /* ── Text, quiet to strong ────────────────────────────────────────────── */
+  --text-muted:     #8b8b94;
+  --text-secondary: #a1a1aa;
+  --text-primary:   #d4d4d8;
+  --text-bright:    #e4e4e7;
+  --text-strong:    #fafafa;
+
+  /* ── Accent and status ────────────────────────────────────────────────── */
+  --accent:        #3b82f6;
+  --accent-hover:  #2563eb;
+  --accent-text:   #60a5fa;   /* accent used as text on the panel */
+  --accent-soft:   color-mix(in oklch, var(--accent) 22%, transparent);
+  --on-accent:     #ffffff;
+
+  --color-error:    #f87171;
+  --color-error-bg: color-mix(in srgb, #7f1d1d 35%, var(--bg-panel));
+  --code-color:     #7dd3fc;
+
+  /* ── Canvas ───────────────────────────────────────────────────────────── */
+  --canvas-bg:          #111115;
+  --canvas-grid:        #2a2a31;
+  --canvas-edge:        #d4d4d8;
+  --canvas-node:        #6b6fb0;
+  --canvas-node-label:  #ffffff;
+  --canvas-added:       #22c55e;   /* an edge the step put in */
+  --canvas-removed:     #f87171;   /* an edge the step took out, drawn dashed */
+  --canvas-move-first:  #c084fc;   /* the move's first node */
+  --canvas-move-second: #fbbf24;   /* and its second */
+  --canvas-label-bg:    #2563eb;   /* edge length annotations */
+  --canvas-label-text:  #ffffff;
+
+  /* ── Charts ───────────────────────────────────────────────────────────── */
+  --chart-line: #f87171;
+  --chart-fill: color-mix(in srgb, #f87171 10%, transparent);
+
+  /* ── Type ─────────────────────────────────────────────────────────────── */
+  --font-sans: "Geist", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --font-lg:   15px;   /* body */
+  --font-md:   14px;   /* inputs, table cells */
+  --font-base: 13px;   /* buttons, tabs, labels */
+  --font-sm:   12px;   /* helper text */
+  --font-xs:   11px;   /* section headers */
+
+  /* ── Structure ────────────────────────────────────────────────────────── */
+  --sidebar-width:  300px;
+  --control-height: 32px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --transition-fast: 0.12s ease;
+}
+
+/* A touch screen gets fingertip-sized controls whatever the window's width. */
+@media (pointer: coarse) {
+  :root { --control-height: 44px; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   LIGHT THEME — colour overrides only; structure is inherited from :root.
+   ════════════════════════════════════════════════════════════════════════ */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-deep:     #ececef;
+  --bg-base:     #f6f6f7;
+  --bg-panel:    #ffffff;
+  --bg-raised:   #f4f4f5;
+  --bg-selected: #dbe5fd;
+
+  --border:        #d4d4d8;
+  --border-strong: #a1a1aa;
+
+  --text-muted:     #63636b;
+  --text-secondary: #52525b;
+  --text-primary:   #27272a;
+  --text-bright:    #18181b;
+  --text-strong:    #09090b;
+
+  --accent-text:   #2563eb;
+
+  --color-error:    #b91c1c;
+  --color-error-bg: #fee2e2;
+  --code-color:     #0369a1;
+
+  --canvas-bg:          #ffffff;
+  --canvas-grid:        #dcdce1;
+  --canvas-edge:        #18181b;
+  --canvas-node:        #4e5072;
+  --canvas-node-label:  #ffffff;
+  --canvas-added:       #16a34a;
+  --canvas-removed:     #dc2626;
+  --canvas-move-first:  #9333ea;
+  --canvas-move-second: #ea8a00;
+  --canvas-label-bg:    #3f74a8;
+  --canvas-label-text:  #ffffff;
+
+  --chart-line: #dc2626;
+  --chart-fill: color-mix(in srgb, #dc2626 8%, transparent);
+}

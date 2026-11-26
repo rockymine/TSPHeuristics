@@ -304,7 +304,6 @@ n,12,11,11";
         public bool AutoAdvance;
         public bool AnnotateEdges;
         public bool ColorizeChanges = true;
-        public string BackgroundColor = "#FFFFFF";
         public bool MultiStart;
         public bool CalculateTemperature;
         public bool ShowGrid = true;

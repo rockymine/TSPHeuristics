@@ -18,7 +18,7 @@ namespace WebApplication.Extensions {
         private static readonly double[] Solid = { };
 
         public static async Task DrawLine(this IContext2DWithoutGetters context, Brush brush, Vector2 pos1, Vector2 pos2) {
-            await context.SetLineDashAsync(brush.Color == "red" ? Dashed : Solid);
+            await context.SetLineDashAsync(brush.Dashed ? Dashed : Solid);
             await context.StrokeStyleAsync(brush.Color);
             await context.LineWidthAsync(brush.Width);
             await context.BeginPathAsync();
@@ -34,7 +34,7 @@ namespace WebApplication.Extensions {
             if (segments.Count == 0)
                 return;
 
-            await context.SetLineDashAsync(brush.Color == "red" ? Dashed : Solid);
+            await context.SetLineDashAsync(brush.Dashed ? Dashed : Solid);
             await context.StrokeStyleAsync(brush.Color);
             await context.LineWidthAsync(brush.Width);
             await context.BeginPathAsync();
@@ -81,7 +81,8 @@ namespace WebApplication.Extensions {
         }
 
         /* Width comes from the caller because MeasureTextAsync needs a round trip and so is not
-         * available on a batch; GraphView measures the labels before opening one. */
+         * available on a batch; GraphView measures the labels before opening one. The box is
+         * filled in brush.Color and the text written in brush.TextStyle. */
         public static async Task DrawTextBox(this IContext2DWithoutGetters context, Brush brush,
             Vector2 pos, string text, double width, double height) {
             /* The caller measures the glyphs exactly, so pad before drawing: a box tight against
@@ -98,7 +99,7 @@ namespace WebApplication.Extensions {
             /* A radius wider than half the shorter side would make the arcs overlap. */
             var radius = Math.Min(10, Math.Min(boxWidth, boxHeight) / 2);
 
-            await context.FillStyleAsync("#3f74a8");
+            await context.FillStyleAsync(brush.Color);
             await context.LineWidthAsync(2);
             await context.BeginPathAsync();
             await context.MoveToAsync(left + radius, bottom);
@@ -108,7 +109,7 @@ namespace WebApplication.Extensions {
             await context.ArcToAsync(left, bottom, right, bottom, radius);
             await context.ClosePathAsync();
             await context.FillAsync(FillRule.EvenOdd);
-            await WriteText(context, brush.TextFont, "white", text, pos);
+            await WriteText(context, brush.TextFont, brush.TextStyle, text, pos);
         }
 
         public static async Task FillTextAsyncVector(this IContext2DWithoutGetters context, string text, Vector2 pos) {

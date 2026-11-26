@@ -10,6 +10,9 @@ namespace WebApplication.Utils {
         public string TextFont { get; set; }
         public string TextStyle { get; set; }
         public FillStyle Style { get; set; }
+        /* Removed edges are drawn dashed. This used to be inferred from Color == "red", which
+         * stopped working the moment the colours came from the theme. */
+        public bool Dashed { get; set; }
 
         public Brush Copy() {
             return new Brush {
@@ -17,7 +20,8 @@ namespace WebApplication.Utils {
                 Width = Width,
                 TextFont = new string(TextFont),
                 TextStyle = new string(TextStyle),
-                Style = Style
+                Style = Style,
+                Dashed = Dashed
             };
         }
     }

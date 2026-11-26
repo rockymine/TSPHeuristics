@@ -11,18 +11,39 @@
  * from a detached or missing element. */
 const charts = new Map();
 
-/* The page uses the dark Bootstrap theme; Chart.js 2 defaults to #666 text and near-black grid
- * lines, which left the axes all but invisible on the #333 panels. */
-const textColor = "#c8c8c8";
-const gridColor = "rgba(255, 255, 255, 0.12)";
+/* Colours come from the theme tokens (theme.js); Chart.js 2 defaults to #666 text and near-black
+ * grid lines, which disappear on a dark panel. A theme switch re-colours every live chart. */
+const colors = () => window.tspTheme ? window.tspTheme.chartColors()
+    : { text: "#a1a1aa", grid: "#2e2e35", line: "#f87171", fill: "transparent" };
 
-function axis(title) {
+function axis(title, c) {
     return {
-        scaleLabel: { display: !!title, labelString: title, fontColor: textColor },
-        ticks: { fontColor: textColor },
-        gridLines: { color: gridColor, zeroLineColor: gridColor }
+        scaleLabel: { display: !!title, labelString: title, fontColor: c.text },
+        ticks: { fontColor: c.text },
+        gridLines: { color: c.grid, zeroLineColor: c.grid }
     };
 }
+
+function applyColors(chart) {
+    const c = colors();
+    const options = chart.options;
+    options.legend.labels.fontColor = c.text;
+    for (const scale of [...options.scales.xAxes, ...options.scales.yAxes]) {
+        scale.scaleLabel.fontColor = c.text;
+        scale.ticks.fontColor = c.text;
+        scale.gridLines.color = c.grid;
+        scale.gridLines.zeroLineColor = c.grid;
+    }
+    chart.data.datasets[0].borderColor = c.line;
+    chart.data.datasets[0].backgroundColor = c.fill;
+}
+
+window.addEventListener("tsp-themechange", () => {
+    for (const chart of charts.values()) {
+        applyColors(chart);
+        chart.update(0);
+    }
+});
 
 export function LineChart(canvasid, chartInfo) {
     const canvas = document.getElementById(canvasid);
@@ -48,6 +69,7 @@ export function LineChart(canvasid, chartInfo) {
         return;
     }
 
+    const c = colors();
     chart = new Chart(canvas, {
         type: "line",
         data: {
@@ -57,8 +79,8 @@ export function LineChart(canvasid, chartInfo) {
                 label: yAxis.title,
                 data: yAxis.values,
                 pointBackgroundColor: yAxis.colors,
-                borderColor: "rgba(220, 53, 69, 0.8)",
-                backgroundColor: "rgba(220, 53, 69, 0.08)"
+                borderColor: c.line,
+                backgroundColor: c.fill
             }]
         },
         /* Responsive, because the charts live in a dock tab that may be hidden when they are
@@ -69,10 +91,10 @@ export function LineChart(canvasid, chartInfo) {
             maintainAspectRatio: true,
             aspectRatio: 2.4,
             animation: { duration: 0 },
-            legend: { labels: { fontColor: textColor } },
+            legend: { labels: { fontColor: c.text } },
             scales: {
-                xAxes: [axis(chartInfo.xAxis.title)],
-                yAxes: [axis(null)]
+                xAxes: [axis(chartInfo.xAxis.title, c)],
+                yAxes: [axis(null, c)]
             }
         }
     });

@@ -8,12 +8,19 @@
 @using WebApplication.Components
 @using WebApplication.Components.Layout
 @using StardustDL.RazorComponents.Markdown
+@inject IJSRuntime JS
 <header class="app-header">
     <h5>Interactive Visualization of Heuristics for the Traveling Salesman Problem</h5>
-    <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="offcanvas"
-            data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions">
-        <i class="bi bi-question-lg"></i> Help
-    </button>
+    <div class="app-header-actions">
+        <button class="btn btn-outline-primary btn-sm" type="button" @onclick="ToggleTheme"
+                title="@(theme == "light" ? "Switch to the dark theme" : "Switch to the light theme")">
+            <i class="bi @(theme == "light" ? "bi-moon" : "bi-sun")"></i>
+        </button>
+        <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="offcanvas"
+                data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions">
+            <i class="bi bi-question-lg"></i> Help
+        </button>
+    </div>
 </header>
 <div class="workspace">
     <!-- Settings: everything that configures a run -->
@@ -110,7 +117,7 @@
         <!-- Error -->
         @if (!string.IsNullOrEmpty(AppState.Error)) {
             <hr class="custom-hr" />
-            <div class="bg-danger custom-input-group" style="margin: 1rem;">
+            <div class="notice-error" role="alert">
                 <h5 class="font-weight-bold">Error</h5>
                 <p>@AppState.Error</p>
             </div>
@@ -260,9 +267,17 @@
 
     private FileInput subscribedFileInput;
 
-    protected override Task OnAfterRenderAsync(bool firstRender) {
-        if (firstRender)
+    /* "light" or "dark", as theme.js reports it; index.html has already applied it to the page. */
+    private string theme;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
             _ = RunAnimationLoop();
+
+            theme = await JS.InvokeAsync<string>("tspTheme.get");
+            AppState.CanvasSettings.Theme = await JS.InvokeAsync<CanvasTheme>("tspTheme.canvasColors");
+            StateHasChanged();
+        }
 
         /* AppState.FileInput starts as a placeholder instance and is only replaced by the real
          * component once the File source is selected and @ref runs. Subscribing once on the first
@@ -286,7 +301,17 @@
                 AppState.CurrentHistoryNode, AppState.AlgorithmEnum, AppState.NeighbourEnum);
         }
 
-        return base.OnAfterRenderAsync(firstRender);
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    /* The page restyles itself through CSS; the canvas does not, so it is redrawn in the colours
+     * the new theme's tokens resolve to. The charts are re-coloured by their own interop. */
+    private async Task ToggleTheme() {
+        theme = await JS.InvokeAsync<string>("tspTheme.set", theme == "light" ? "dark" : "light");
+        AppState.CanvasSettings.Theme = await JS.InvokeAsync<CanvasTheme>("tspTheme.canvasColors");
+
+        if (AppState.GraphHistory != null && AppState.CurrentHistoryNode != null)
+            await Redraw();
     }
 
     private void OnLoadedFileChanged() => InvokeAsync(StateHasChanged);
@@ -355,7 +380,6 @@
         AppState.CanvasSettings.Scale = AppState.Scale;
         AppState.CanvasSettings.NodeRadius = AppState.NodeRadius;
         AppState.CanvasSettings.ShowGrid = AppState.ShowGrid;
-        AppState.CanvasSettings.BackgroundColor = AppState.BackgroundColor;
 
         await UpdateEnumerator();
     }
@@ -522,7 +546,7 @@
          * than at the canvas origin, so with a graph whose smallest coordinate was not zero a
          * strip along the top and left kept the previous frame's pixels. */
         await context.ClearRectAsync(0, 0, settings.Width, settings.Height);
-        await context.FillStyleAsync(settings.BackgroundColor);
+        await context.FillStyleAsync(settings.Theme.Background);
         await context.FillRectAsync(0, 0, settings.Width, settings.Height);
 
         if (settings.ShowGrid)

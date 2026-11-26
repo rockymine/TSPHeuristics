@@ -3,12 +3,23 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Master Thesis Project</title>
+    <title>MHVis — TSP Heuristics</title>
     <base href="/" />
-    <!--<link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />-->
-    <link href="lib/bootstrap-dark-5/dist/css/bootstrap-night.min.css" rel="stylesheet" />
+    <!-- Theme: set data-theme before any CSS loads, so the page never flashes the other theme.
+         The reader's stored choice wins; without one the system preference decides. -->
+    <script>
+        (function () {
+            var t = null;
+            try { t = localStorage.getItem("tsp-theme"); } catch (e) { }
+            if (t !== "light" && t !== "dark")
+                t = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", t);
+        })();
+    </script>
+    <link href="lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="lib/bootstrap-icons/font/bootstrap-icons.min.css" rel="stylesheet" />
     <script src="lib/Chart.js/Chart.min.js"></script>
+    <link href="css/tokens.css" rel="stylesheet" />
     <link href="css/app.css" rel="stylesheet" />
     <link href="WebApplication.styles.css" rel="stylesheet" />
 </head>
@@ -23,5 +34,6 @@
     <script src="lib/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="js/DownloadFile.js"></script>
     <script src="js/CanvasUtil.js"></script>
+    <script src="js/theme.js"></script>
 </body>
 </html>

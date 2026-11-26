@@ -15,16 +15,20 @@ namespace WebApplication.Utils {
          * out too small for the text it is drawn behind. */
         public const string EdgeTextFont = "15px serif";
 
-        private static readonly Brush EdgeBrush = new() {
-            Color = "black", Width = 2,
-            TextFont = EdgeTextFont, TextStyle = "black"
+        private const string NodeTextFont = "15px serif bold";
+        private const double EdgeWidth = 2;
+
+        /* The colours come from the theme (settings.Theme), so every brush is built per frame. */
+        private static Brush GridBrush(CanvasTheme theme) => new() {
+            Color = theme.Grid, Width = 0.75, TextFont = "", TextStyle = ""
         };
-        private static readonly Brush NodeBrush = new() {
-            Color = "#4e5072", Width = 2, Style = FillStyle.Fill,
-            TextFont = "15px serif bold", TextStyle = "white"
+        private static Brush NodeBrush(CanvasTheme theme) => new() {
+            Color = theme.Node, Width = 2, Style = FillStyle.Fill,
+            TextFont = NodeTextFont, TextStyle = theme.NodeLabel
         };
-        private static readonly Brush GridBrush = new() {
-            Color = "#999999", Width = 0.75
+        private static Brush LabelBrush(CanvasTheme theme) => new() {
+            Color = theme.LabelBackground, Width = 2, Style = FillStyle.Fill,
+            TextFont = EdgeTextFont, TextStyle = theme.LabelText
         };
 
         /* One grid line used to be one DrawLine, i.e. seven interop calls each. A 90x90 instance
@@ -44,7 +48,7 @@ namespace WebApplication.Utils {
                     Manipulate(new Vector2(i, settings.MaxPos.Y), settings)));
             }
 
-            await context.DrawLines(GridBrush, segments);
+            await context.DrawLines(GridBrush(settings.Theme), segments);
         }
 
         /* Nodes are grouped by fill colour so each colour is a single path, and all the index
@@ -52,7 +56,8 @@ namespace WebApplication.Utils {
         public static async Task DrawNodes(IContext2DWithoutGetters context, GraphState state,
             LinkedListNode<GraphState> currentStateNode, CanvasSettings settings) {
             var nodes = state.Nodes;
-            var brush = NodeBrush.Copy();
+            var theme = settings.Theme;
+            var brush = NodeBrush(theme);
             var moveInfo = currentStateNode.Value.MoveInfo;
 
             var byColor = new Dictionary<string, List<Vector2>>();
@@ -60,7 +65,7 @@ namespace WebApplication.Utils {
 
             foreach (var node in nodes) {
                 var position = Manipulate(node.Position, settings);
-                var color = NodeColor(moveInfo, node);
+                var color = NodeColor(moveInfo, node, theme);
 
                 if (!byColor.TryGetValue(color, out var group)) {
                     group = new List<Vector2>();
@@ -76,18 +81,18 @@ namespace WebApplication.Utils {
                 await context.DrawCircles(brush, settings.NodeRadius, group.Value);
             }
 
-            await context.WriteTexts(NodeBrush.TextFont, NodeBrush.TextStyle, labels);
+            await context.WriteTexts(brush.TextFont, brush.TextStyle, labels);
         }
 
-        private static string NodeColor(MoveInfo moveInfo, Node node) {
+        private static string NodeColor(MoveInfo moveInfo, Node node, CanvasTheme theme) {
             if (moveInfo == null || moveInfo.Nodes.Count < 2)
-                return NodeBrush.Color;
+                return theme.Node;
             if (node.Index == moveInfo.Nodes[0].Index)
-                return "purple";
+                return theme.MoveFirst;
             if (node.Index == moveInfo.Nodes[1].Index)
-                return "orange";
+                return theme.MoveSecond;
 
-            return NodeBrush.Color;
+            return theme.Node;
         }
 
         public static async Task DrawEdges(IContext2DWithoutGetters context, GraphState state,
@@ -98,19 +103,25 @@ namespace WebApplication.Utils {
              * everything else is grouped by (colour, width). The old loop also never restored
              * brush.Width after a pheromone edge, so once one edge carried pheromone every
              * following edge inherited its width. */
-            var groups = new Dictionary<(string Color, double Width), List<(Vector2, Vector2)>>();
+            var groups = new Dictionary<(string Color, double Width, bool Dashed), List<(Vector2, Vector2)>>();
+            var theme = settings.Theme;
 
-            var compare = state == stateNode.Value ? stateNode.Previous?.Value.PathEdges : stateNode.Value.PathEdges;
-            var changeColor = state == stateNode.Value ? "green" : "red";
+            /* The current state shows the edges the step put in, the previous one those it took out. */
+            var current = state == stateNode.Value;
+            var compare = current ? stateNode.Previous?.Value.PathEdges : stateNode.Value.PathEdges;
+            var changeColor = current ? theme.Added : theme.Removed;
             var compareKeys = compare == null ? null : PathKeys(compare);
 
             foreach (var edge in edges) {
-                var color = EdgeBrush.Color;
-                if (compareKeys != null && !compareKeys.Contains(EdgeKey(edge)))
+                var color = theme.Edge;
+                var dashed = false;
+                if (compareKeys != null && !compareKeys.Contains(EdgeKey(edge))) {
                     color = changeColor;
+                    dashed = !current;
+                }
 
-                var width = edge.Pheromone != 0 ? edge.Pheromone * 500 : EdgeBrush.Width;
-                var key = (color, width);
+                var width = edge.Pheromone != 0 ? edge.Pheromone * 500 : EdgeWidth;
+                var key = (color, width, dashed);
 
                 if (!groups.TryGetValue(key, out var group)) {
                     group = new List<(Vector2, Vector2)>();
@@ -120,10 +131,11 @@ namespace WebApplication.Utils {
                 group.Add((Manipulate(edge.Node1.Position, settings), Manipulate(edge.Node2.Position, settings)));
             }
 
-            var brush = EdgeBrush.Copy();
+            var brush = new Brush { TextFont = EdgeTextFont, TextStyle = theme.Edge };
             foreach (var group in groups) {
                 brush.Color = group.Key.Color;
                 brush.Width = group.Key.Width;
+                brush.Dashed = group.Key.Dashed;
                 await context.DrawLines(brush, group.Value);
             }
 
@@ -175,7 +187,7 @@ namespace WebApplication.Utils {
 
         private static async Task DrawEdgeTextBoxes(IContext2DWithoutGetters context,
             IReadOnlyList<TextMetric> annotations, CanvasSettings settings) {
-            var brush = EdgeBrush.Copy();
+            var brush = LabelBrush(settings.Theme);
 
             foreach (var annotation in annotations) {
                 await context.DrawTextBox(brush, Manipulate(annotation.Position, settings),

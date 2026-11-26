@@ -31,7 +31,7 @@ namespace WebApplication.Utils {
         public bool Colorize { get; set; }
         public bool Annotate { get; set; }
         public bool ShowGrid { get; set; }
-        public string BackgroundColor { get; set; }
+        public CanvasTheme Theme { get; set; } = new();
         public float NodeRadius { get; set; }
     }
 }
