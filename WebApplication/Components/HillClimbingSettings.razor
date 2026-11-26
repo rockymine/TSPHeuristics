@@ -2,43 +2,23 @@
 <div>
     <div class="form-group">
         <label for="selectDescentType">Descent Type</label>
-        <select class="form-control" name="descentType" id="selectDescentType" @bind="DescentType">
-            <option value="Random" @onselect="e => DescentType = DescentType.Random">Random Descent</option>
-            <option value="Next" @onselect="e => DescentType = DescentType.Next">Next Descent</option>
-            <option value="Steepest" @onselect="e => DescentType = DescentType.Steepest">Steepest Descent</option>
+        <select class="form-control" name="descentType" id="selectDescentType" @bind:get="DescentType" @bind:set="v => DescentTypeChanged.InvokeAsync(v)">
+            <option value="Random">Random Descent</option>
+            <option value="Next">Next Descent</option>
+            <option value="Steepest">Steepest Descent</option>
         </select>
     </div>
-    <NeighborFunctionSettings @bind-NeighbourEnum="@NeighbourEnum"></NeighborFunctionSettings>
+    <NeighborFunctionSettings NeighbourEnum="@NeighbourEnum" NeighbourEnumChanged="@NeighbourEnumChanged"></NeighborFunctionSettings>
 </div>
 
 @code {
-    private DescentType descentType;
     [Parameter]
-    public DescentType DescentType {
-        get => descentType;
-        set {
-            if (value == descentType)
-                return;
-
-            descentType = value;
-            DescentTypeChanged.InvokeAsync(value);
-        }
-    }
+    public DescentType DescentType { get; set; }
     [Parameter]
     public EventCallback<DescentType> DescentTypeChanged { get; set; }
 
-	private NeighbourType neighbourEnum;
     [Parameter]
-    public NeighbourType NeighbourEnum {
-        get => neighbourEnum;
-        set {
-            if (value == neighbourEnum)
-                return;
-
-            neighbourEnum = value;
-            NeighbourEnumChanged.InvokeAsync(value);
-        }
-    }
+    public NeighbourType NeighbourEnum { get; set; }
     [Parameter]
     public EventCallback<NeighbourType> NeighbourEnumChanged { get; set; }
 }

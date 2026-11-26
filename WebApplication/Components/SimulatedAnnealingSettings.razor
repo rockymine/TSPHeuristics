@@ -2,114 +2,54 @@
 
 <div class="form-group">
     <label for="iter1">Phase Length</label>
-    <input type="number" id="iter1" class="form-control" @bind="PhaseLength">
+    <input type="number" id="iter1" class="form-control" @bind:get="PhaseLength" @bind:set="v => PhaseLengthChanged.InvokeAsync(v)">
 </div>
 <div class="form-group">
     <label for="temp1">StartTemp</label>
-    <input type="number" id="temp1" class="form-control" @bind="StartTemp">
+    <input type="number" id="temp1" class="form-control" @bind:get="StartTemp" @bind:set="v => StartTempChanged.InvokeAsync(v)">
 </div>
 <div class="form-group">
     <label for="temp2">MinTemp</label>
-    <input type="number" step="0.005" id="temp2" class="form-control" @bind="MinTemp">
+    <input type="number" step="0.005" id="temp2" class="form-control" @bind:get="MinTemp" @bind:set="v => MinTempChanged.InvokeAsync(v)">
 </div>
 <div class="form-group">
     <label for="alphaSA">Alpha</label>
-    <input type="number" step="0.05" id="alphaSA" class="form-control" @bind="AlphaSA">
+    <input type="number" step="0.05" id="alphaSA" class="form-control" @bind:get="AlphaSA" @bind:set="v => AlphaSAChanged.InvokeAsync(v)">
 </div>
-<NeighborFunctionSettings @bind-NeighbourEnum="@NeighbourEnum"></NeighborFunctionSettings>
+<NeighborFunctionSettings NeighbourEnum="@NeighbourEnum" NeighbourEnumChanged="@NeighbourEnumChanged"></NeighborFunctionSettings>
 <div class="form-group form-check">
-    <input class="form-check-input" type="checkbox" id="calculateTemperature" @bind="@CalculateTemperature">
+    <input class="form-check-input" type="checkbox" id="calculateTemperature" @bind:get="CalculateTemperature" @bind:set="v => CalculateTemperatureChanged.InvokeAsync(v)">
     <label class="form-check-label" for="calculateTemperature">Calculate Initial Temperature</label>
 </div>
 
 @code {
-    private NeighbourType neighbourEnum;
     [Parameter]
-    public NeighbourType NeighbourEnum {
-        get => neighbourEnum;
-        set {
-            if (value == neighbourEnum)
-                return;
-
-            neighbourEnum = value;
-            NeighbourEnumChanged.InvokeAsync(value);
-        }
-    }
+    public NeighbourType NeighbourEnum { get; set; }
     [Parameter]
     public EventCallback<NeighbourType> NeighbourEnumChanged { get; set; }
 
-    private int phaseLength;
     [Parameter]
-    public int PhaseLength {
-        get => phaseLength;
-        set {
-            if (value == phaseLength)
-                return;
-
-            phaseLength = value;
-            PhaseLengthChanged.InvokeAsync(value);
-        }
-    }
+    public int PhaseLength { get; set; }
     [Parameter]
     public EventCallback<int> PhaseLengthChanged { get; set; }
 
-    private double startTemp;
     [Parameter]
-    public double StartTemp {
-        get => startTemp;
-        set {
-            if (value == startTemp)
-                return;
-
-            startTemp = value;
-            StartTempChanged.InvokeAsync(value);
-        }
-    }
+    public double StartTemp { get; set; }
     [Parameter]
     public EventCallback<double> StartTempChanged { get; set; }
 
-    private double minTemp;
     [Parameter]
-    public double MinTemp {
-        get => minTemp;
-        set {
-            if (value == minTemp)
-                return;
-
-            minTemp = value;
-            MinTempChanged.InvokeAsync(value);
-        }
-    }
+    public double MinTemp { get; set; }
     [Parameter]
     public EventCallback<double> MinTempChanged { get; set; }
 
-    private double alphaSA;
     [Parameter]
-    public double AlphaSA {
-        get => alphaSA;
-        set {
-            if (value == alphaSA)
-                return;
-
-            alphaSA = value;
-            AlphaSAChanged.InvokeAsync(value);
-        }
-    }
+    public double AlphaSA { get; set; }
     [Parameter]
     public EventCallback<double> AlphaSAChanged { get; set; }
 
-    private bool _calculateTemperature;
     [Parameter]
-    public bool CalculateTemperature {
-        get => _calculateTemperature;
-        set {
-            if (value == _calculateTemperature)
-                return;
-
-            _calculateTemperature = value;
-            CalculateTemperatureChanged.InvokeAsync(value);
-        }
-    }
+    public bool CalculateTemperature { get; set; }
     [Parameter]
     public EventCallback<bool> CalculateTemperatureChanged { get; set; }
 }

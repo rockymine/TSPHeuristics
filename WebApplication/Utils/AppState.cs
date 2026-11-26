@@ -96,8 +96,11 @@ namespace WebApplication.Utils {
          * was loaded afterwards and then indexed Instance.Nodes out of range. */
         public int StartNode {
             get {
+                /* Without an instance there is nothing to clamp against, so the chosen value is
+                 * reported as it is. Returning 0 here made the start node control, which now shows
+                 * this value instead of a copy of its own, read 0 and count up from there. */
                 var count = NodeCountOfInstance;
-                return count == 0 ? 0 : Math.Clamp(_startNode, 0, count - 1);
+                return count == 0 ? _startNode : Math.Clamp(_startNode, 0, count - 1);
             }
             set {
                 if (value < 0)

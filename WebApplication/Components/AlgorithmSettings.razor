@@ -1,49 +1,29 @@
 ﻿@using TravellingSalesmanProblem.Algorithms
 <div class="form-group">
     <label for="selectHeuristics">Heuristic</label>
-    <select class="form-control" name="heuristics" id="selectHeuristics" @bind="AlgorithmEnum">
-        <option value="NN" @onselect="e => AlgorithmEnum = AlgorithmEnum.NN">Nearest Neighbor</option>
-        <option value="SA" @onselect="e => AlgorithmEnum = AlgorithmEnum.SA">Simulated Annealing</option>
-        <option value="AS" @onselect="e => AlgorithmEnum = AlgorithmEnum.AS">Ant System</option>
-        <option value="HC" @onselect="e => AlgorithmEnum = AlgorithmEnum.HC">Hill Climbing</option>
-        <option value="Manual" @onselect="e => AlgorithmEnum = AlgorithmEnum.Manual">Manual Search</option>
+    <select class="form-control" name="heuristics" id="selectHeuristics" @bind:get="AlgorithmEnum" @bind:set="v => AlgorithmEnumChanged.InvokeAsync(v)">
+        <option value="NN">Nearest Neighbor</option>
+        <option value="SA">Simulated Annealing</option>
+        <option value="AS">Ant System</option>
+        <option value="HC">Hill Climbing</option>
+        <option value="Manual">Manual Search</option>
     </select>
 </div>
 @if (AlgorithmEnum is AlgorithmEnum.NN or AlgorithmEnum.HC) {
     <div class="form-check">
-        <input type="checkbox" class="form-check-input" id="multi" @bind="MultiStart">
+        <input type="checkbox" class="form-check-input" id="multi" @bind:get="MultiStart" @bind:set="v => MultiStartChanged.InvokeAsync(v)">
         <label class="form-check-label" for="multi">Multi Start</label>
     </div>
 }
 
 @code {
-    private AlgorithmEnum algorithmEnum;
     [Parameter]
-    public AlgorithmEnum AlgorithmEnum {
-        get => algorithmEnum;
-        set {
-            if (value == algorithmEnum)
-                return;
-
-            algorithmEnum = value;
-            AlgorithmEnumChanged.InvokeAsync(value);
-        }
-    }
+    public AlgorithmEnum AlgorithmEnum { get; set; }
     [Parameter]
     public EventCallback<AlgorithmEnum> AlgorithmEnumChanged { get; set; }
 
-    private bool _multiStart;
     [Parameter]
-    public bool MultiStart {
-        get => _multiStart;
-        set {
-            if (value == _multiStart)
-                return;
-
-            _multiStart = value;
-            MultiStartChanged.InvokeAsync(value);
-        }
-    }
+    public bool MultiStart { get; set; }
     [Parameter]
     public EventCallback<bool> MultiStartChanged { get; set; }
 }
