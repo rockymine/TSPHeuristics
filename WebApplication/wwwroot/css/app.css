@@ -645,3 +645,10 @@ hr {
 .text-size-small { font-size: 11px; }
 .text-size-medium { font-size: 13px; }
 .text-size-large { font-size: 16px; }
+
+/* Playback speed, beside the playback buttons and as tall as they are. */
+.speed-select {
+    width: auto;
+    min-height: var(--control-height);
+    padding-right: 28px;
+}

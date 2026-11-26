@@ -148,6 +148,15 @@
                         <Icon Name="chevrons-right" />
                     </button>
                 </div>
+                @* One choice, so one control: a select next to Play, which it belongs to, instead of four
+                   buttons in the view bar. *@
+                <select class="form-control form-control-sm speed-select" id="playbackSpeed" aria-label="Playback speed"
+                        title="How fast Play steps through the run"
+                        @bind:get="AppState.AnimationDelay" @bind:set="v => AppState.AnimationDelay = v">
+                    @foreach (var (delay, label) in PlaybackSpeeds) {
+                        <option value="@delay">@label (@FormatDuration(TimeSpan.FromMilliseconds(delay)) per step)</option>
+                    }
+                </select>
                 <span class="stage-toolbar-time" title="How long the heuristic took to compute the whole run">
                     Computed in @FormatDuration(AppState.TimeSpan)
                 </span>
@@ -210,16 +219,6 @@
             <CanvasDisplaySettings @bind-ShowGrid="@AppState.ShowGrid" @bind-ShowGrid:after="ApplyView"
                                    @bind-AnnotateEdges="@AppState.AnnotateEdges" @bind-AnnotateEdges:after="ApplyView"
                                    @bind-ColorizeChanges="@AppState.ColorizeChanges" @bind-ColorizeChanges:after="ApplyView" />
-            <div class="toolbar-field" role="group" aria-labelledby="speedLabel">
-                <span id="speedLabel">Speed</span>
-                <div class="segmented" id="playbackSpeed">
-                    @foreach (var (delay, label) in PlaybackSpeeds) {
-                        <button type="button" class="btn btn-sm btn-toggle" aria-pressed="@(AppState.AnimationDelay == delay ? "true" : "false")"
-                                title="@($"{label}: one state every {FormatDuration(TimeSpan.FromMilliseconds(delay))} while playing")"
-                                @onclick="() => AppState.AnimationDelay = delay">@label</button>
-                    }
-                </div>
-            </div>
         </div>
 
         <!-- Views: tables, charts and calculations for the state shown above -->
