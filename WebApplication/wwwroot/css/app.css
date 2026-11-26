@@ -331,20 +331,6 @@ label,
     color: var(--text-strong);
 }
 
-/* Execute stays at the foot of the sidebar however long the settings above it run. */
-.sidebar-footer {
-    position: sticky;
-    bottom: 0;
-    margin-top: auto;
-    padding: var(--space-3) var(--space-4);
-    background: var(--bg-panel);
-    border-top: 1px solid var(--border);
-}
-
-.sidebar-footer .notice-error {
-    margin: 0 0 var(--space-3);
-}
-
 .graph-text {
     height: 200px;
     font-family: var(--font-mono);
@@ -475,6 +461,12 @@ label,
 .stage-toolbar-time {
     color: var(--text-muted);
     font-variant-numeric: tabular-nums;
+}
+
+.stage-toolbar .notice-error {
+    flex-basis: 100%;
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
 }
 
 .stage-toolbar-state {

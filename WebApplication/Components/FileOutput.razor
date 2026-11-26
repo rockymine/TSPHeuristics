@@ -1,12 +1,19 @@
-﻿@inject IJSRuntime JSRuntime
+@inject IJSRuntime JSRuntime
 
-<button class="btn btn-primary" type="link" @onclick="DownloadFileFromStream"><i class="bi bi-download"></i> Download Source</button>
+<button class="btn btn-outline-secondary btn-sm" type="button" title="Download the graph as text, in the format the Text source reads"
+        disabled="@string.IsNullOrEmpty(Content)" @onclick="DownloadFileFromStream">
+    <i class="bi bi-download"></i> Download Source
+</button>
 
 @code {
-    public string LoadedFile { get; set; }
+    [Parameter]
+    public string Content { get; set; }
 
     private async Task DownloadFileFromStream() {
-        byte[] file = System.Text.Encoding.UTF8.GetBytes(LoadedFile);
-        await JSRuntime.InvokeVoidAsync("BlazorDownloadFile", Guid.NewGuid().ToString()  + ".txt", "text/plain", file);
+        if (string.IsNullOrEmpty(Content))
+            return;
+
+        byte[] file = System.Text.Encoding.UTF8.GetBytes(Content);
+        await JSRuntime.InvokeVoidAsync("BlazorDownloadFile", Guid.NewGuid().ToString() + ".txt", "text/plain", file);
     }
 }

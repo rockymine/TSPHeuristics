@@ -37,7 +37,7 @@ const load = name => fs.readFileSync(path.join(INSTANCES, name + '.txt'), 'utf8'
   // sees the new value. Poll until it stops changing rather than requiring it to differ from the
   // previous instance's time, which coincidentally matched for one cell.
   const execute = async (timeoutMs) => {
-    await page.click('text=Execute Algorithm');
+    await page.click('#executeAlgorithm');
     const deadline = Date.now() + timeoutMs;
     let last = null;
     while (Date.now() < deadline) {

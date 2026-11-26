@@ -275,7 +275,10 @@ namespace WebApplication.Utils {
         public ManualSearch ManualSearch = new();
 
         public FileInput FileInput = new();
-        public FileOutput FileOutput = new();
+        /* The loaded instance as text, for Download Source. It was written into a FileOutput
+         * component through a reference - before the first render that showed the button, so the
+         * first run's text went to a placeholder and the download after it failed. */
+        public string SourceText;
         public string DefaultGraph = @"n,1,11,5
 n,2,6,4
 n,3,4,10
