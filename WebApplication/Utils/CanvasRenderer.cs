@@ -15,7 +15,11 @@ namespace WebApplication.Utils {
          * out too small for the text it is drawn behind. */
         public const string EdgeTextFont = "15px serif";
 
-        private const string NodeTextFont = "15px serif bold";
+        /* Was "15px serif bold", which is not a valid font: the weight has to come first. The
+         * context ignores an invalid font, so the node numbers were written in whatever font was
+         * set last - the 10px sans-serif default on most frames. Sized to sit inside the default
+         * 8px node radius with two digits. */
+        private const string NodeTextFont = "600 11px system-ui, sans-serif";
         private const double EdgeWidth = 2;
 
         /* The colours come from the theme (settings.Theme), so every brush is built per frame. */

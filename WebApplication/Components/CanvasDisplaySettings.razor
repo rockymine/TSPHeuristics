@@ -1,9 +1,5 @@
 ﻿<div class="col">
     <div class="form-group">
-        <label for="scale">Scale</label>
-        <input type="number" id="scale" class="form-control" @bind="Scale">
-    </div>
-    <div class="form-group">
         <label for="nodeSize">Node Size</label>
         <input type="number" id="nodeSize" class="form-control" @bind="NodeRadius">
     </div>
@@ -26,21 +22,6 @@
 </div>
 
 @code {
-	private float _scale;
-    [Parameter]
-    public float Scale {
-        get => _scale;
-        set {
-            if (value == _scale)
-                return;
-
-            _scale = value;
-            ScaleChanged.InvokeAsync(value);
-        }
-    }
-    [Parameter]
-    public EventCallback<float> ScaleChanged { get; set; }
-
     private float _nodeRadius;
     [Parameter]
     public float NodeRadius {

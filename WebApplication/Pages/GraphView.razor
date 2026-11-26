@@ -70,8 +70,7 @@
         <!-- Canvas Settings -->
         <div class="custom-input-group">
             <h5 class="font-weigth-bold">Canvas Settings</h5>
-            <CanvasDisplaySettings @bind-Scale="@AppState.Scale"
-                                   @bind-NodeRadius="@AppState.NodeRadius"
+            <CanvasDisplaySettings @bind-NodeRadius="@AppState.NodeRadius"
                                    @bind-ShowGrid="@AppState.ShowGrid"
                                    @bind-AnnotateEdges="@AppState.AnnotateEdges"
                                    @bind-ColorizeChanges="@AppState.ColorizeChanges"
@@ -183,15 +182,24 @@
                 <figure class="canvas-frame">
                     <figcaption>@(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Previous (Before the Move)" : "Previous (Iteration Start)")</figcaption>
                     <Canvas @ref="@AppState.PreviousCanvas"
-                            width="@AppState.CanvasSettings.Width"
-                            height="@AppState.CanvasSettings.Height" />
+                            width="@AppState.CanvasSettings.BufferWidth"
+                            height="@AppState.CanvasSettings.BufferHeight"
+                            style="@AppState.CanvasSettings.CssSize"
+                            hidden="@(AppState.Instance == null)" />
                 </figure>
             }
-            <figure class="canvas-frame">
+            @* The frame around the current canvas is the one measured for the fit (canvas.js): it
+               is in the markup in every mode, and it has the same width as the previous one. *@
+            <figure class="canvas-frame" @ref="currentFrame">
                 <figcaption>@(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Current (After the Move)" : "Current (Iteration End)")</figcaption>
                 <Canvas @ref="@AppState.CurrentCanvas"
-                        width="@AppState.CanvasSettings.Width"
-                        height="@AppState.CanvasSettings.Height" />
+                        width="@AppState.CanvasSettings.BufferWidth"
+                        height="@AppState.CanvasSettings.BufferHeight"
+                        style="@AppState.CanvasSettings.CssSize"
+                        hidden="@(AppState.Instance == null)" />
+                @if (AppState.Instance == null) {
+                    <p class="canvas-empty text-muted">The graph is drawn here once an algorithm has been executed.</p>
+                }
             </figure>
         </div>
 
@@ -270,13 +278,31 @@
     /* "light" or "dark", as theme.js reports it; index.html has already applied it to the page. */
     private string theme;
 
+    /* The box the canvases are fitted to, as canvas.js last reported it, and whether the last fit
+     * resized them. A resized canvas is cleared by the browser, and the new size only reaches the
+     * element in the render after the fit, so the redraw waits for OnAfterRenderAsync. */
+    private ElementReference currentFrame;
+    private DotNetObjectReference<GraphView> pageReference;
+    private (double Width, double ViewportHeight, double PixelRatio) canvasBox = (360, 900, 1);
+    private bool canvasResized;
+
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
             _ = RunAnimationLoop();
 
             theme = await JS.InvokeAsync<string>("tspTheme.get");
             AppState.CanvasSettings.Theme = await JS.InvokeAsync<CanvasTheme>("tspTheme.canvasColors");
+
+            pageReference = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("tspCanvas.observe", currentFrame, pageReference);
             StateHasChanged();
+        }
+
+        if (canvasResized) {
+            canvasResized = false;
+
+            if (AppState.GraphHistory != null && AppState.CurrentHistoryNode != null)
+                await FillCanvases();
         }
 
         /* AppState.FileInput starts as a placeholder instance and is only replaced by the real
@@ -302,6 +328,23 @@
         }
 
         await base.OnAfterRenderAsync(firstRender);
+    }
+
+    [JSInvokable]
+    public void OnCanvasBox(double width, double viewportHeight, double pixelRatio) {
+        canvasBox = (width, viewportHeight, pixelRatio);
+
+        if (AppState.Instance != null && FitCanvases())
+            StateHasChanged();
+    }
+
+    /* The height limit keeps a tall graph, or a single canvas in a wide column, from pushing the
+     * toolbar and the views off the screen. */
+    private bool FitCanvases() {
+        var maxHeight = Math.Max(240, canvasBox.ViewportHeight * 0.65);
+        var resized = AppState.CanvasSettings.Fit(canvasBox.Width, maxHeight, canvasBox.PixelRatio);
+        canvasResized |= resized;
+        return resized;
     }
 
     /* The page restyles itself through CSS; the canvas does not, so it is redrawn in the colours
@@ -377,7 +420,7 @@
         AppState.Error = null;
         AppState.CanvasSettings.MinPos = AppState.Instance.FindMin();
         AppState.CanvasSettings.MaxPos = AppState.Instance.FindMax();
-        AppState.CanvasSettings.Scale = AppState.Scale;
+        FitCanvases();
         AppState.CanvasSettings.NodeRadius = AppState.NodeRadius;
         AppState.CanvasSettings.ShowGrid = AppState.ShowGrid;
 
@@ -545,6 +588,10 @@
         /* The cleared and repainted rectangle started at the graph's minimum coordinate rather
          * than at the canvas origin, so with a graph whose smallest coordinate was not zero a
          * strip along the top and left kept the previous frame's pixels. */
+        /* Everything is drawn in CSS pixels; the transform maps them onto the buffer, which is
+         * PixelRatio times larger. Setting it absolutely each frame also discards whatever a
+         * previous frame left on the context. */
+        await context.SetTransformAsync(settings.PixelRatio, 0, 0, settings.PixelRatio, 0, 0);
         await context.ClearRectAsync(0, 0, settings.Width, settings.Height);
         await context.FillStyleAsync(settings.Theme.Background);
         await context.FillRectAsync(0, 0, settings.Width, settings.Height);

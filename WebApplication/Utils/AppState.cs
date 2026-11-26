@@ -12,21 +12,6 @@ namespace WebApplication.Utils {
     public class AppState {
         public GraphProblem Instance { get; set; }
 
-        private float _scale = 30;
-        public float Scale {
-            get => _scale;
-            set {
-                if (value == _scale)
-                    return;
-                /* Scale 0 collapses CanvasSettings.Width/Height to zero, leaving an invisible
-                 * canvas that cannot be recovered from without reloading. */
-                if (value < 1 || value > 40)
-                    return;
-
-                _scale = value;
-            }
-        }
-
         private float _nodeRadius = 8;
         public float NodeRadius {
             get => _nodeRadius;

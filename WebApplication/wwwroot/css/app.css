@@ -416,12 +416,18 @@ label,
     color: var(--text-secondary);
 }
 
-/* The canvas keeps its pixel size as a buffer and is scaled down to fit its column. */
+/* The canvas is fitted to its frame (CanvasSettings.Fit) and carries its size inline; max-width
+   only matters for the moment between a resize and the next fit. */
 .canvas-frame canvas {
     display: block;
     max-width: 100%;
     height: auto;
     border-radius: var(--radius-sm);
+}
+
+.canvas-empty {
+    margin: var(--space-5) 0;
+    font-size: var(--font-base);
 }
 
 .chart-box {
