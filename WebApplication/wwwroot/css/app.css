@@ -411,24 +411,6 @@ hr {
 @media (max-width: 1100px) {
 }
 
-@media (max-width: 800px) {
-    .workspace {
-        grid-template-columns: minmax(0, 1fr);
-        background: none;
-    }
-
-    .sidebar {
-        position: static;
-        max-height: none;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .stage {
-        padding: 0 var(--space-3) var(--space-4);
-    }
-
-}
 
 /* ── Derivation cards (Calculations tab) ──────────────────────────────────
    One card per rule: title, context and verdict; a sentence on what the rule does; then the
@@ -902,4 +884,118 @@ hr {
         height: 100%;
         overflow-y: auto;
     }
+}
+
+/* ── Phone ────────────────────────────────────────────────────────────────
+   The run comes first: a short header, the tiles as a row that scrolls sideways, then the canvas
+   edge to edge with the player under it, and the settings in a drawer behind the header's
+   Settings button, with Run at its foot. They used to come first and push the canvas almost two
+   screens down. */
+.settings-toggle,
+.sheet-bar,
+.sheet-scrim,
+.title-short { display: none; }
+
+@media (max-width: 800px) {
+    .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .title-long, .text-size-switch, .help-text { display: none; }
+    .title-short { display: inline; }
+    .settings-toggle { display: inline-flex; }
+
+    .workspace {
+        display: block;
+        background: none;
+    }
+
+    .sheet-scrim {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 39;
+        background: rgba(0, 0, 0, 0.4);
+    }
+
+    .sidebar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 40;
+        height: 85vh;
+        max-height: none;
+        overflow-y: auto;
+        border: none;
+        border-radius: 14px 14px 0 0;
+        box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.25);
+        transform: translateY(105%);
+        visibility: hidden;
+        transition: transform 0.22s ease, visibility 0s linear 0.22s;
+    }
+
+    .sidebar.sidebar--open {
+        transform: none;
+        visibility: visible;
+        transition: transform 0.22s ease;
+    }
+
+    .sheet-bar {
+        display: flex;
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-2) var(--space-4);
+        background: var(--bg-panel);
+        border-bottom: 1px solid var(--border);
+        color: var(--text-strong);
+    }
+
+    .stage { padding: 0 0 var(--space-4); }
+
+    .tiles {
+        display: flex;
+        overflow-x: auto;
+        gap: var(--space-2);
+        margin: 0;
+        padding: var(--space-2) var(--space-3);
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+    }
+
+    .tiles::-webkit-scrollbar { display: none; }
+
+    .tile {
+        flex: none;
+        scroll-snap-align: start;
+        padding: 6px 10px;
+    }
+
+    .tile-label { flex: none; overflow: visible; }
+
+    .player-card {
+        margin: 0 0 var(--space-3);
+        border-radius: 0;
+        border-inline: none;
+    }
+
+    .canvas-frame { padding: 0; }
+    .canvas-frame canvas { border-radius: 0; }
+
+    .player {
+        --player-side: 84px;
+        padding: var(--space-2) var(--space-3) var(--space-3);
+    }
+
+    .legend, .player-side-text { display: none; }
+    .playback { gap: 4px; }
+    .playback .btn:not(.play-big) { min-width: 34px; width: 34px; }
+
+    .view-bar, .dock { margin-inline: var(--space-3); }
 }

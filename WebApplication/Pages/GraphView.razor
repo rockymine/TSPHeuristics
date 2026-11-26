@@ -8,8 +8,14 @@
 @using StardustDL.RazorComponents.Markdown
 @inject IJSRuntime JS
 <header class="app-header">
-    <h5>Interactive Visualization of Heuristics for the Traveling Salesman Problem</h5>
+    <h5><span class="title-long">Interactive Visualization of Heuristics for the Traveling Salesman Problem</span><span class="title-short">TSP heuristics</span></h5>
     <div class="app-header-actions">
+        @* On a phone the settings are a drawer; this opens it. Sliders, so it is not mistaken for
+           the theme switch next to it. *@
+        <button class="btn btn-outline-primary btn-sm settings-toggle" type="button" aria-controls="settings"
+                aria-expanded="@(settingsOpen ? "true" : "false")" @onclick="() => settingsOpen = true">
+            <Icon Name="sliders-horizontal" /> Settings
+        </button>
         @* Text size for the whole app, the graph's node numbers included - which is also what sizes
            the nodes, so there is no separate node size to set. *@
         <div class="segmented text-size-switch" role="group" aria-label="Text size">
@@ -22,15 +28,23 @@
                 title="@(theme == "light" ? "Switch to the dark theme" : "Switch to the light theme")">
             <Icon Name="@(theme == "light" ? "moon" : "sun")" />
         </button>
-        <button class="btn btn-outline-primary btn-sm" type="button" @onclick="() => helpPanel.Show()">
-            <Icon Name="circle-help" /> Help
+        <button class="btn btn-outline-primary btn-sm" type="button" @onclick="() => helpPanel.Show()" aria-label="Help">
+            <Icon Name="circle-help" /><span class="help-text">Help</span>
         </button>
     </div>
 </header>
 <div class="workspace">
     <!-- Settings: the instance first (what is solved), then the algorithm (how). How it is drawn
          lives in the view bar under the canvases. -->
-    <aside class="sidebar">
+    @if (settingsOpen) {
+        <div class="sheet-scrim" @onclick="() => settingsOpen = false"></div>
+    }
+    <aside class="sidebar @(settingsOpen ? "sidebar--open" : null)" id="settings" aria-label="Settings"
+           @onkeydown="OnSettingsKey">
+        <div class="sheet-bar">
+            <strong>Settings</strong>
+            <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="() => settingsOpen = false">Done</button>
+        </div>
         <SidebarSection Title="Instance">
             <div class="form-group">
                 <label for="selectGraphSource">Source</label>
@@ -116,7 +130,7 @@
             }
             <button class="btn btn-primary run-button" type="button" id="executeAlgorithm"
                     title="@(AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Start a manual session on the graph" : "Compute the run with these settings")"
-                    @onclick="e => InitiateGraph(AppState.GraphSource)">
+                    @onclick="RunFromSettings">
                 @RunLabel
                 @if (SettingsChanged || AppState.GraphHistory == null) {
                     <span class="run-dot" title="@(SettingsChanged ? "Settings changed since the last run" : "Not run yet")"></span>
@@ -229,7 +243,7 @@
                             title="How fast Play steps through the run" disabled="@(AppState.GraphHistory == null)"
                             @bind:get="AppState.AnimationDelay" @bind:set="v => AppState.AnimationDelay = v">
                         @foreach (var (delay, label) in PlaybackSpeeds) {
-                            <option value="@delay">@label (@FormatDuration(TimeSpan.FromMilliseconds(delay)))</option>
+                            <option value="@delay" title="@($"One step every {FormatDuration(TimeSpan.FromMilliseconds(delay))}")">@label</option>
                         }
                     </select>
                 </div>
@@ -561,6 +575,20 @@
     private string runSignature;
     private AlgorithmEnum RunAlgorithm => runAlgorithm ?? AppState.AlgorithmEnum;
     private bool RunMultiStart => runAlgorithm == null ? AppState.MultiStart : runMultiStart;
+    /* The settings drawer on a phone; on a desktop the sidebar is always there. */
+    private bool settingsOpen;
+
+    private void OnSettingsKey(KeyboardEventArgs e) {
+        if (e.Key == "Escape")
+            settingsOpen = false;
+    }
+
+    /* Run closes the drawer, so the run it computes is what the phone shows next. */
+    private async Task RunFromSettings() {
+        settingsOpen = false;
+        await InitiateGraph(AppState.GraphSource);
+    }
+
     private string RunLabel => AppState.AlgorithmEnum == AlgorithmEnum.Manual ? "Start" : "Run";
 
     /* Every setting the run depends on. Run records it; when it differs, the sidebar's Run shows a
