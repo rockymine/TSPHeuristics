@@ -51,6 +51,7 @@
   --canvas-move-second: #fbbf24;   /* and its second */
   --canvas-label-bg:    #2563eb;   /* edge length annotations */
   --canvas-label-text:  #ffffff;
+  --canvas-pheromone:   #60a5fa;   /* ant colony: pheromone as line width */
 
   /* ── Charts ───────────────────────────────────────────────────────────── */
   --chart-line: #f87171;
@@ -147,6 +148,7 @@
   --canvas-move-second: #ea8a00;
   --canvas-label-bg:    #3f74a8;
   --canvas-label-text:  #ffffff;
+  --canvas-pheromone:   #3b82f6;
 
   --chart-line: #dc2626;
   --chart-fill: color-mix(in srgb, #dc2626 8%, transparent);

@@ -50,6 +50,7 @@ window.tspTheme = (function () {
                 moveSecond: css("--canvas-move-second"),
                 labelBackground: css("--canvas-label-bg"),
                 labelText: css("--canvas-label-text"),
+                pheromone: css("--canvas-pheromone"),
                 labelSize: parseFloat(css("--canvas-label-size")) || 11
             };
         },

@@ -15,6 +15,7 @@ namespace WebApplication.Utils {
         public string MoveSecond { get; set; } = "#ea8a00";
         public string LabelBackground { get; set; } = "#3f74a8";
         public string LabelText { get; set; } = "#ffffff";
+        public string Pheromone { get; set; } = "#3b82f6";
 
         /* The node numbers' size in CSS pixels (--canvas-label-size), which follows the page's
          * text size; the nodes are sized around their numbers. */

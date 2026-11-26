@@ -68,6 +68,10 @@ namespace WebApplication.Utils {
          * cap on the node size once the canvas has a scale. */
         public double NodeSpacing { get; private set; }
 
+        /* The highest pheromone level of the whole ant colony run, so line widths compare across
+         * iterations instead of being scaled anew in each one. */
+        public double PheromoneMax { get; set; }
+
         public void SetNodes(IReadOnlyList<Vector2> positions) {
             var nearest = new List<double>(positions.Count);
 

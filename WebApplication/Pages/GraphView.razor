@@ -148,6 +148,11 @@
                         <Icon Name="chevrons-right" />
                     </button>
                 </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="replayStep"
+                        disabled="@(AppState.CurrentHistoryNode?.Previous == null)"
+                        title="Replay this step. Hold to see the tour before it (or hold B).">
+                    <Icon Name="rotate-ccw" /><span>Replay step</span>
+                </button>
                 @* One choice, so one control: a select next to Play, which it belongs to, instead of four
                    buttons in the view bar. *@
                 <select class="form-control form-control-sm speed-select" id="playbackSpeed" aria-label="Playback speed"
@@ -186,22 +191,11 @@
             }
         </div>
 
-        <!-- Canvases: the state a step starts from and the state it ends on, side by side -->
-        <div class="stage-canvases @(ShowsPreviousCanvas ? "pair" : null)">
-            @if (ShowsPreviousCanvas) {
-                <figure class="canvas-frame">
-                    <figcaption>@PreviousCaption</figcaption>
-                    <canvas id="@PreviousCanvasId"
-                            width="@AppState.CanvasSettings.BufferWidth"
-                            height="@AppState.CanvasSettings.BufferHeight"
-                            style="@AppState.CanvasSettings.CssSize"
-                            hidden="@(AppState.Instance == null)"></canvas>
-                </figure>
-            }
-            @* The frame around the current canvas is the one measured for the fit (canvas.js): it
-               is in the markup in every mode, and it has the same width as the previous one. *@
+        <!-- One canvas: the step's change is played on it (canvas.js) instead of being split over
+             a "before" and an "after" canvas; Replay step plays it again. -->
+        <div class="stage-canvases">
+            @* The frame is the one measured for the fit (canvas.js). *@
             <figure class="canvas-frame" @ref="currentFrame">
-                <figcaption>@CurrentCaption</figcaption>
                 <canvas id="@CurrentCanvasId"
                         width="@AppState.CanvasSettings.BufferWidth"
                         height="@AppState.CanvasSettings.BufferHeight"
@@ -339,6 +333,7 @@
 
             pageReference = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("tspCanvas.observe", currentFrame, pageReference);
+            await JS.InvokeVoidAsync("tspCanvas.bindReplay", CurrentCanvasId);
             StateHasChanged();
         }
 
@@ -545,7 +540,7 @@
         }
 
         AppState.CurrentHistoryNode = AppState.CurrentHistoryNode.Next;
-        await Redraw();
+        await Redraw(animate: true);
     }
 
     private async Task ReverseHistory() {
@@ -573,54 +568,60 @@
         return true;
     }
 
-    private async Task Redraw() {
+    /* animate: play the step's change on the canvas - when moving one step forward, by hand or
+     * while playing. Jumps, stepping back and view changes show the step at rest. */
+    private async Task Redraw(bool animate = false) {
         SyncView();
 
-        await FillCanvases();
+        await FillCanvases(animate);
         await UpdateVisualsFromGraphState();
         StateHasChanged();
     }
 
-    private async Task FillCanvases() {
-        if (ShowsPreviousCanvas) {
-            /* Stepping back to the first state left the "Previous" canvas showing whatever frame
-             * was drawn last, because it was only ever painted when a previous state existed. */
-            if (AppState.CurrentHistoryNode.Previous != null)
-                await FillCanvas(PreviousCanvasId, AppState.CurrentHistoryNode.Previous.Value);
-            else
-                await ResetCanvasOf(PreviousCanvasId);
-        }
-
-        await FillCanvas(CurrentCanvasId, AppState.CurrentHistoryNode.Value);
-    }
-
-    private const string PreviousCanvasId = "previousCanvas";
     private const string CurrentCanvasId = "currentCanvas";
 
     /* The whole frame is described in .NET (CanvasRenderer fills a CanvasScene) and painted by
      * canvas.js in one interop call. It went through Excubo's Batch2D before, which serialised
      * every canvas call one by one: about 25 ms per canvas and step for twelve nodes. The length
-     * labels are measured by the page as it draws them, so that round trip is gone as well. */
-    private async Task FillCanvas(string canvasId, GraphState state) {
+     * labels are measured by the page as it draws them, so that round trip is gone as well.
+     *
+     * The step goes with the picture of the tour before it, so the page can play the change,
+     * replay it and show the tour before while Replay or B is held, without asking again. */
+    private async Task FillCanvases(bool animate = false) {
+        var node = AppState.CurrentHistoryNode;
         var settings = AppState.CanvasSettings;
-        var scene = NewScene(settings);
 
+        var scene = NewScene(settings);
         if (settings.ShowGrid)
             CanvasRenderer.DrawGrid(scene, settings);
-        CanvasRenderer.DrawEdges(scene, state, AppState.CurrentHistoryNode, settings);
-        CanvasRenderer.DrawNodes(scene, state, AppState.CurrentHistoryNode, settings);
+        CanvasRenderer.DrawStep(scene, node.Value, node.Previous?.Value, settings);
+        CanvasRenderer.DrawNodes(scene, node.Value, node.Value.MoveInfo, settings, pulse: true);
 
-        await JS.InvokeVoidAsync("tspCanvas.draw", canvasId, scene.ToJson());
+        var before = "null";
+        if (node.Previous != null) {
+            var previous = NewScene(settings);
+            if (settings.ShowGrid)
+                CanvasRenderer.DrawGrid(previous, settings);
+            CanvasRenderer.DrawBefore(previous, node.Previous.Value, node.Value, settings);
+            CanvasRenderer.DrawNodes(previous, node.Previous.Value, node.Value.MoveInfo, settings, pulse: false);
+            before = previous.ToJson();
+        }
+
+        var duration = animate && node.Previous != null ? StepAnimation() : 0;
+        await JS.InvokeVoidAsync("tspCanvas.show", CurrentCanvasId,
+            $"{{\"scene\":{scene.ToJson()},\"before\":{before},\"duration\":{duration}}}");
     }
 
-    private async Task ResetCanvases() {
-        /* The "Previous" canvas is only in the markup for SA, HC and the manual mode; canvas.js
-         * skips a canvas that is not in the document. */
-        if (ShowsPreviousCanvas)
-            await ResetCanvasOf(PreviousCanvasId);
-
-        await ResetCanvasOf(CurrentCanvasId);
+    /* How long a step's change plays: 420 ms by hand; while playing, most of the time a step is
+     * shown, and nothing at Fastest, where a step lasts one frame. */
+    private int StepAnimation() {
+        if (!AppState.AutoAdvance)
+            return 420;
+        var delay = AppState.AnimationDelay;
+        return delay <= 16 ? 0 : Math.Min(420, (int)(delay * 0.85));
     }
+
+    private async Task ResetCanvases() => await ResetCanvasOf(CurrentCanvasId);
 
     /* The canvas cleared to the background, with the grid if it is on. */
     private async Task ResetCanvasOf(string canvasId) {
@@ -649,25 +650,7 @@
      * document. Same trap as the charts: the reference has to be checked together with the mode. */
     private bool ShowsDistanceTable => AppState.AlgorithmEnum == AlgorithmEnum.Manual;
 
-    /* The captions say what each canvas actually shows. "Previous (Iteration Start)" and "Current
-     * (Iteration End)" described a timeline that no mode had: nearest neighbor shows one tour
-     * growing, annealing one draw (a rejected draw leaves the tour as it was, with the neighbor it
-     * turned down drawn dashed), hill climbing one improving move, a multi-start run one restart. */
     private bool IsMultiStart => AppState.MultiStart && AppState.AlgorithmEnum is AlgorithmEnum.NN or AlgorithmEnum.HC;
-
-    private string PreviousCaption => AppState.AlgorithmEnum switch {
-        AlgorithmEnum.SA => "Before the draw",
-        AlgorithmEnum.HC when IsMultiStart => "Previous best",
-        _ => "Before the move"
-    };
-
-    private string CurrentCaption => AppState.AlgorithmEnum switch {
-        AlgorithmEnum.SA => "After the draw",
-        AlgorithmEnum.NN => IsMultiStart ? "Best tour so far" : "Tour so far",
-        AlgorithmEnum.AS => "Best tour and pheromone (line width)",
-        AlgorithmEnum.HC when IsMultiStart => "New best",
-        _ => "After the move"
-    };
 
     /* The first tab is named after the table it holds, which differs per mode. */
     private string HistoryTitle => AppState.AlgorithmEnum switch {
@@ -677,8 +660,6 @@
         _ => "Moves"
     };
 
-    private bool ShowsPreviousCanvas =>
-        AppState.AlgorithmEnum is AlgorithmEnum.SA or AlgorithmEnum.HC or AlgorithmEnum.Manual;
 
     /* The tour the move panel builds on: the one currently displayed, so that stepping back and
      * applying something else works on what is on screen rather than on the last state. */
@@ -704,7 +685,7 @@
         AppState.CurrentHistoryNode =
             AppState.ManualSearch.Apply(AppState.GraphHistory, AppState.CurrentHistoryNode, move);
 
-        await Redraw();
+        await Redraw(animate: true);
     }
 
     private async Task UndoManualMove() {
@@ -776,6 +757,10 @@
         }
 
         AppState.SourceText = GraphProblem.SerializeGraph(AppState.Instance);
+        /* Pheromone widths are scaled to the whole run, so iterations compare. */
+        AppState.CanvasSettings.PheromoneMax = AppState.AlgorithmEnum == AlgorithmEnum.AS
+            ? AppState.GraphHistory.SelectMany(s => s.PathEdges).Select(e => e.Pheromone).DefaultIfEmpty(0).Max()
+            : 0;
         AppState.Stopwatch.Stop();
         AppState.TimeSpan = AppState.Stopwatch.Elapsed;
 

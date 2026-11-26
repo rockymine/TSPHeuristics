@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Text.Json;
@@ -21,8 +22,12 @@ namespace WebApplication.Utils {
         public string Background { get; set; }
         public List<SceneOp> Ops { get; } = new();
 
-        /* Segments sharing one style, as x1, y1, x2, y2, ... */
-        public void Lines(Brush brush, IReadOnlyList<(Vector2 From, Vector2 To)> segments) {
+        /* Segments sharing one style, as x1, y1, x2, y2, ... An animation role tells the page how the
+         * segments enter when the step is played (canvas.js): "grow" draws them in from their first
+         * point, "fade" fades them to a faint ghost, "candidate" draws them in and takes them back
+         * (a rejected neighbor), "flash" turns them to the alt colour for a moment. Without one
+         * they are simply there. */
+        public void Lines(Brush brush, IReadOnlyList<(Vector2 From, Vector2 To)> segments, string anim = null, string alt = null) {
             if (segments.Count == 0)
                 return;
 
@@ -35,16 +40,37 @@ namespace WebApplication.Utils {
                 points[i * 4 + 3] = Round(to.Y);
             }
 
-            Ops.Add(new SceneOp { Kind = "lines", Color = brush.Color, Width = brush.Width, Dashed = brush.Dashed, Points = points });
+            Ops.Add(new SceneOp {
+                Kind = "lines", Color = brush.Color, Width = brush.Width, Dashed = brush.Dashed, Points = points,
+                Anim = anim, Fill = alt
+            });
+        }
+
+        /* Segments of one colour whose widths change from w0 to w1 as the step is played: the
+         * pheromone on every edge of an ant colony run. */
+        public void Widths(string color, double alpha, IReadOnlyList<(Vector2 From, Vector2 To)> segments,
+            IReadOnlyList<double> from, IReadOnlyList<double> to) {
+            if (segments.Count == 0)
+                return;
+
+            Lines(new Brush { Color = color, Width = 1 }, segments);
+            var op = Ops[^1];
+            op.Kind = "widths";
+            op.Alpha = alpha;
+            op.W0 = Round(from);
+            op.W1 = Round(to);
         }
 
         /* Filled circles of one colour and radius, with an optional ring (halo) around each. */
-        public void Circles(string color, double radius, IReadOnlyList<Vector2> centres, string halo = null, double haloWidth = 0) {
+        /* Pulse: the circles swell once while the step is played (the move's two nodes). */
+        public void Circles(string color, double radius, IReadOnlyList<Vector2> centres, string halo = null, double haloWidth = 0,
+            bool pulse = false) {
             if (centres.Count == 0)
                 return;
 
             Ops.Add(new SceneOp {
-                Kind = "circles", Color = color, Radius = radius, Halo = halo, Width = haloWidth, Points = Flatten(centres)
+                Kind = "circles", Color = color, Radius = radius, Halo = halo, Width = haloWidth, Points = Flatten(centres),
+                Anim = pulse ? "pulse" : null
             });
         }
 
@@ -95,6 +121,8 @@ namespace WebApplication.Utils {
                   .Append(",\"width\":").Append(Num(op.Width))
                   .Append(",\"radius\":").Append(Num(op.Radius))
                   .Append(",\"dashed\":").Append(op.Dashed ? "true" : "false")
+                  .Append(",\"anim\":").Append(Str(op.Anim))
+                  .Append(",\"alpha\":").Append(Num(op.Alpha))
                   .Append(",\"points\":[");
                 for (var j = 0; j < op.Points.Length; j++) {
                     if (j > 0)
@@ -102,6 +130,11 @@ namespace WebApplication.Utils {
                     sb.Append(op.Points[j].ToString(CultureInfo.InvariantCulture));
                 }
                 sb.Append(']');
+                if (op.W0 != null) {
+                    sb.Append(",\"w0\":[").Append(string.Join(",", op.W0.Select(w => w.ToString(CultureInfo.InvariantCulture))))
+                      .Append("],\"w1\":[").Append(string.Join(",", op.W1.Select(w => w.ToString(CultureInfo.InvariantCulture))))
+                      .Append(']');
+                }
                 if (op.Texts != null) {
                     sb.Append(",\"texts\":[");
                     for (var j = 0; j < op.Texts.Length; j++) {
@@ -120,6 +153,13 @@ namespace WebApplication.Utils {
         private static string Num(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
 
         private static string Str(string value) => value == null ? "null" : JsonSerializer.Serialize(value);
+
+        private static float[] Round(IReadOnlyList<double> values) {
+            var rounded = new float[values.Count];
+            for (var i = 0; i < values.Count; i++)
+                rounded[i] = Round((float)values[i]);
+            return rounded;
+        }
 
         private static float[] Flatten(IReadOnlyList<Vector2> points) {
             var flat = new float[points.Count * 2];
@@ -144,6 +184,10 @@ namespace WebApplication.Utils {
         public double Width { get; set; }
         public double Radius { get; set; }
         public bool Dashed { get; set; }
+        public string Anim { get; set; }
+        public double Alpha { get; set; } = 1;
+        public float[] W0 { get; set; }
+        public float[] W1 { get; set; }
         public float[] Points { get; set; }
         public string[] Texts { get; set; }
     }

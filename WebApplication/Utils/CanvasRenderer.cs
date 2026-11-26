@@ -101,14 +101,15 @@ namespace WebApplication.Utils {
         }
 
         /* Nodes are grouped by fill colour so each colour is a single path, and all the index
-         * labels share one font/style setup instead of re-sending it per node. */
-        public static void DrawNodes(CanvasScene scene, GraphState state,
-            LinkedListNode<GraphState> currentStateNode, CanvasSettings settings) {
+         * labels share one font/style setup instead of re-sending it per node. The move's two nodes
+         * are coloured from the step being shown - also on the "before" picture, so they mark the
+         * same nodes on both - and pulse while the step is played. */
+        public static void DrawNodes(CanvasScene scene, GraphState state, MoveInfo move, CanvasSettings settings, bool pulse) {
             var nodes = state.Nodes;
             var theme = settings.Theme;
             var brush = NodeBrush(theme);
-            /* "Changes" off: no highlighted nodes either. Colorize used to be set and never read. */
-            var moveInfo = settings.Colorize ? currentStateNode.Value.MoveInfo : null;
+            /* "Highlight changes" off: no highlighted nodes either. */
+            var moveInfo = settings.Colorize ? move : null;
 
             var (radius, fontSize) = NodeLayout(settings, nodes.Count == 0 ? 0 : nodes.Max(n => n.Index));
 
@@ -128,10 +129,8 @@ namespace WebApplication.Utils {
                 labels.Add((node.Index.ToString(), position));
             }
 
-            foreach (var group in byColor) {
-                brush.Color = group.Key;
-                scene.Circles(group.Key, radius, group.Value, theme.Background, HaloWidth);
-            }
+            foreach (var group in byColor)
+                scene.Circles(group.Key, radius, group.Value, theme.Background, HaloWidth, pulse && group.Key != theme.Node);
 
             if (fontSize > 0)
                 scene.Texts(NodeTextFont(fontSize), brush.TextStyle, labels);
@@ -148,69 +147,140 @@ namespace WebApplication.Utils {
             return theme.Node;
         }
 
-        public static void DrawEdges(CanvasScene scene, GraphState state,
-            LinkedListNode<GraphState> stateNode, CanvasSettings settings) {
-            var edges = state.PathEdges;
-
-            /* Pheromone weighted edges each need their own width, so they cannot share a path;
-             * everything else is grouped by (colour, width). The old loop also never restored
-             * brush.Width after a pheromone edge, so once one edge carried pheromone every
-             * following edge inherited its width. */
-            var groups = new Dictionary<(string Color, double Width, bool Dashed), List<(Vector2, Vector2)>>();
+        /* One canvas shows the step; it used to take two, the tour before on the left and after on
+         * the right, and the change had to be found by comparing them. Now the page plays the change
+         * (canvas.js): the edges the step put in are drawn in, green, from their first node; the
+         * edges it took out fade to a faint red dashed ghost, which stays so a paused step is still
+         * readable. A rejected draw leaves the tour as it was, so its neighbor's edges are drawn in
+         * dashed and taken back, and the edges it would have removed flash. Replay plays it again;
+         * the tour before is a picture of its own (DrawBefore). */
+        public static void DrawStep(CanvasScene scene, GraphState state, GraphState previous, CanvasSettings settings) {
             var theme = settings.Theme;
 
-            /* The current state shows the edges the step put in, the previous one those it took out. */
-            var current = state == stateNode.Value;
-            var compare = current ? stateNode.Previous?.Value.PathEdges : stateNode.Value.PathEdges;
-            var changeColor = current ? theme.Added : theme.Removed;
-            var compareKeys = compare == null || !settings.Colorize ? null : PathKeys(compare);
-
-            foreach (var edge in edges) {
-                var color = theme.Edge;
-                var dashed = false;
-                if (compareKeys != null && !compareKeys.Contains(EdgeKey(edge))) {
-                    color = changeColor;
-                    dashed = !current;
-                }
-
-                var width = edge.Pheromone != 0 ? edge.Pheromone * 500 : EdgeWidth;
-                var key = (color, width, dashed);
-
-                if (!groups.TryGetValue(key, out var group)) {
-                    group = new List<(Vector2, Vector2)>();
-                    groups[key] = group;
-                }
-
-                group.Add((Manipulate(edge.Node1.Position, settings), Manipulate(edge.Node2.Position, settings)));
+            if (IsPheromone(state)) {
+                DrawPheromone(scene, state, previous, settings);
+                return;
             }
 
-            var brush = new Brush { TextFont = EdgeTextFont(theme), TextStyle = theme.Edge };
-            foreach (var group in groups) {
-                brush.Color = group.Key.Color;
-                brush.Width = group.Key.Width;
-                brush.Dashed = group.Key.Dashed;
-                scene.Lines(brush, group.Value);
+            var prevKeys = settings.Colorize && previous != null ? PathKeys(previous.PathEdges) : null;
+            var rejected = settings.Colorize && state.Outcome == DrawOutcome.LongerRejected &&
+                           state.MoveInfo?.Added is { Count: > 0 };
+            var flashKeys = rejected
+                ? state.MoveInfo.Removed.Select(e => Key(e.A.Index, e.B.Index)).ToHashSet()
+                : null;
+
+            var keep = new List<(Vector2, Vector2)>();
+            var added = new List<(Vector2, Vector2)>();
+            var flash = new List<(Vector2, Vector2)>();
+
+            foreach (var edge in state.PathEdges) {
+                var key = EdgeKey(edge);
+                if (flashKeys != null && flashKeys.Contains(key))
+                    flash.Add(Segment(edge.Node1, edge.Node2, settings));
+                else if (prevKeys != null && !prevKeys.Contains(key))
+                    added.Add(Grown(edge, previous, settings));
+                else
+                    keep.Add(Segment(edge.Node1, edge.Node2, settings));
             }
 
-            /* A rejected draw leaves the tour as it was, so there is nothing to colour - which would
-             * make it look as if nothing had happened. The edges the neighbour would have put in
-             * are drawn thin and dashed instead: the move that was turned down. */
-            if (current && settings.Colorize && state.Outcome == DrawOutcome.LongerRejected &&
-                state.MoveInfo?.Added is { Count: > 0 } added) {
-                brush.Color = theme.Removed;
-                brush.Width = 1.5;
-                brush.Dashed = true;
-                scene.Lines(brush, added.Select(e =>
-                    (Manipulate(e.A.Position, settings), Manipulate(e.B.Position, settings))).ToList());
+            scene.Lines(new Brush { Color = theme.Edge, Width = EdgeWidth }, keep);
+
+            if (prevKeys != null) {
+                var currentKeys = PathKeys(state.PathEdges);
+                var removed = previous.PathEdges.Where(e => !currentKeys.Contains(EdgeKey(e)))
+                    .Select(e => Segment(e.Node1, e.Node2, settings)).ToList();
+                scene.Lines(new Brush { Color = theme.Removed, Width = 2.2, Dashed = true }, removed, "fade");
+                scene.Lines(new Brush { Color = theme.Added, Width = 2.8 }, added, "grow");
             }
 
-            /* Ant runs put a pheromone level on every edge of the complete graph; annotating all of
-             * them is unreadable, which is why this is suppressed. */
-            if (settings.Annotate && !state.PathEdges.Any(e => e.Pheromone != 0)) {
-                var labels = BuildAnnotations(state).Select(a => (a.Text, Manipulate(a.Position, settings))).ToList();
-                scene.Boxes(EdgeTextFont(theme), theme.LabelBackground, theme.LabelText, labels);
+            if (rejected) {
+                scene.Lines(new Brush { Color = theme.Edge, Width = EdgeWidth }, flash, "flash", theme.Removed);
+                scene.Lines(new Brush { Color = theme.Removed, Width = 2.4, Dashed = true },
+                    state.MoveInfo.Added.Select(e => Segment(e.A, e.B, settings)).ToList(), "candidate");
             }
+
+            DrawAnnotations(scene, state, settings);
         }
+
+        /* The tour before the step, shown while Replay or B is held: its edges, with those the step
+         * removes dashed red. */
+        public static void DrawBefore(CanvasScene scene, GraphState previous, GraphState state, CanvasSettings settings) {
+            var theme = settings.Theme;
+
+            if (IsPheromone(previous)) {
+                DrawPheromone(scene, previous, null, settings);
+                return;
+            }
+
+            var currentKeys = settings.Colorize ? PathKeys(state.PathEdges) : null;
+            var keep = new List<(Vector2, Vector2)>();
+            var removed = new List<(Vector2, Vector2)>();
+
+            foreach (var edge in previous.PathEdges) {
+                if (currentKeys != null && !currentKeys.Contains(EdgeKey(edge)))
+                    removed.Add(Segment(edge.Node1, edge.Node2, settings));
+                else
+                    keep.Add(Segment(edge.Node1, edge.Node2, settings));
+            }
+
+            scene.Lines(new Brush { Color = theme.Edge, Width = EdgeWidth }, keep);
+            scene.Lines(new Brush { Color = theme.Removed, Width = 2.4, Dashed = true }, removed);
+            DrawAnnotations(scene, previous, settings);
+        }
+
+        /* An ant colony state carries a pheromone level on every edge of the complete graph. The
+         * levels are drawn as widths, scaled to the highest level of the whole run so they compare
+         * across iterations, and grow or shrink from the previous iteration's as the step plays. The
+         * best tour of the iteration is drawn on top; it used not to be drawn at all. */
+        private static void DrawPheromone(CanvasScene scene, GraphState state, GraphState previous, CanvasSettings settings) {
+            var theme = settings.Theme;
+            var max = settings.PheromoneMax > 0 ? settings.PheromoneMax : state.PathEdges.Max(e => e.Pheromone);
+            double Width(double tau) => 0.4 + 9 * tau / max;
+
+            var before = previous != null && IsPheromone(previous)
+                ? previous.PathEdges.GroupBy(EdgeKey).ToDictionary(g => g.Key, g => g.First().Pheromone)
+                : null;
+
+            var segments = new List<(Vector2, Vector2)>(state.PathEdges.Count);
+            var from = new List<double>(state.PathEdges.Count);
+            var to = new List<double>(state.PathEdges.Count);
+            foreach (var edge in state.PathEdges) {
+                segments.Add(Segment(edge.Node1, edge.Node2, settings));
+                to.Add(Width(edge.Pheromone));
+                from.Add(before != null && before.TryGetValue(EdgeKey(edge), out var tau) ? Width(tau) : Width(edge.Pheromone));
+            }
+            scene.Widths(theme.Pheromone, 0.55, segments, from, to);
+
+            var tour = new List<(Vector2, Vector2)>();
+            for (var i = 0; i + 1 < state.Path.Count; i++)
+                tour.Add(Segment(state.Path[i], state.Path[i + 1], settings));
+            scene.Lines(new Brush { Color = theme.Edge, Width = 1.6 }, tour);
+        }
+
+        private static bool IsPheromone(GraphState state) => state.PathEdges.Any(e => e.Pheromone != 0);
+
+        /* Edge lengths; not for ant runs, where every edge of the complete graph is drawn. */
+        private static void DrawAnnotations(CanvasScene scene, GraphState state, CanvasSettings settings) {
+            if (!settings.Annotate || IsPheromone(state))
+                return;
+
+            var labels = BuildAnnotations(state).Select(a => (a.Text, Manipulate(a.Position, settings))).ToList();
+            scene.Boxes(EdgeTextFont(settings.Theme), settings.Theme.LabelBackground, settings.Theme.LabelText, labels);
+        }
+
+        private static (Vector2, Vector2) Segment(Node a, Node b, CanvasSettings settings) =>
+            (Manipulate(a.Position, settings), Manipulate(b.Position, settings));
+
+        /* An added edge is drawn in from its first node - for nearest neighbor from the node the
+         * tour had reached, so the new edge grows out of the tour's end. */
+        private static (Vector2, Vector2) Grown(Edge edge, GraphState previous, CanvasSettings settings) {
+            var end = previous?.Path.Count > 0 ? previous.Path[^1] : null;
+            return end != null && end.Index == edge.Node2.Index
+                ? Segment(edge.Node2, edge.Node1, settings)
+                : Segment(edge.Node1, edge.Node2, settings);
+        }
+
+        private static (int, int) Key(int a, int b) => a < b ? (a, b) : (b, a);
 
         /* Membership was tested with compare.Find(e => e.IsEqual(edge)) - a linear scan of the
          * comparison tour for every edge drawn, so O(E^2) per frame on a complete graph. */
