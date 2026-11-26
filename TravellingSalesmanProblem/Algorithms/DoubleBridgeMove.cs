@@ -57,17 +57,14 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public MoveInfo Describe() {
-            var calculation = "$" +
-                string.Join("+", AddedEdges.Select(e => Round(Edge.GetDistance(e.Item1, e.Item2)).ToString())) +
-                string.Concat(RemovedEdges.Select(e => "-" + Round(Edge.GetDistance(e.Item1, e.Item2)))) +
-                $"={Round(Delta)}$";
+            var calculation = MoveCalculation.Format(
+                AddedEdges.Select(e => Edge.GetDistance(e.Item1, e.Item2)),
+                RemovedEdges.Select(e => Edge.GetDistance(e.Item1, e.Item2)));
 
             return new MoveInfo(Type, new List<Node> { BStart, CStart, DStart, A2Start },
                 new List<int> { I, J, K, L }, Delta, calculation);
         }
 
-        /* "+ 0d" turns -0 into 0: a delta that cancels exactly can come out as -0, printed "-0". */
-        private static double Round(double value) => Math.Round(value, 1) + 0d;
 
         public GraphProblem Apply() {
             var tour = Graph.Nodes.ToArray();

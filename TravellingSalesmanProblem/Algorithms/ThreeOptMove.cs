@@ -96,17 +96,14 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public MoveInfo Describe() {
             var added = AddedEdges;
-            var calculation = "$" +
-                string.Join("+", added.Select(e => Round(Edge.GetDistance(e.Item1, e.Item2)).ToString())) +
-                $"-{Round(Edge.GetDistance(A, B))}-{Round(Edge.GetDistance(C, D))}-{Round(Edge.GetDistance(E, F))}" +
-                $"={Round(Delta)}$";
+            var calculation = MoveCalculation.Format(
+                added.Select(e => Edge.GetDistance(e.Item1, e.Item2)),
+                new[] { Edge.GetDistance(A, B), Edge.GetDistance(C, D), Edge.GetDistance(E, F) });
 
             return new MoveInfo(Type, new List<Node> { B, D, F }, new List<int> { I, J, K },
                 Delta, calculation);
         }
 
-        /* "+ 0d" turns -0 into 0: a delta that cancels exactly can come out as -0, printed "-0". */
-        private static double Round(double value) => Math.Round(value, 1) + 0d;
 
         public GraphProblem Apply() {
             var tour = Graph.Nodes.ToArray();

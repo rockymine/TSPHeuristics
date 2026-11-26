@@ -38,12 +38,10 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public MoveInfo Describe() {
             var nodes = new List<Node> { NodeI, NodeJ };
-            string calculation = $"${Round(Di_j)}+{Round(Di1_j1)}-{Round(Di_i1)}-{Round(Dj_j1)}={Round(Costs)}$";
+            string calculation = MoveCalculation.Format(new[] { Di_j, Di1_j1 }, new[] { Di_i1, Dj_j1 });
             return new MoveInfo(Type, nodes, new List<int> { I, J }, Costs, calculation);
         }
 
-        /* "+ 0d" turns -0 into 0: a delta that cancels exactly can come out as -0, printed "-0". */
-        private static double Round(double value) => Math.Round(value, 1) + 0d;
 
         public GraphProblem Apply() {
             var tour = Graph.Nodes.ToArray();

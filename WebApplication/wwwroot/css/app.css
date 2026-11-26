@@ -590,9 +590,12 @@ label,
     background: var(--accent);
 }
 
+/* The views scroll sideways inside the dock. A wide formula in a history table used to widen
+   the whole page instead, so below about 1200 px everything scrolled sideways with it. */
 .dock-body {
     padding: var(--space-3) var(--space-4);
     background: var(--bg-base);
+    overflow-x: auto;
 }
 
 .dock-body h5 {

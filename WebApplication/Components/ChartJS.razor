@@ -23,9 +23,12 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
-	public async Task UpdateFromGraphState() {
+	/* Takes the state's chart data from the caller. It used to send its Chart parameter, which
+	 * is only refreshed when the page renders - and the playback loop updates the charts before
+	 * that render, so during playback the chart showed the previous state. */
+	public async Task UpdateFromGraphState(ChartInfo chart) {
 		var module = await Module;
-		await module.InvokeVoidAsync("LineChart", ChartID, Chart);
+		await module.InvokeVoidAsync("LineChart", ChartID, chart ?? Chart);
 		StateHasChanged();
 	}
 }

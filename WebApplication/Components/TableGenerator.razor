@@ -61,18 +61,18 @@
 	<!-- Table expansion through modal -->
 	@if (CanShowModal) {
 		@if (rows < tableInfo.Cells.GetLength(0) || cols < tableInfo.Cells.GetLength(1)) {
-			<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal"
+			<button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#@modalId"
 					@onclick="OpenModal">
-				Show Full Table
+				Show all rows
 			</button>
 		}
 
 		<!-- Modal -->
-		<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+		<div class="modal fade" id="@modalId" tabindex="-1" aria-labelledby="@(modalId)-label" aria-hidden="true">
 			<div class="modal-dialog modal-full-width">
 				<div class="modal-content">
 					<div class="modal-header">
-						<h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+						<h5 class="modal-title" id="@(modalId)-label">@title: all rows</h5>
 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
 								@onclick="CloseModal"></button>
 					</div>
@@ -93,6 +93,12 @@
 }
 
 @code {
+	/* Every table used to render id="exampleModal". With two tables on the page (the manual mode's
+	 * history and distance matrix) Bootstrap opened the first one in the document - the history's,
+	 * inside its hidden tab - so the page got a backdrop and no dialog, and could only be left by
+	 * reloading. */
+	private readonly string modalId = $"tableModal-{Guid.NewGuid():N}";
+
 	[Parameter]
 	public bool CanShowModal { get; set; } = true;
 	[Parameter]

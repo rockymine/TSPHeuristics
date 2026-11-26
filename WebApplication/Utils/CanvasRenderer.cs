@@ -10,6 +10,20 @@ using WebApplication.Extensions;
 
 namespace WebApplication.Utils {
     public class CanvasRenderer {
+        private const double MaxGridLines = 30;
+
+        private static double GridStep(double span) {
+            var magnitude = 1d;
+            while (true) {
+                foreach (var factor in new[] { 1d, 2d, 5d }) {
+                    var step = factor * magnitude;
+                    if (span / step <= MaxGridLines)
+                        return step;
+                }
+                magnitude *= 10;
+            }
+        }
+
         /* GraphView has to select this font on the context before measuring the annotations, or
          * MeasureTextAsync reports the canvas default (10px sans-serif) and every label box comes
          * out too small for the text it is drawn behind. */
@@ -41,15 +55,20 @@ namespace WebApplication.Utils {
         public static async Task DrawGrid(IContext2DWithoutGetters context, CanvasSettings settings) {
             var segments = new List<(Vector2, Vector2)>();
 
-            for (int i = (int)settings.MinPos.Y; i <= settings.MaxPos.Y; i++) {
+            /* One line per whole coordinate meant 5,000 lines for a 0..5000 graph (6.4 s per
+             * Execute, 2.2 s per step) and a hung page at 0..100000. The step is the smallest of
+             * 1, 2, 5, 10, 20, 50, ... that keeps it to at most MaxGridLines lines per axis. */
+            var step = GridStep(Math.Max(settings.MaxPos.X - settings.MinPos.X, settings.MaxPos.Y - settings.MinPos.Y));
+
+            for (var y = Math.Ceiling(settings.MinPos.Y / step) * step; y <= settings.MaxPos.Y; y += step) {
                 segments.Add((
-                    Manipulate(new Vector2((int)settings.MinPos.X, i), settings),
-                    Manipulate(new Vector2(settings.MaxPos.X, i), settings)));
+                    Manipulate(new Vector2(settings.MinPos.X, (float)y), settings),
+                    Manipulate(new Vector2(settings.MaxPos.X, (float)y), settings)));
             }
-            for (int i = (int)settings.MinPos.X; i <= settings.MaxPos.X; i++) {
+            for (var x = Math.Ceiling(settings.MinPos.X / step) * step; x <= settings.MaxPos.X; x += step) {
                 segments.Add((
-                    Manipulate(new Vector2(i, (int)settings.MinPos.Y), settings),
-                    Manipulate(new Vector2(i, settings.MaxPos.Y), settings)));
+                    Manipulate(new Vector2((float)x, settings.MinPos.Y), settings),
+                    Manipulate(new Vector2((float)x, settings.MaxPos.Y), settings)));
             }
 
             await context.DrawLines(GridBrush(settings.Theme), segments);

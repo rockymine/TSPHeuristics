@@ -142,6 +142,21 @@ namespace TravellingSalesmanProblem.Algorithms {
             return history.AddLast(state);
         }
 
+        /* Takes back the move shown in current, and whatever followed it - the same rule Apply
+         * uses when a move is applied to an earlier state. Undo used to remove the last move
+         * whatever was on screen: step back to move 2 of 4, press Undo, and move 4 vanished while
+         * the view jumped forward to move 3. */
+        public static LinkedListNode<GraphState> Undo(LinkedList<GraphState> history, LinkedListNode<GraphState> current) {
+            if (history == null || current == null || current.List != history || current.Previous == null)
+                return history?.First;
+
+            var keep = current.Previous;
+            while (history.Last != keep)
+                history.RemoveLast();
+
+            return keep;
+        }
+
         /* Removes the last move. Reset goes back to the starting tour in one step. */
         public static LinkedListNode<GraphState> Undo(LinkedList<GraphState> history) {
             if (history == null || history.Count < 2)

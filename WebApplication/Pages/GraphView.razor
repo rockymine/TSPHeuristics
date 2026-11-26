@@ -53,7 +53,7 @@
                                        @bind-SelectionRule="@AppState.SelectionRule" />
                 }
                 @if (AppState.AlgorithmEnum == AlgorithmEnum.Manual) {
-                    <ManualMoveSettings Tour="@CurrentTour()" CanUndo="@(AppState.GraphHistory?.Count > 1)"
+                    <ManualMoveSettings Tour="@CurrentTour()" CanUndo="@CanUndoManualMove"
                                         OnApply="ApplyManualMove" OnUndo="UndoManualMove"
                                         OnReset="ResetManualMoves" />
                 }
@@ -428,8 +428,12 @@
                 break;
         }
 
-        if (AppState.Instance.Nodes.Count == 0) {
-            AppState.Error = "Could not load the specified graph.";
+        /* A one node graph crashed Nearest Neighbor and Ant System (there is no edge to take), and
+         * with two there is no tour to improve. */
+        if (AppState.Instance.Nodes.Count < 3) {
+            AppState.Error = AppState.Instance.Nodes.Count == 0
+                ? "The graph has no nodes. Add lines like n,1,4,2."
+                : $"A tour needs at least 3 nodes; this graph has {AppState.Instance.Nodes.Count}.";
             return;
         }
 
@@ -476,8 +480,13 @@
         if (!canChange)
             return;
 
-        if (AppState.CurrentHistoryNode.Next == null)
+        /* At the last state playback stops. It used to keep ticking with Pause still showing,
+         * and the next run then started playing by itself. */
+        if (AppState.CurrentHistoryNode.Next == null) {
+            AppState.AutoAdvance = false;
+            StateHasChanged();
             return;
+        }
 
         AppState.CurrentHistoryNode = AppState.CurrentHistoryNode.Next;
         await Redraw();
@@ -627,11 +636,22 @@
 
     /* The tour the move panel builds on: the one currently displayed, so that stepping back and
      * applying something else works on what is on screen rather than on the last state. */
+    /* The heuristic that produced the history on screen. The manual panel used to act on any
+     * history: run Simulated Annealing, switch to Manual Search without executing, and Apply,
+     * Undo and Back to start rewrote and then deleted the annealing run. The panel now only works
+     * on a run that Manual Search started; otherwise it asks for Execute. */
+    private AlgorithmEnum? runAlgorithm;
+
+    private bool HasManualRun =>
+        runAlgorithm == AlgorithmEnum.Manual && AppState.GraphHistory != null && AppState.CurrentHistoryNode != null;
+
+    private bool CanUndoManualMove => HasManualRun && AppState.CurrentHistoryNode.Previous != null;
+
     private GraphProblem CurrentTour() =>
-        AppState.CurrentHistoryNode == null ? null : ManualSearch.TourOf(AppState.CurrentHistoryNode.Value);
+        HasManualRun ? ManualSearch.TourOf(AppState.CurrentHistoryNode.Value) : null;
 
     private async Task ApplyManualMove(ITourMove move) {
-        if (AppState.GraphHistory == null || AppState.CurrentHistoryNode == null || move == null)
+        if (!HasManualRun || move == null)
             return;
 
         AppState.AutoAdvance = false;
@@ -642,16 +662,16 @@
     }
 
     private async Task UndoManualMove() {
-        if (AppState.GraphHistory == null)
+        if (!HasManualRun)
             return;
 
         AppState.AutoAdvance = false;
-        AppState.CurrentHistoryNode = ManualSearch.Undo(AppState.GraphHistory);
+        AppState.CurrentHistoryNode = ManualSearch.Undo(AppState.GraphHistory, AppState.CurrentHistoryNode);
         await Redraw();
     }
 
     private async Task ResetManualMoves() {
-        if (AppState.GraphHistory == null)
+        if (!HasManualRun)
             return;
 
         AppState.AutoAdvance = false;
@@ -660,6 +680,7 @@
     }
 
     private async Task UpdateEnumerator() {
+        runAlgorithm = AppState.AlgorithmEnum;
         AppState.Instance.Reset();
         AppState.TableGenerator.Reset();
         if (ShowsDistanceTable)
@@ -730,7 +751,7 @@
         for (int i = 0; i < ChartCount(); i++) {
             var chart = AppState.ChartJS[i];
             if (chart != null)
-                await chart.UpdateFromGraphState();
+                await chart.UpdateFromGraphState(AppState.CurrentHistoryNode.Value.ChartInfo[i]);
         }
     }
 

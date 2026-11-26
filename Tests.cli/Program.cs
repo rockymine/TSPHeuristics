@@ -28,6 +28,7 @@ namespace Tests.cli {
             GivenStartTour();
             ManualMoves();
             RandomDescent();
+            ReviewFixes();
 
             Console.WriteLine();
             Console.WriteLine(_failures == 0 ? "ALL PASS" : $"{_failures} FAILED");
@@ -310,6 +311,65 @@ namespace Tests.cli {
                 Check(built == null || Math.Abs(built.Apply().Costs - wide.Costs - built.Delta) < 1e-9,
                     $"{ManualSearch.Label(type)} preview matches what applying it does");
             }
+        }
+
+        /* Regressions from the UI review: each of these was wrong on screen. */
+        private static void ReviewFixes() {
+            /* Worked sums add up exactly as printed, for every move type and every position. */
+            var bad = 0;
+            var checkedSums = 0;
+            for (int seed = 1; seed <= 5; seed++) {
+                var tour = Tour(9, seed);
+                var n = tour.Nodes.Count;
+                var moves = new List<ITourMove>();
+                for (int i = 1; i <= n - 3; i++)
+                    for (int j = i + 1; j <= n - 2; j++) {
+                        moves.Add(new SwapMove(tour, i, j));
+                        moves.Add(new TwoOptMove(tour, i, j));
+                    }
+                foreach (var move in moves) {
+                    var text = move.Describe().Calculation.Trim('$');
+                    var parts = text.Split('=');
+                    var terms = System.Text.RegularExpressions.Regex.Matches(parts[0], @"[+-]?\d+\.\d+")
+                        .Select(m => double.Parse(m.Value, System.Globalization.CultureInfo.InvariantCulture)).Sum();
+                    var shown = double.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture);
+                    checkedSums++;
+                    if (Math.Abs(Math.Round(terms, 2) - shown) > 1e-9 || Math.Abs(shown - move.Delta) > 0.03)
+                        bad++;
+                }
+            }
+            Check(bad == 0, "every printed move sum adds up and stays within 0.03 of the exact delta",
+                $"{bad} of {checkedSums} wrong");
+
+            /* Undo takes back the move on screen, not the last one. */
+            var manual = new ManualSearch();
+            var graph = GraphProblem.FromText(Square + "t,0,2,1,3\n");
+            var history = manual.FindPath(graph);
+            var node = history.First;
+            for (int k = 0; k < 3; k++)
+                node = manual.Apply(history, node, new SwapMove(ManualSearch.TourOf(node.Value), 1, 2));
+            var shownNode = node.Previous;                         /* stepped back to move 2 */
+            var afterUndo = ManualSearch.Undo(history, shownNode);
+            Check(history.Count == 2 && afterUndo == history.Last && afterUndo == history.First.Next,
+                "undo after stepping back removes the move on screen and what followed it", $"{history.Count} states");
+            Check(ManualSearch.Undo(history, history.First) == history.First && history.Count == 2,
+                "undo on the starting tour does nothing");
+
+            /* The parser rejects input that used to crash or vanish silently. */
+            Check(Rejected(Square + "n,9,NaN,1\n").Contains("numeric"), "NaN coordinates are rejected");
+            Check(Rejected(Square + "e,0,99,3\n").Contains("not defined"), "an edge to an undefined node is rejected");
+            Check(Rejected(Square + "x,1,2,3\n").Contains("not a graph line"), "an unknown line prefix is rejected");
+            Check(Rejected(Square + "n,7,1,5,0\n").Contains("fields"), "a decimal comma is rejected, not misread");
+            Check(Rejected("n,a,1,1\n").Contains("whole number"), "a non-numeric index names the problem");
+            Check(GraphProblem.FromText("\uFEFF# comment\n" + Square).Nodes.Count == 4, "a byte order mark is ignored");
+            Check(!GraphProblem.SerializeGraph(GraphProblem.FromText(Square)).Contains("e,"),
+                "a serialized graph carries no edge lines");
+
+            /* Ant System keeps each state's tour. */
+            var ants = new AntSystem { AntCount = 5, Iterations = 6, Alpha = 0.1, Beta = 2, BreakWhenPathsAreEqual = false }
+                .FindPath(Instance(10, 3));
+            Check(ants.Skip(1).All(s => s.Path.Count > 0), "every Ant System state keeps its tour",
+                $"{ants.Skip(1).Count(s => s.Path.Count == 0)} of {ants.Count - 1} empty");
         }
 
         private static string Rejected(string text) {

@@ -88,7 +88,10 @@ namespace TravellingSalesmanProblem.Algorithms {
             var newState = state.DeepCopy();
 
             newState.Distance = XBest.Costs;
-            newState.Path = XBest.Nodes;
+            /* A copy: XBest is an ant's tour, and Ant.Reset() clears that list on the next
+             * iteration - every stored state but the last ended up with an empty tour, which is why
+             * the Tour History table had no rows. */
+            newState.Path = new List<Node>(XBest.Nodes);
             newState.PathEdges = X.Edges;
             newState.Iteration = iteration;
             newState.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
@@ -125,7 +128,11 @@ namespace TravellingSalesmanProblem.Algorithms {
             var lastSum = 0d;
 
             foreach (var edge in edges) {
-                edge.Pheromone = (1 - Alpha) * edge.Pheromone;
+                /* The snapshot for the formula takes τ before evaporation: the formula applies
+                 * (1 - α) itself, and showing the already evaporated τ applied it twice, so the
+                 * printed line did not equal its own result. */
+                var before = edge.Pheromone;
+                edge.Pheromone = (1 - Alpha) * before;
 
                 if (GlobalUpdatingRule == GlobalUpdatingRule.AS) {
                     var key = edge.Key;
@@ -135,11 +142,11 @@ namespace TravellingSalesmanProblem.Algorithms {
                             sum += deposit.Amount;
                     }
 
-                    lastEdge = Snapshot(edge);
+                    lastEdge = Snapshot(edge, before);
                     lastSum = sum;
                     edge.Pheromone += sum;
                 } else if (bestKeys.Contains(edge.Key)) {
-                    lastEdge = Snapshot(edge);
+                    lastEdge = Snapshot(edge, before);
                     edge.Pheromone += Alpha * lgbInversed;
                 }
             }
@@ -156,10 +163,11 @@ namespace TravellingSalesmanProblem.Algorithms {
             };
         }
 
-        private static Edge Snapshot(Edge edge) {
+        private static Edge Snapshot(Edge edge, double pheromone) {
             var copy = edge.Copy();
             copy.Node1 = edge.Node1;
             copy.Node2 = edge.Node2;
+            copy.Pheromone = pheromone;
             return copy;
         }
 

@@ -152,10 +152,24 @@ namespace TravellingSalesmanProblem.Graph {
             foreach (var line in text.Split('\n'))
                 ParseLine(graph, line.Trim('\r'), ref tour);
 
+            CheckEdgeEndpoints(graph);
             graph.ConnectAllNodes();
             PostProcess(graph);
             ApplyStartTour(graph, tour);
             return graph;
+        }
+
+        /* An "e" line naming a node that is not defined used to be kept with a null endpoint, and
+         * the first heuristic to walk it crashed with a NullReferenceException. */
+        private static void CheckEdgeEndpoints(GraphProblem graph) {
+            var indices = new HashSet<int>(graph.Nodes.Select(n => n.Index));
+            foreach (var edge in graph.Edges) {
+                foreach (var id in new[] { edge.Node1Id, edge.Node2Id }) {
+                    if (!indices.Contains(id))
+                        throw new FormatException(
+                            $"The edge e,{edge.Node1Id},{edge.Node2Id} refers to node {id}, which is not defined.");
+                }
+            }
         }
 
         public static GraphProblem FromFile(string path) {
@@ -164,6 +178,8 @@ namespace TravellingSalesmanProblem.Graph {
 
             foreach (var line in File.ReadAllLines(path))
                 ParseLine(graph, line, ref tour);
+
+            CheckEdgeEndpoints(graph);
 
             /* FromText always returns a complete graph; FromFile silently returned an edgeless one
              * for node-only files, which the heuristics cannot traverse. */
@@ -212,12 +228,20 @@ namespace TravellingSalesmanProblem.Graph {
         }
 
         private static void ParseLine(GraphProblem graph, string line, ref List<int> tour) {
-            if (string.IsNullOrWhiteSpace(line))
+            /* A file saved with a byte order mark carries it at the start of its first line. */
+            line = line.Trim().TrimStart('\uFEFF');
+            if (line.Length == 0)
                 return;
             if (line.StartsWith("#"))
                 return;
 
             var splitted = line.Split(",");
+            splitted[0] = splitted[0].Trim().ToLowerInvariant();
+
+            /* Lines with an unknown prefix (or " n" before the trim) used to vanish silently, so a
+             * typo removed a node without a word. */
+            if (splitted[0] != "n" && splitted[0] != "e" && splitted[0] != "t")
+                throw new FormatException($"'{line}' is not a graph line: lines start with n (node), e (edge) or t (tour).");
 
             /* A "t" line is as long as the tour, so it is length checked against its own rule. */
             if (splitted[0] == "t") {
@@ -237,8 +261,9 @@ namespace TravellingSalesmanProblem.Graph {
 
             /* A short line used to throw IndexOutOfRangeException from deep inside the parser.
              * Reject it here so callers see a single, predictable FormatException. */
-            if (splitted.Length < 4)
-                throw new FormatException($"Expected 4 comma separated fields, got {splitted.Length}: '{line}'");
+            /* Exactly four: "n,2,1,5,0" - a decimal comma - used to be read as the point (1, 5). */
+            if (splitted.Length != 4)
+                throw new FormatException($"'{line}' has {splitted.Length} fields; node and edge lines need 4: n,index,x,y or e,index,index,value (use a point for decimals).");
 
             /* Two nodes sharing an index make the tour ambiguous, and two sharing a position render
              * on top of each other with a zero length edge between them. Skip the repeat rather
@@ -266,10 +291,9 @@ namespace TravellingSalesmanProblem.Graph {
                     .Append(",").Append(node.Position.Y.ToString(CultureInfo.InvariantCulture)).AppendLine();
             }
 
-            foreach (var edge in graph.Edges) {
-                sb.Append("e,").Append(edge.Node1Id).Append(",")
-                    .Append(edge.Node2Id).Append(",").Append(edge.Value).AppendLine();
-            }
+            /* No "e" lines: the graph is always complete and every distance comes from the
+             * coordinates, so the old output - one "e,i,j,0" per edge, 4,950 lines for 100 nodes -
+             * carried nothing but noise. */
 
             /* Round trips the starting tour, so a graph that was handed out with one keeps it. */
             if (graph.StartTour != null && graph.StartTour.Count > 0) {
@@ -318,20 +342,31 @@ namespace TravellingSalesmanProblem.Graph {
                 node.Edges.Add(edge);
         }
 
+        /* TryParse with a message naming the line: int.Parse surfaced raw resource keys such as
+         * "Format_InvalidStringWithValue", and float.Parse accepted NaN and Infinity, which crashed
+         * the canvas. */
         public static Node ParseNode(string[] s) {
-            return new Node {
-                Index = int.Parse(s[1]),
-                Position = new Vector2(float.Parse(s[2], CultureInfo.InvariantCulture),
-                    float.Parse(s[3], CultureInfo.InvariantCulture))
-            };
+            var line = string.Join(",", s);
+            if (!int.TryParse(s[1].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var index))
+                throw new FormatException($"'{s[1].Trim()}' is not a whole number in '{line}'.");
+            if (!TryCoordinate(s[2], out var x) || !TryCoordinate(s[3], out var y))
+                throw new FormatException($"'{line}' needs two numeric coordinates, e.g. n,1,4.5,2.");
+
+            return new Node { Index = index, Position = new Vector2(x, y) };
         }
 
+        private static bool TryCoordinate(string text, out float value) =>
+            float.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out value) &&
+            float.IsFinite(value);
+
         public static Edge ParseEdge(string[] s) {
-            return new Edge {
-                Node1Id = int.Parse(s[1]),
-                Node2Id = int.Parse(s[2]),
-                Value = double.Parse(s[3], CultureInfo.InvariantCulture)
-            };
+            var line = string.Join(",", s);
+            if (!int.TryParse(s[1].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var node1) ||
+                !int.TryParse(s[2].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var node2) ||
+                !double.TryParse(s[3].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var value))
+                throw new FormatException($"'{line}' is not an edge: expected e,index,index,value.");
+
+            return new Edge { Node1Id = node1, Node2Id = node2, Value = value };
         }
 
         public Vector2 FindMin() {

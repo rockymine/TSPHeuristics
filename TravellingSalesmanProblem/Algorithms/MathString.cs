@@ -117,7 +117,7 @@ namespace TravellingSalesmanProblem.Algorithms {
             var latex = "$\\tau(r, s) \\leftarrow(1 -\\alpha) \\cdot \\tau(r, s) + \\alpha \\cdot \\triangle \\tau(r, s)$";
             var dummy = "$\\tau(?r?,?s?) = (1-?alpha?) \\cdot ?tau? + ?alpha? \\cdot ?triangle?$";
             var description = "$\\text{ Once all ants have constructed their tour, the amount of pheromone is modified by applying the global updating rule. Here, only the globally best ant is allowed to deposit pheromone. } \\triangle \\tau(r, s) \\text{ is set to the inversed length of the globally best tour } (L_{ gb })^{ -1 } \\text{ and } 0 < \\alpha < 1 \\text{ is the pheromone decay parameter.}$";
-            var result = $"$\\tau({edge.Node1.Index},{edge.Node2.Index}) = {Math.Round(edge.Pheromone + (alpha * delta), 3)}$";
+            var result = $"$\\tau({edge.Node1.Index},{edge.Node2.Index}) = {Math.Round(((1 - alpha) * edge.Pheromone) + (alpha * delta), 3)}$";
 
             var mathString = new MathString(latex, dummy, result) {
                 Description = description
@@ -137,7 +137,7 @@ namespace TravellingSalesmanProblem.Algorithms {
              * lost its leading symbol. The backslash has to be escaped like every other one here. */
             var latex = "$\\tau(r,s) \\leftarrow (1 - \\alpha) \\cdot \\tau(r,s) + \\sum_{k=1}^{m}\\triangle\\tau_{k}(r,s)$";
             var dummy = "$\\tau(?r?,?s?) = (1 - ?alpha?) \\cdot ?tau? + ?triangle?$";
-            var result = $"$\\tau({edge.Node1.Index},{edge.Node2.Index}) = {Math.Round(edge.Pheromone + delta, 3)}$";
+            var result = $"$\\tau({edge.Node1.Index},{edge.Node2.Index}) = {Math.Round(((1 - alpha) * edge.Pheromone) + delta, 3)}$";
 
             var mathString = new MathString(latex, dummy, result);
             mathString.SetVar("r", edge.Node1.Index);

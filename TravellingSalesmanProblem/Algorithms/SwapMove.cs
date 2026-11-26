@@ -56,18 +56,17 @@ namespace TravellingSalesmanProblem.Algorithms {
             string calculation;
 
             if (NodeI == JPrev || JPrev == INext) {
-                calculation = $"${Round(IPrev_J)}+{Round(I_JNext)}-{Round(IPrev_I)}-{Round(J_JNext)}={Round(Costs)}$";
+                calculation = MoveCalculation.Format(new[] { IPrev_J, I_JNext }, new[] { IPrev_I, J_JNext });
             } else if (NodeI == JNext || JNext == IPrev) {
-                calculation = $"${Round(JPrev_I)}+{Round(J_INext)}-{Round(JPrev_J)}-{Round(I_INext)}={Round(Costs)}$";
+                calculation = MoveCalculation.Format(new[] { JPrev_I, J_INext }, new[] { JPrev_J, I_INext });
             } else {
-                calculation = $"${Round(IPrev_J)}+{Round(J_INext)}+{Round(JPrev_I)}+{Round(I_JNext)}-{Round(IPrev_I)}-{Round(I_INext)}-{Round(JPrev_J)}-{Round(J_JNext)}={Round(Costs)}$";
+                calculation = MoveCalculation.Format(new[] { IPrev_J, J_INext, JPrev_I, I_JNext },
+                    new[] { IPrev_I, I_INext, JPrev_J, J_JNext });
             }
 
             return new MoveInfo(Type, nodes, new List<int> { I, J }, Costs, calculation);
         }
 
-        /* "+ 0d" turns -0 into 0: a delta that cancels exactly can come out as -0, printed "-0". */
-        private static double Round(double value) => Math.Round(value, 1) + 0d;
 
         public GraphProblem Apply() {
             var nodes = Graph.Nodes.ToArray();
