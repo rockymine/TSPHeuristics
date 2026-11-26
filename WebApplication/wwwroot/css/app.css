@@ -40,9 +40,15 @@ hr {
     align-items: center;
     justify-content: space-between;
     gap: var(--space-4);
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-2) max(var(--space-4), calc((100% - var(--content-max)) / 2 + var(--space-4)));
     background: var(--bg-panel);
     border-bottom: 1px solid var(--border);
+}
+
+@media (min-width: 1921px) {
+    .workspace {
+        border-inline: 1px solid var(--border);
+    }
 }
 
 .app-header h5 {
@@ -74,7 +80,14 @@ hr {
     min-height: 100vh;
 }
 
+/* The layout is made for a Full HD screen. Beyond 1920 px the app does not stretch further - wider
+   canvases only grow the graph past what a step needs, and the toolbar drifts away from it - but
+   stays centred with the page background on both sides. The header's content follows the same
+   edges while its bar runs across. */
 .workspace {
+    width: 100%;
+    max-width: var(--content-max);
+    margin-inline: auto;
     flex: 1 0 auto;
     display: grid;
     grid-template-columns: var(--sidebar-width) minmax(0, 1fr);

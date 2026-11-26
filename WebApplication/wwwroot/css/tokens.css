@@ -70,6 +70,7 @@
 
   /* ── Structure ────────────────────────────────────────────────────────── */
   --sidebar-width:  300px;
+  --content-max:    1920px;   /* the widest the app gets; wider screens get margins */
   --control-height: 32px;
   --space-1: 4px;
   --space-2: 8px;
