@@ -87,6 +87,14 @@
                     <FileInput @ref="@AppState.FileInput" />
                 }
             </div>
+            @* The download is the graph this section produced - most useful for keeping a random
+               instance - so it sits with the graph's settings, not with the run's actions. *@
+            @if (AppState.Instance != null) {
+                <div class="sidebar-actions">
+                    <FileOutput Content="@AppState.SourceText" />
+                    <small class="form-text text-muted">The graph of the last run, in the text format above.</small>
+                </div>
+            }
         </SidebarSection>
     </aside>
 
@@ -99,9 +107,6 @@
                             title="Run the heuristic on the graph" @onclick="e => InitiateGraph(AppState.GraphSource)">
                         <i class="bi bi-play-fill"></i> Execute Algorithm
                     </button>
-                    @if (AppState.Instance != null) {
-                        <FileOutput Content="@AppState.SourceText" />
-                    }
                 </div>
             @if (AppState.GraphHistory != null) {
                 <div class="btn-toolbar" role="group" aria-label="Playback">
