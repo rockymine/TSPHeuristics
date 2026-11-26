@@ -1,19 +1,10 @@
-﻿/* app.css — the application's styles. Colours, sizes and spacing come from tokens.css; nothing
+/* app.css — the application's styles. Colours, sizes and spacing come from tokens.css; nothing
  * here names a colour of its own, so both themes are covered by the token blocks alone.
  *
- * Bootstrap 5.1 is the base for forms, buttons, tables, the help panel and the table modal. It
- * has no colour modes of its own and hard-codes most of its colours, so the "Bootstrap bridge"
- * section points each component the page uses at the tokens. */
+ * Buttons, form controls, tables, the help drawer and the table dialog are styled in controls.css;
+ * there is no Bootstrap. This file holds the page's own layout and components. */
 
 /* ── Base ───────────────────────────────────────────────────────────────── */
-:root {
-    --bs-body-bg: var(--bg-base);
-    --bs-body-color: var(--text-primary);
-    --bs-body-font-family: var(--font-sans);
-    --bs-font-sans-serif: var(--font-sans);
-    --bs-font-monospace: var(--font-mono);
-}
-
 html, body {
     background: var(--bg-base);
     color: var(--text-primary);
@@ -43,212 +34,6 @@ hr {
     background: var(--accent-soft);
 }
 
-/* ── Bootstrap bridge ─────────────────────────────────────────────────── */
-.text-muted {
-    color: var(--text-muted) !important;
-}
-
-.text-danger {
-    color: var(--color-error) !important;
-}
-
-.form-control,
-.form-select {
-    background-color: var(--bg-raised);
-    border-color: var(--border);
-    color: var(--text-primary);
-    font-size: var(--font-md);
-    min-height: var(--control-height);
-}
-
-.form-control:focus,
-.form-select:focus {
-    background-color: var(--bg-raised);
-    border-color: var(--accent);
-    color: var(--text-strong);
-    box-shadow: 0 0 0 1px var(--accent);
-}
-
-.form-control:disabled {
-    background-color: var(--bg-deep);
-    color: var(--text-muted);
-}
-
-/* The selects carry .form-control, which has no arrow of its own. */
-select.form-control {
-    appearance: auto;
-}
-
-.form-check-input {
-    background-color: var(--bg-raised);
-    border-color: var(--border-strong);
-}
-
-.form-check-input:checked {
-    background-color: var(--accent);
-    border-color: var(--accent);
-}
-
-.form-check-input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent);
-}
-
-.form-text {
-    color: var(--text-muted);
-    font-size: var(--font-sm);
-}
-
-label,
-.form-check-label {
-    color: var(--text-secondary);
-    font-size: var(--font-base);
-}
-
-.input-group-text {
-    background-color: var(--bg-raised);
-    border-color: var(--border);
-    color: var(--text-primary);
-}
-
-.btn {
-    font-size: var(--font-base);
-    border-radius: var(--radius-md);
-}
-
-.btn-primary {
-    background-color: var(--accent);
-    border-color: var(--accent);
-    color: var(--on-accent);
-}
-
-.btn-primary:hover,
-.btn-primary:focus {
-    background-color: var(--accent-hover);
-    border-color: var(--accent-hover);
-    color: var(--on-accent);
-}
-
-.btn-primary:disabled,
-.btn-primary.disabled {
-    background-color: var(--bg-raised);
-    border-color: var(--border);
-    color: var(--text-muted);
-    opacity: 1;
-}
-
-.btn-secondary,
-.btn-outline-secondary {
-    background-color: transparent;
-    border-color: var(--border);
-    color: var(--text-secondary);
-}
-
-.btn-secondary:hover,
-.btn-outline-secondary:hover:not(:disabled) {
-    background-color: var(--bg-raised);
-    border-color: var(--border-strong);
-    color: var(--text-strong);
-}
-
-.btn-outline-secondary:disabled {
-    color: var(--text-muted);
-    opacity: 0.6;
-}
-
-.btn-outline-primary {
-    border-color: var(--border);
-    color: var(--text-secondary);
-}
-
-.btn-outline-primary:hover {
-    background-color: var(--bg-raised);
-    border-color: var(--border-strong);
-    color: var(--text-strong);
-}
-
-.table {
-    --bs-table-bg: transparent;
-    --bs-table-color: var(--text-primary);
-    --bs-table-striped-bg: var(--bg-raised);
-    --bs-table-hover-bg: var(--bg-raised);
-    color: var(--text-primary);
-    border-color: var(--border);
-    font-size: var(--font-md);
-}
-
-.table > :not(:first-child) {
-    border-top-color: var(--border-strong);
-}
-
-/* Highlighted cells: the tour's edges in the distance matrix, improving moves in the histories. */
-.table .table-light {
-    --bs-table-bg: var(--bg-selected);
-    --bs-table-accent-bg: transparent;
-    color: var(--text-strong);
-    border-color: var(--border);
-}
-
-.offcanvas,
-.modal-content {
-    background-color: var(--bg-panel);
-    color: var(--text-primary);
-    border-color: var(--border);
-}
-
-.modal-header,
-.modal-footer {
-    border-color: var(--border);
-}
-
-.nav-tabs {
-    border-bottom-color: var(--border);
-}
-
-.nav-tabs .nav-link {
-    color: var(--text-secondary);
-}
-
-.nav-tabs .nav-link:hover {
-    border-color: var(--border) var(--border) transparent;
-    color: var(--text-strong);
-}
-
-.nav-tabs .nav-link.active {
-    background-color: var(--bg-panel);
-    border-color: var(--border) var(--border) var(--bg-panel);
-    color: var(--text-strong);
-}
-
-.accordion-item {
-    background-color: var(--bg-panel);
-    border-color: var(--border);
-    color: var(--text-primary);
-}
-
-.accordion-button {
-    background-color: var(--bg-panel);
-    color: var(--text-bright);
-    font-size: var(--font-md);
-}
-
-.accordion-button:not(.collapsed) {
-    background-color: var(--bg-selected);
-    color: var(--text-strong);
-    box-shadow: inset 0 -1px 0 var(--border);
-}
-
-.accordion-button:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent);
-}
-
-/* Bootstrap draws the chevron and the close cross as dark SVG; the dark theme needs them light. */
-:root:not([data-theme="light"]) .accordion-button::after,
-:root:not([data-theme="light"]) .btn-close {
-    filter: invert(1) grayscale(1) brightness(1.6);
-}
-
 /* ── Header ───────────────────────────────────────────────────────────── */
 .app-header {
     display: flex;
@@ -274,7 +59,16 @@ label,
 /* ── Workspace ────────────────────────────────────────────────────────────
    Settings on the left, the stage on the right: a toolbar for moving through the run's states,
    the two canvases side by side, and the docked views below them. */
+/* The workspace fills the window under the header, so on a short page the sidebar's panel colour
+   still runs to the bottom edge. */
+#app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
 .workspace {
+    flex: 1 0 auto;
     display: grid;
     grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
     align-items: start;
@@ -613,14 +407,9 @@ label,
     font-weight: 600;
 }
 
-/* ── Help panel and table modal ───────────────────────────────────────── */
-.modal-full-width {
-    margin: 1.75rem;
-    max-width: unset !important;
-}
-
+/* Help text */
 .word-break {
-    text-align: justify;
+    text-align: start;
     hyphens: auto;
 }
 
@@ -789,3 +578,25 @@ label,
     color: var(--text-muted);
     font-size: var(--font-sm);
 }
+
+/* Bootstrap used to give these their flex layout. */
+.btn-toolbar {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Three inputs side by side (the random graph's limits). */
+.field-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2);
+}
+
+.field-row .form-group + .form-group {
+    margin-top: 0;
+}
+
+/* KaTeX keeps an absolutely positioned MathML copy for screen readers. With no positioned ancestor
+   it escapes every scrolling table and widens the page; anchoring it to the formula keeps it in. */
+.katex { position: relative; }

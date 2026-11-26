@@ -1,0 +1,50 @@
+@namespace WebApplication.Components
+
+@* Icons as inline SVG, so nothing is downloaded and the shapes inherit currentColor - an icon
+   takes the colour of whatever it sits in and follows a theme without a second definition. Shapes
+   are from Lucide (https://lucide.dev), ISC licensed: Copyright (c) Lucide Icons and
+   Contributors. Permission to use, copy, modify, and/or distribute this software for any purpose
+   with or without fee is hereby granted, provided that the above copyright notice and this
+   permission notice appear in all copies. To add one, copy the contents of the <svg> element from
+   the Lucide source for that icon. *@
+
+<svg class="icon @Class" width="@Size" height="@Size" viewBox="0 0 24 24" fill="none"
+     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+     aria-hidden="true" focusable="false">@Shapes</svg>
+
+@code {
+    /* Lucide icon name, e.g. "play". An unknown name renders nothing. */
+    [Parameter] public string Name { get; set; }
+
+    /* Edge length in CSS pixels. 16 sits correctly on the small buttons. */
+    [Parameter] public int Size { get; set; } = 16;
+
+    [Parameter] public string Class { get; set; }
+
+    private MarkupString Shapes =>
+        (MarkupString)(Name != null && Paths.TryGetValue(Name, out var shapes) ? shapes : string.Empty);
+
+    private static readonly Dictionary<string, string> Paths = new() {
+        ["chevrons-left"] = """<path d="m11 17-5-5 5-5" /><path d="m18 17-5-5 5-5" />""",
+        ["chevrons-right"] = """<path d="m6 17 5-5-5-5" /><path d="m13 17 5-5-5-5" />""",
+        ["chevron-left"] = """<path d="m15 18-6-6 6-6" />""",
+        ["chevron-right"] = """<path d="m9 18 6-6-6-6" />""",
+        ["chevron-up"] = """<path d="m18 15-6-6-6 6" />""",
+        ["chevron-down"] = """<path d="m6 9 6 6 6-6" />""",
+        ["minus"] = """<path d="M5 12h14" />""",
+        ["plus"] = """<path d="M5 12h14" /><path d="M12 5v14" />""",
+        ["download"] = """<path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" />""",
+        ["pause"] = """<rect x="14" y="3" width="5" height="18" rx="1" /><rect x="5" y="3" width="5" height="18" rx="1" />""",
+        ["play"] = """<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" />""",
+        ["circle-help"] = """<circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" />""",
+        ["ellipsis"] = """<circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" />""",
+        ["ellipsis-vertical"] = """<circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" />""",
+        ["x"] = """<path d="M18 6 6 18" /><path d="m6 6 12 12" />""",
+        ["sun"] = """<circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" />""",
+        ["moon"] = """<path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />""",
+        ["grid-3x3"] = """<rect width="18" height="18" x="3" y="3" rx="2" /><path d="M3 9h18" /><path d="M3 15h18" /><path d="M9 3v18" /><path d="M15 3v18" />""",
+        ["palette"] = """<circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />""",
+        ["ruler"] = """<path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z" /><path d="m14.5 12.5 2-2" /><path d="m11.5 9.5 2-2" /><path d="m8.5 6.5 2-2" /><path d="m17.5 15.5 2-2" />""",
+        ["maximize"] = """<path d="M15 3h6v6" /><path d="m21 3-7 7" /><path d="m3 21 7-7" /><path d="M9 21H3v-6" />""",
+    };
+}

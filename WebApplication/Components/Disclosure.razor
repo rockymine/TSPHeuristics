@@ -1,0 +1,30 @@
+@namespace WebApplication.Components
+
+@* A titled section that expands and collapses, holding its own state. Sections are independent
+   rather than mutually exclusive, so more than one can be open at a time. *@
+
+<section class="disclosure">
+    <button type="button" class="disclosure-trigger" @onclick="() => expanded = !expanded"
+            aria-expanded="@expanded.ToString().ToLowerInvariant()">
+        @Title
+        <Icon Name="@(expanded ? "chevron-up" : "chevron-down")" />
+    </button>
+    @if (expanded) {
+        <div class="disclosure-panel">
+            @ChildContent
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter] public string Title { get; set; }
+
+    /* Whether the section starts expanded. */
+    [Parameter] public bool Open { get; set; }
+
+    [Parameter] public RenderFragment ChildContent { get; set; }
+
+    private bool expanded;
+
+    protected override void OnInitialized() => expanded = Open;
+}

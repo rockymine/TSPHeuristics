@@ -14,11 +14,10 @@
     <div class="app-header-actions">
         <button class="btn btn-outline-primary btn-sm" type="button" @onclick="ToggleTheme"
                 title="@(theme == "light" ? "Switch to the dark theme" : "Switch to the light theme")">
-            <i class="bi @(theme == "light" ? "bi-moon" : "bi-sun")"></i>
+            <Icon Name="@(theme == "light" ? "moon" : "sun")" />
         </button>
-        <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="offcanvas"
-                data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions">
-            <i class="bi bi-question-lg"></i> Help
+        <button class="btn btn-outline-primary btn-sm" type="button" @onclick="() => helpPanel.Show()">
+            <Icon Name="circle-help" /> Help
         </button>
     </div>
 </header>
@@ -106,41 +105,41 @@
                 <div class="toolbar-group" role="group" aria-label="Run">
                     <button class="btn btn-primary btn-sm" type="button" id="executeAlgorithm"
                             title="Run the heuristic on the graph" @onclick="e => InitiateGraph(AppState.GraphSource)">
-                        <i class="bi bi-play-fill"></i> Execute Algorithm
+                        Execute Algorithm
                     </button>
                 </div>
             @if (AppState.GraphHistory != null) {
                 <div class="btn-toolbar" role="group" aria-label="Playback">
                     <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
-                            class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump First"
+                            class="btn btn-outline-secondary btn-sm" title="Jump First"
                             @onclick="e => JumpFirst()">
-                        <i class="bi bi-chevron-double-left"></i>
+                        <Icon Name="chevrons-left" />
                     </button>
                     <button type="button" disabled="@(AppState.GraphHistory.First == AppState.CurrentHistoryNode)"
-                            class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse"
+                            class="btn btn-outline-secondary btn-sm" title="Reverse"
                             @onclick="e => ReverseHistory()">
-                        <i class="bi bi-chevron-left"></i>
+                        <Icon Name="chevron-left" />
                     </button>
                     @if (AppState.AutoAdvance) {
-                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top"
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
                                 title="Pause" @onclick="e => AppState.AutoAdvance = false">
-                            <i class="bi bi-pause"></i>
+                            <Icon Name="pause" />
                         </button>
                     } else {
-                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top"
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
                                 title="Play" @onclick="e => AppState.AutoAdvance = true">
-                            <i class="bi bi-play"></i>
+                            <Icon Name="play" />
                         </button>
                     }
                     <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
-                            class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Advance"
+                            class="btn btn-outline-secondary btn-sm" title="Advance"
                             @onclick="e => AdvanceHistory()">
-                        <i class="bi bi-chevron-right"></i>
+                        <Icon Name="chevron-right" />
                     </button>
                     <button type="button" disabled="@(AppState.GraphHistory.Last == AppState.CurrentHistoryNode)"
-                            class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Jump Last"
+                            class="btn btn-outline-secondary btn-sm" title="Jump Last"
                             @onclick="e => JumpLast()">
-                        <i class="bi bi-chevron-double-right"></i>
+                        <Icon Name="chevrons-right" />
                     </button>
                 </div>
                 <span class="stage-toolbar-time">
@@ -224,15 +223,15 @@
                  AppState.CurrentHistoryNode.Value.ChartInfo.Count >= 1) {
                 <DockTab Title="Charts" Order="2">
                     @if (AppState.AlgorithmEnum is AlgorithmEnum.SA) {
-                        <div class="row">
-                            <div class="col-md-6">
+                        <div class="chart-grid">
+                            <div>
                                 <ChartJS @ref="@AppState.ChartJS[0]"
                                          Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[0]"
                                          ChartID="sa_temperature">
                                 </ChartJS>
                             </div>
                             @if (AppState.CurrentHistoryNode.Value.ChartInfo.Count >= 2) {
-                                <div class="col-md-6">
+                                <div>
                                     <ChartJS @ref="@AppState.ChartJS[1]"
                                              Chart="@AppState.CurrentHistoryNode.Value.ChartInfo[1]"
                                              ChartID="sa_distance">
@@ -268,12 +267,14 @@
         </DockTabs>
     </main>
 </div>
-<Help />
+<Help @ref="helpPanel" />
 
 @code {
     private AppState AppState = new();
 
     private FileInput subscribedFileInput;
+
+    private Help helpPanel;
 
     /* "light" or "dark", as theme.js reports it; index.html has already applied it to the page. */
     private string theme;

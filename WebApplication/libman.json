@@ -3,36 +3,22 @@
   "defaultProvider": "cdnjs",
   "libraries": [
     {
-      "provider": "jsdelivr",
-      "library": "bootstrap-dark-5@1.1.0",
-      "destination": "wwwroot/lib/bootstrap-dark-5/"
-    },
-    {
-      "provider": "jsdelivr",
-      "library": "bootstrap@5.1.1",
-      "destination": "wwwroot/lib/bootstrap/"
-    },
-    {
-      "provider": "jsdelivr",
-      "library": "bootstrap-icons@1.8.3",
-      "destination": "wwwroot/lib/bootstrap-icons/"
-    },
-    {
-      "provider": "cdnjs",
-      "library": "popper.js@2.11.5",
-      "destination": "wwwroot/lib/popper.js/"
-    },
-    {
       "provider": "cdnjs",
       "library": "Chart.js@2.9.4",
       "destination": "wwwroot/lib/Chart.js/",
-      "files": [ "Chart.min.js" ]
+      "files": [
+        "Chart.min.js"
+      ]
     },
     {
       "provider": "jsdelivr",
       "library": "katex@0.16.11",
       "destination": "wwwroot/lib/katex/",
-      "files": [ "dist/katex.min.js", "dist/katex.min.css", "dist/fonts/*.woff2" ]
+      "files": [
+        "dist/katex.min.js",
+        "dist/katex.min.css",
+        "dist/fonts/*.woff2"
+      ]
     }
   ]
 }

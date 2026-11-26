@@ -1,0 +1,412 @@
+/* controls.css — buttons, form controls and tables, on tokens.
+ *
+ * These were Bootstrap's. The class names are kept (.btn, .form-control, …) because they are
+ * generic and the markup reads fine with them; what changes is that the rules are ours and take
+ * their colours from tokens.css, so a theme reaches them. The stylesheet they replace was a fixed
+ * dark build with no light variant and no way to add one - which is what made it the thing
+ * blocking a theme rather than merely a dependency. */
+
+/* Bootstrap's reboot used to set this for every element; without it, padding and borders are added
+ * on top of width: 100% and the fields of a row spill past the sidebar. */
+*, *::before, *::after { box-sizing: border-box; }
+
+body { margin: 0; }
+
+/* The rest of what the reboot gave the page: no top margins, so a heading or paragraph sits flush
+ * with whatever box it opens, and a gap only below it. */
+h1, h2, h3, h4, h5, h6 { margin: 0 0 var(--space-2); font-weight: 600; line-height: 1.25; }
+h5 { font-size: var(--font-lg); }
+h6 { font-size: var(--font-md); }
+p { margin: 0 0 var(--space-3); }
+
+button, input, select, textarea { font: inherit; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BUTTONS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  color: var(--text-bright);
+  font-size: var(--font-base);
+  font-family: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+              color var(--transition-fast);
+}
+
+.btn:hover { background: var(--bg-selected); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  background: var(--bg-raised);
+}
+
+.btn-sm { padding: 4px 8px; font-size: var(--font-sm); }
+
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+.btn-primary:disabled { background: var(--accent); }
+
+.btn-secondary { background: var(--bg-raised); color: var(--text-bright); }
+
+.btn-outline-primary {
+  background: transparent;
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.btn-outline-primary:hover { background: var(--accent); color: var(--on-accent); }
+
+.btn-outline-secondary {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+.btn-outline-secondary:hover { background: var(--bg-raised); color: var(--text-bright); }
+
+.btn-link {
+  background: transparent;
+  border-color: transparent;
+  color: var(--accent-text);
+  padding: var(--space-1);
+}
+.btn-link:hover { background: var(--bg-raised); }
+
+/* Transport buttons sit flush against each other. */
+.btn-group { display: inline-flex; }
+.btn-group .btn { border-radius: 0; }
+.btn-group .btn:first-child { border-top-left-radius: var(--radius-sm); border-bottom-left-radius: var(--radius-sm); }
+.btn-group .btn:last-child { border-top-right-radius: var(--radius-sm); border-bottom-right-radius: var(--radius-sm); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FORM CONTROLS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.form-group + .form-group { margin-top: var(--space-3); }
+.form-group > label { display: block; margin-bottom: var(--space-1); }
+
+label {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-bright);
+  font-size: var(--font-md);
+  font-family: inherit;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.form-control:disabled { opacity: 0.5; }
+.form-control-sm { padding: 3px 6px; font-size: var(--font-base); }
+
+select.form-control {
+  /* The native arrow disappears against a dark field in some browsers, so draw one. */
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%),
+                    linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 26px;
+}
+
+textarea.form-control {
+  font-family: ui-monospace, monospace;
+  font-size: var(--font-base);
+  resize: vertical;
+}
+
+.form-check { display: flex; align-items: center; gap: var(--space-2); }
+.form-check + .form-check { margin-top: var(--space-1); }
+
+.form-check-input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.form-check-label { margin: 0; cursor: pointer; }
+
+.form-text {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--font-sm);
+  line-height: 1.5;
+}
+
+.input-group { display: flex; align-items: stretch; }
+.input-group .btn { border-radius: 0; }
+.input-group .btn:first-child { border-top-left-radius: var(--radius-sm); border-bottom-left-radius: var(--radius-sm); }
+.input-group-text {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-3);
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-left: 0;
+  border-top-right-radius: var(--radius-sm);
+  border-bottom-right-radius: var(--radius-sm);
+  color: var(--text-bright);
+  font-size: var(--font-md);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TABLES
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.table-responsive { overflow-x: auto; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-base);
+  color: var(--text-primary);
+}
+
+.table th, .table td {
+  padding: var(--space-2) var(--space-3);
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.table th { color: var(--text-bright); font-weight: 600; }
+.table tbody tr:hover td { background: var(--bg-raised); }
+
+/* Cells are marked by TableGenerator setting a class string on TableCellInfo, so these names come
+   from C# rather than from any markup - which is how they were missed when the Bootstrap
+   stylesheet went and the highlighting quietly stopped.
+
+   .table-light marks a cell that matters right now: an edge of the current tour in the distance
+   matrix, and a move that shortened the tour in the move history. */
+.table td.table-light {
+  background: var(--bg-selected);
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+/* Bootstrap 4 spelling, still used for the leading index column of the distance matrix. Kept
+   rather than renamed so the C# and the stylesheet agree; the intent is simply bold. */
+.font-weight-bold { font-weight: 700; color: var(--text-bright); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TEXT AND SMALL UTILITIES
+   ══════════════════════════════════════════════════════════════════════════ */
+
+a { color: var(--accent-text); }
+.text-muted { color: var(--text-muted); }
+.text-danger { color: var(--color-error); }
+
+code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.95em;
+  color: var(--code-color);
+}
+
+/* Replaces the d-grid/gap/mx-auto trio: a full-width column of controls. */
+.stack { display: grid; gap: var(--space-2); }
+
+/* Two charts side by side, replacing a row/col-md-6 pair. */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+/* A boxed readout - the manual move's cost preview. */
+.readout-box {
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-base);
+}
+
+/* ── Overlays, tab strip, disclosure and icons (from the revamp branch's shell.css) ── */
+.drawer-backdrop, .dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.5);
+  z-index: 1000;
+}
+
+/* ── Drawer: a panel down the right-hand edge (the Help panel) ───────────── */
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(560px, 92vw);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 24px rgb(0 0 0 / 0.35);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-title { margin: 0; font-size: var(--font-lg); color: var(--text-bright); }
+.drawer-body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-4); }
+
+/* ── Dialog: centred overlay (the full distance matrix) ─────────────────── */
+
+.dialog {
+  position: fixed;
+  inset: var(--space-5);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.45);
+}
+
+.dialog-header, .dialog-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-4);
+}
+.dialog-header { border-bottom: 1px solid var(--border); }
+.dialog-footer { border-top: 1px solid var(--border); justify-content: flex-end; }
+.dialog-title { margin: 0; font-size: var(--font-lg); color: var(--text-bright); }
+.dialog-body { flex: 1; min-height: 0; overflow: auto; padding: var(--space-4); }
+
+/* The close affordance shared by both. */
+.overlay-close {
+  margin-left: auto;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  line-height: 0;
+}
+.overlay-close:hover { color: var(--text-strong); background: var(--bg-raised); }
+
+/* ── Tab strip ───────────────────────────────────────────────────────────── */
+
+.tabstrip {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-4);
+}
+
+.tabstrip-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-md);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.tabstrip-tab:hover { color: var(--text-bright); }
+.tabstrip-tab--active { color: var(--text-strong); border-bottom-color: var(--accent); }
+
+/* ── Disclosure (accordion) ─────────────────────────────────────────────── */
+
+.disclosure {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.disclosure + .disclosure { margin-top: var(--space-2); }
+
+.disclosure-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  appearance: none;
+  border: 0;
+  text-align: left;
+  background: var(--bg-raised);
+  color: var(--text-bright);
+  font-size: var(--font-md);
+  font-weight: 600;
+  padding: var(--space-3) var(--space-3);
+  cursor: pointer;
+}
+.disclosure-trigger:hover { background: var(--bg-selected); }
+.disclosure-trigger .icon { margin-left: auto; }
+
+.disclosure-panel {
+  padding: var(--space-3);
+  border-top: 1px solid var(--border);
+  font-size: var(--font-base);
+  color: var(--text-primary);
+}
+.disclosure-panel h5 { font-size: var(--font-md); color: var(--text-bright); margin: 0 0 var(--space-2); }
+.disclosure-panel h6 { font-size: var(--font-base); color: var(--text-secondary); margin: var(--space-3) 0 var(--space-1); }
+.disclosure-panel p { margin: 0 0 var(--space-2); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ICONS — inline SVG, so they take the colour of whatever they sit in.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.icon {
+  display: inline-block;
+  vertical-align: -0.15em;   /* sits on the text baseline rather than above it */
+  flex-shrink: 0;
+}
+
+/* A button holding only an icon should be square, not text-width. */
+.btn .icon { vertical-align: -0.15em; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SCROLLBARS — the default light scrollbars are jarring on these surfaces.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.app-sidebar, .canvas-area, .dock-body, .dock-split > * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+
+/* The lower triangle of the distance matrix repeats the upper one, so it is left blank. */
+.cell-empty { color: var(--text-muted); }
+
+/* Focus is moved onto the panel itself so Escape reaches it; the panel needs no ring for that. */
+.drawer:focus, .dialog:focus { outline: none; }
