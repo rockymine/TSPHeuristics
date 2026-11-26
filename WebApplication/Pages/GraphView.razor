@@ -250,17 +250,13 @@
                 </DockTab>
             }
             @if (AppState.GraphHistory != null &&
-                 AppState.CurrentHistoryNode.Value != null &&
-                 AppState.CurrentHistoryNode.Value.Equations.Count != 0) {
+                 AppState.CurrentHistoryNode?.Value?.Derivations is { Count: > 0 } derivations) {
                 <DockTab Title="Calculations" Order="3">
-                    @foreach (var kvp in AppState.CurrentHistoryNode.Value.Equations) {
-                        <span>@kvp.Key</span>
-
-                        <br />
-                        <MarkdownRenderer Value="@kvp.Value.Latex" />
-                        <MarkdownRenderer Value="@kvp.Value.Generate()" />
-                        <MarkdownRenderer Value="@kvp.Value.Result" />
-                    }
+                    <div class="drv-list">
+                        @foreach (var derivation in derivations) {
+                            <DerivationCard Derivation="@derivation" />
+                        }
+                    </div>
                 </DockTab>
             }
         </DockTabs>

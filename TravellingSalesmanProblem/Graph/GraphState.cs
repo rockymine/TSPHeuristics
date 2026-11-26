@@ -17,6 +17,9 @@ namespace TravellingSalesmanProblem.Graph {
         public int Iteration { get; set; }
         public Dictionary<string, string> Messages { get; set; } = new();
         public Dictionary<string, MathString> Equations { get; set; } = new();
+        /* The rules worked through for this state (move, Metropolis, cooling, pheromone update),
+         * in display order. Derivations are immutable once built, so copies share them. */
+        public List<Derivation> Derivations { get; set; } = new();
         public List<ChartInfo> ChartInfo { get; set; } = new();
 
         public GraphProblem ToGraphProblem() {
@@ -34,6 +37,7 @@ namespace TravellingSalesmanProblem.Graph {
             state.Path.AddRange(Path);
             state.PathEdges.AddRange(PathEdges);
             state.MoveInfo = MoveInfo?.DeepCopy();
+            state.Derivations = new List<Derivation>(Derivations ?? new());
             state.Distance = Distance;
             state.Temperature = Temperature;
             state.Iteration = Iteration;

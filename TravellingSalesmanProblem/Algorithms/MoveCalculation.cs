@@ -14,6 +14,18 @@ namespace TravellingSalesmanProblem.Algorithms {
      * by at most a few hundredths. Formatting is culture invariant: in a German browser the old
      * ToString() wrote decimal commas, which KaTeX spaced like a list. */
     public static class MoveCalculation {
+        /* Builds a move's MoveInfo from the edges it puts in and takes out: the worked sum and the
+         * edge lists come from the same terms. */
+        public static MoveInfo Describe(NeighbourType type, List<Graph.Node> nodes, List<int> positions, double delta,
+                                        IEnumerable<(Graph.Node, Graph.Node)> added, IEnumerable<(Graph.Node, Graph.Node)> removed) {
+            var plus = added.Select(MoveEdge.Of).ToList();
+            var minus = removed.Select(MoveEdge.Of).ToList();
+            return new MoveInfo(type, nodes, positions, delta, Format(plus.Select(e => e.Length), minus.Select(e => e.Length))) {
+                Added = plus,
+                Removed = minus
+            };
+        }
+
         public static string Format(IEnumerable<double> added, IEnumerable<double> removed) {
             var plus = added.Select(Round).ToList();
             var minus = removed.Select(Round).ToList();

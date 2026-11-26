@@ -19,6 +19,10 @@ namespace TravellingSalesmanProblem.Algorithms {
         public double Delta { get; set; }
         /* The same change written out with the numbers substituted, as LaTeX. */
         public string Calculation { get; set; }
+        /* The edges the move puts in and takes out, with their lengths - the terms of Δ, so the
+         * history row, the derivation card and the canvas all name the same edges. */
+        public List<MoveEdge> Added { get; set; } = new();
+        public List<MoveEdge> Removed { get; set; } = new();
 
         public MoveInfo(NeighbourType type, List<Node> nodes, List<int> positions,
                         double delta, string calculation) {
@@ -30,6 +34,13 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public MoveInfo DeepCopy() =>
-            new(Type, new List<Node>(Nodes), new List<int>(Positions), Delta, Calculation);
+            new(Type, new List<Node>(Nodes), new List<int>(Positions), Delta, Calculation) {
+                Added = new List<MoveEdge>(Added),
+                Removed = new List<MoveEdge>(Removed)
+            };
+    }
+
+    public record MoveEdge(Node A, Node B, double Length) {
+        public static MoveEdge Of((Node, Node) e) => new(e.Item1, e.Item2, Edge.GetDistance(e.Item1, e.Item2));
     }
 }

@@ -27,6 +27,12 @@
       "library": "Chart.js@2.9.4",
       "destination": "wwwroot/lib/Chart.js/",
       "files": [ "Chart.min.js" ]
+    },
+    {
+      "provider": "jsdelivr",
+      "library": "katex@0.16.11",
+      "destination": "wwwroot/lib/katex/",
+      "files": [ "dist/katex.min.js", "dist/katex.min.css", "dist/fonts/*.woff2" ]
     }
   ]
 }

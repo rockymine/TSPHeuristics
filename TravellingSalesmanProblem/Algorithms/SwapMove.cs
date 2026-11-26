@@ -53,18 +53,20 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public MoveInfo Describe() {
             var nodes = new List<Node> { NodeI, NodeJ };
-            string calculation;
+            (Node, Node)[] added, removed;
 
             if (NodeI == JPrev || JPrev == INext) {
-                calculation = MoveCalculation.Format(new[] { IPrev_J, I_JNext }, new[] { IPrev_I, J_JNext });
+                added = new[] { (IPrev, NodeJ), (NodeI, JNext) };
+                removed = new[] { (IPrev, NodeI), (NodeJ, JNext) };
             } else if (NodeI == JNext || JNext == IPrev) {
-                calculation = MoveCalculation.Format(new[] { JPrev_I, J_INext }, new[] { JPrev_J, I_INext });
+                added = new[] { (JPrev, NodeI), (NodeJ, INext) };
+                removed = new[] { (JPrev, NodeJ), (NodeI, INext) };
             } else {
-                calculation = MoveCalculation.Format(new[] { IPrev_J, J_INext, JPrev_I, I_JNext },
-                    new[] { IPrev_I, I_INext, JPrev_J, J_JNext });
+                added = new[] { (IPrev, NodeJ), (NodeJ, INext), (JPrev, NodeI), (NodeI, JNext) };
+                removed = new[] { (IPrev, NodeI), (NodeI, INext), (JPrev, NodeJ), (NodeJ, JNext) };
             }
 
-            return new MoveInfo(Type, nodes, new List<int> { I, J }, Costs, calculation);
+            return MoveCalculation.Describe(Type, nodes, new List<int> { I, J }, Costs, added, removed);
         }
 
 

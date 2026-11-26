@@ -1,0 +1,62 @@
+@using TravellingSalesmanProblem.Algorithms
+@inject IJSRuntime JS
+
+@* One rule worked through: what it does in a sentence, the symbolic line, the same line with
+   numbers, and the result, aligned on the relation. The TeX is typeset by KaTeX in one call per
+   card (math.js), only when the derivation changes. *@
+<article class="drv" @ref="element">
+    <header class="drv-head">
+        <h3>@Derivation.Title</h3>
+        @if (!string.IsNullOrEmpty(Derivation.Context)) {
+            <span class="drv-context">@Derivation.Context</span>
+        }
+        @if (!string.IsNullOrEmpty(Derivation.Verdict)) {
+            <span class="drv-verdict @VerdictClass">@Derivation.Verdict</span>
+        }
+    </header>
+    @if (!string.IsNullOrEmpty(Derivation.Caption)) {
+        <p class="drv-caption">@Derivation.Caption</p>
+    }
+    <div class="drv-grid">
+        @for (var i = 0; i < Derivation.Steps.Count; i++) {
+            var step = Derivation.Steps[i];
+            var kind = step.Kind.ToString().ToLowerInvariant();
+            @* A new symbolic line starts a new block (Δ, then f(y); P, then r). *@
+            @if (i > 0 && step.Kind == StepKind.Rule) {
+                <span class="drv-sep" aria-hidden="true"></span>
+            }
+            <span class="drv-lhs drv-@kind" data-tex="@step.Lhs"></span>
+            <span class="drv-rel drv-@kind" data-tex="@step.Rel"></span>
+            <span class="drv-rhs drv-@kind"><span class="drv-math" data-tex="@step.Rhs"></span></span>
+            @if (!string.IsNullOrEmpty(step.Note)) {
+                <span class="drv-note">@step.Note</span>
+            }
+        }
+    </div>
+    @if (!string.IsNullOrEmpty(Derivation.Footer)) {
+        <p class="drv-footer" data-tex="@Derivation.Footer"></p>
+    }
+</article>
+
+@code {
+    [Parameter]
+    public Derivation Derivation { get; set; }
+
+    private ElementReference element;
+    private Derivation rendered;
+
+    private string VerdictClass => Derivation.VerdictKind switch {
+        VerdictKind.Good => "good",
+        VerdictKind.Warn => "warn",
+        VerdictKind.Bad => "bad",
+        _ => "neutral"
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (ReferenceEquals(rendered, Derivation))
+            return;
+
+        rendered = Derivation;
+        await JS.InvokeVoidAsync("tspMath.render", element);
+    }
+}

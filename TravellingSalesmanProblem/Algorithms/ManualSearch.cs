@@ -137,6 +137,10 @@ namespace TravellingSalesmanProblem.Algorithms {
             state.MoveInfo = move.Describe();
             state.Iteration = from.Value.Iteration + 1;
 
+            var card = Derivations.Move(state.MoveInfo, from.Value.Distance, Derivations.MoveContext(state.MoveInfo),
+                "Applied by hand. Compare it with your own calculation.");
+            state.Derivations = card == null ? new List<Derivation>() : new List<Derivation> { card };
+
             RebuildChart(state, history, tour.Costs);
             UpdateStateMessages(state);
             return history.AddLast(state);

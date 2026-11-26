@@ -95,13 +95,8 @@ namespace TravellingSalesmanProblem.Algorithms {
         public double Delta => AddedLength - RemovedLength;
 
         public MoveInfo Describe() {
-            var added = AddedEdges;
-            var calculation = MoveCalculation.Format(
-                added.Select(e => Edge.GetDistance(e.Item1, e.Item2)),
-                new[] { Edge.GetDistance(A, B), Edge.GetDistance(C, D), Edge.GetDistance(E, F) });
-
-            return new MoveInfo(Type, new List<Node> { B, D, F }, new List<int> { I, J, K },
-                Delta, calculation);
+            return MoveCalculation.Describe(Type, new List<Node> { B, D, F }, new List<int> { I, J, K }, Delta,
+                AddedEdges, new[] { (A, B), (C, D), (E, F) });
         }
 
 

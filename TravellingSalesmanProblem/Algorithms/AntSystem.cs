@@ -72,6 +72,7 @@ namespace TravellingSalesmanProblem.Algorithms {
                 XBest = Colony[bestAnt].Path;
                 BestCosts = costs[bestAnt];
 
+                globalIteration = iteration + 1;
                 X = GlobalUpdating(X);
 
                 iteration++;
@@ -94,7 +95,9 @@ namespace TravellingSalesmanProblem.Algorithms {
             newState.Path = new List<Node>(XBest.Nodes);
             newState.PathEdges = X.Edges;
             newState.Iteration = iteration;
-            newState.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
+            newState.Derivations = lastGlobalUpdate == null
+                ? new List<Derivation>()
+                : new List<Derivation> { lastGlobalUpdate };
 
             UpdateStateMessages(newState);
             return newState;
@@ -104,6 +107,10 @@ namespace TravellingSalesmanProblem.Algorithms {
          * cloned every node and re-ran PostProcess only for the clones to be thrown away by the
          * two Nodes.Find() calls below - O(V * E) per iteration on top of an O(n^3) copy. Copying
          * the edges and pointing them straight at the existing nodes does the same job. */
+        /* The pheromone update of the last iteration, as shown in the Calculations tab. */
+        private Derivation lastGlobalUpdate;
+        private int globalIteration;
+
         private GraphProblem GlobalUpdating(GraphProblem graph) {
             var edges = new List<Edge>(graph.Edges.Count);
             foreach (var source in graph.Edges) {
@@ -151,11 +158,10 @@ namespace TravellingSalesmanProblem.Algorithms {
                 }
             }
 
-            if (lastEdge != null) {
-                Equations["Global Updating Rule"] = GlobalUpdatingRule == GlobalUpdatingRule.AS
-                    ? MathString.GlobalUpdatingRuleAS(lastEdge, Alpha, lastSum)
-                    : MathString.GlobalUpdatingRule(lastEdge, Alpha, lgbInversed);
-            }
+            lastGlobalUpdate = lastEdge == null ? null
+                : Derivations.GlobalUpdate(lastEdge, lastEdge.Pheromone, Alpha,
+                    GlobalUpdatingRule == GlobalUpdatingRule.AS ? lastSum : lgbInversed,
+                    BestCosts, GlobalUpdatingRule != GlobalUpdatingRule.AS, globalIteration);
 
             return new GraphProblem {
                 Nodes = graph.Nodes,

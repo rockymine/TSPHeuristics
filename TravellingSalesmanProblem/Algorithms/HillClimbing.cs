@@ -51,10 +51,11 @@ namespace TravellingSalesmanProblem.Algorithms {
                 if (Y.Costs >= X.Costs)
                     break;
 
+                var fx = X.Costs;
                 X = Y;
                 XBest = X;
                 iteration++;
-                history.AddLast(AdvanceState(history.Last.Value, iteration));
+                history.AddLast(AdvanceState(history.Last.Value, iteration, fx));
 
                 history.Last.Value.ChartInfo[0].XAxis.Add(iteration, "red");
                 history.Last.Value.ChartInfo[0].YAxis[0].Add(X.Costs, "red");
@@ -103,13 +104,19 @@ namespace TravellingSalesmanProblem.Algorithms {
             return new GraphProblem { Nodes = nodes, Edges = graph.Edges };
         }
 
+        private string DescentCaption() => DescentType switch {
+            DescentType.Steepest => "Steepest descent: every neighbour is checked and the shortest one is taken.",
+            DescentType.Next => "Next descent: neighbours are checked in order and the first shorter one is taken.",
+            _ => "Random descent: neighbours are drawn at random until one is shorter."
+        };
+
         public override void UpdateStateMessages(GraphState state) {
             state.Messages["Iteration"] = state.Iteration.ToString();
             state.Messages["Route"] = string.Join("-", state.Path.Select(n => n.Index));
             state.Messages["Distance"] = Math.Round(state.Distance, 3).ToString();
         }
 
-        private GraphState AdvanceState(GraphState state, int iteration) {
+        private GraphState AdvanceState(GraphState state, int iteration, double? fx = null) {
             var newState = state.DeepCopy();
 
             newState.Distance = XBest.Costs;
@@ -117,6 +124,11 @@ namespace TravellingSalesmanProblem.Algorithms {
             newState.PathEdges = XBest.Edges;
             newState.MoveInfo = XBest.MoveInfo?.DeepCopy();
             newState.Iteration = iteration;
+
+            var card = fx is { } before
+                ? Derivations.Move(newState.MoveInfo, before, Derivations.MoveContext(newState.MoveInfo), DescentCaption())
+                : null;
+            newState.Derivations = card == null ? new List<Derivation>() : new List<Derivation> { card };
 
             for (int i = 0; i < newState.ChartInfo[0].YAxis[0].Values.Count; i++) {
                 newState.ChartInfo[0].YAxis[0].Colors[i] = (i == iteration - 1) ? "blue" : "red";

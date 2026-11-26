@@ -38,8 +38,8 @@ namespace TravellingSalesmanProblem.Algorithms {
 
         public MoveInfo Describe() {
             var nodes = new List<Node> { NodeI, NodeJ };
-            string calculation = MoveCalculation.Format(new[] { Di_j, Di1_j1 }, new[] { Di_i1, Dj_j1 });
-            return new MoveInfo(Type, nodes, new List<int> { I, J }, Costs, calculation);
+            return MoveCalculation.Describe(Type, nodes, new List<int> { I, J }, Costs,
+                new[] { (NodeI, NodeJ), (NodeI1, NodeJ1) }, new[] { (NodeI, NodeI1), (NodeJ, NodeJ1) });
         }
 
 

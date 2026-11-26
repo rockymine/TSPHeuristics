@@ -676,3 +676,106 @@ label,
         padding: var(--space-2) var(--space-3);
     }
 }
+
+/* ── Derivation cards (Calculations tab) ──────────────────────────────────
+   One card per rule: title, context and verdict; a sentence on what the rule does; then the
+   lines aligned on their relation - the symbolic line muted, the line with numbers, and the
+   result emphasised on an accent tint. */
+.drv-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+    gap: var(--space-4);
+    align-items: start;
+}
+
+.drv {
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    min-width: 0;
+}
+
+.drv-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-2);
+}
+
+.drv-head h3 {
+    margin: 0;
+    font-size: var(--font-md);
+    font-weight: 600;
+    color: var(--text-strong);
+}
+
+.drv-context {
+    color: var(--text-muted);
+    font-size: var(--font-sm);
+}
+
+.drv-verdict {
+    margin-left: auto;
+    padding: 1px 10px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    font-size: var(--font-sm);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.drv-verdict.good { color: var(--canvas-added); background: color-mix(in srgb, var(--canvas-added) 12%, transparent); }
+.drv-verdict.bad { color: var(--canvas-removed); background: color-mix(in srgb, var(--canvas-removed) 12%, transparent); }
+.drv-verdict.warn { color: var(--canvas-move-second); background: color-mix(in srgb, var(--canvas-move-second) 14%, transparent); }
+.drv-verdict.neutral { color: var(--accent-text); background: var(--accent-soft); }
+
+.drv-caption {
+    margin: var(--space-2) 0 var(--space-3);
+    color: var(--text-secondary);
+    font-size: var(--font-base);
+    line-height: 1.5;
+}
+
+.drv-grid {
+    display: grid;
+    grid-template-columns: max-content max-content minmax(0, 1fr);
+    column-gap: var(--space-2);
+    row-gap: 6px;
+    align-items: baseline;
+    font-size: 15px;
+    overflow-x: auto;
+}
+
+.drv-lhs { text-align: right; }
+
+.drv-rule { color: var(--text-muted); }
+
+.drv-rhs.drv-result .drv-math {
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--text-strong);
+    font-weight: 600;
+}
+
+.drv-note {
+    grid-column: 3;
+    margin: -2px 0 4px;
+    color: var(--text-muted);
+    font-size: var(--font-sm);
+}
+
+/* Between blocks (Δ, then f(y); P, then r): one hairline across all three columns. */
+.drv-sep {
+    grid-column: 1 / -1;
+    height: 1px;
+    margin: var(--space-1) 0;
+    background: var(--border);
+}
+
+.drv-footer {
+    margin: var(--space-3) 0 0;
+    color: var(--text-muted);
+    font-size: var(--font-sm);
+}

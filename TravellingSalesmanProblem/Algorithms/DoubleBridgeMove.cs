@@ -57,12 +57,8 @@ namespace TravellingSalesmanProblem.Algorithms {
         }
 
         public MoveInfo Describe() {
-            var calculation = MoveCalculation.Format(
-                AddedEdges.Select(e => Edge.GetDistance(e.Item1, e.Item2)),
-                RemovedEdges.Select(e => Edge.GetDistance(e.Item1, e.Item2)));
-
-            return new MoveInfo(Type, new List<Node> { BStart, CStart, DStart, A2Start },
-                new List<int> { I, J, K, L }, Delta, calculation);
+            return MoveCalculation.Describe(Type, new List<Node> { BStart, CStart, DStart, A2Start },
+                new List<int> { I, J, K, L }, Delta, AddedEdges, RemovedEdges);
         }
 
 

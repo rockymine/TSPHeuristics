@@ -1,4 +1,4 @@
-﻿using ChartData;
+using ChartData;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,25 +47,28 @@ namespace TravellingSalesmanProblem.Algorithms {
             XBest = X;
             var iteration = 0;
             var temperature = state.Temperature;
+            initialTemperature = temperature;
+            lastUphill = null;
             history.AddLast(AdvanceState(state, iteration, temperature));
 
             while (temperature >= MinTemp) {
+                phase = iteration;
                 for (int i = 0; i < PhaseLength; i++) {
                     Y = NeighbourState.Create(X, NeighbourEnum, DescentType.Random);
 
                     if (Y.Costs <= X.Costs) {
+                        var fx = X.Costs;
                         X = Y;
 
                         if (X.Costs < XBest.Costs) {
                             XBest = X;
-                            history.AddLast(AdvanceState(history.Last.Value, iteration, temperature));
+                            history.AddLast(AdvanceState(history.Last.Value, iteration, temperature,
+                                Explain(fx, iteration, temperature)));
                         }
                     } else if (MetropolisRule(temperature)) {
                         X = Y;
                     }
                 }
-
-                Equations["Temperature Update"] = MathString.UpdateTemperature(history.Last.Value, Alpha);
 
                 iteration++;
                 temperature *= Alpha;
@@ -97,19 +100,44 @@ namespace TravellingSalesmanProblem.Algorithms {
             var r = Random.NextDouble();
             bool condition = r < Math.Exp(-(Y.Costs - X.Costs) / temperature);
 
-            Equations["Metropolis Rule"] = MathString.MetropolisRule(X, Y, temperature, r, condition);
+            lastUphill = (phase, X.Costs, Y.Costs, temperature, r);
             return condition;
         }
 
-        private GraphState AdvanceState(GraphState state, int iteration, double temperature) {
+        /* The rules behind a new best tour, in the order they happened: the move (shorter, so taken
+         * without a draw), the last longer tour tested since the previous state, and the cooling at
+         * the end of this phase. These used to be whatever the Equations dictionary held - the
+         * Metropolis line of some later draw next to the temperature update of an earlier state,
+         * so two different temperatures sat side by side and the order flipped between states. */
+        private int phase;
+        private double initialTemperature;
+        private (int Phase, double Fx, double Fy, double T, double R)? lastUphill;
+
+        private List<Derivation> Explain(double fx, int iteration, double temperature) {
+            var cards = new List<Derivation>();
+            var move = Derivations.Move(XBest.MoveInfo, fx, Derivations.MoveContext(XBest.MoveInfo),
+                "A shorter neighbour is always taken, without a random draw. This one is also the best tour so far.");
+            if (move != null)
+                cards.Add(move);
+
+            if (lastUphill is { } u) {
+                cards.Add(Derivations.Metropolis(u.Phase, u.Fx, u.Fy, u.T, u.R,
+                    $"last longer tour tested, phase {u.Phase}"));
+                lastUphill = null;
+            }
+
+            cards.Add(Derivations.Cooling(iteration, temperature, Alpha, initialTemperature, MinTemp, PhaseLength));
+            return cards;
+        }
+
+        private GraphState AdvanceState(GraphState state, int iteration, double temperature, List<Derivation> derivations = null) {
             var newState = state.DeepCopy();
 
             newState.Distance = XBest.Costs;
             newState.Path = XBest.Nodes;
             newState.PathEdges = XBest.Edges;
-            newState.Equations = Equations;
             newState.MoveInfo = XBest.MoveInfo?.DeepCopy();
-            newState.Equations = Equations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.DeepCopy());
+            newState.Derivations = derivations ?? new List<Derivation>();
             newState.Temperature = temperature;
             newState.Iteration = iteration;
 
