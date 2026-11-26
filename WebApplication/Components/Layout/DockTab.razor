@@ -1,0 +1,25 @@
+@implements IDisposable
+
+<div class="dock-pane" role="tabpanel" hidden="@(!Parent.IsActive(this))">
+    @ChildContent
+</div>
+
+@code {
+    [CascadingParameter]
+    public DockTabs Parent { get; set; }
+
+    [Parameter]
+    public string Title { get; set; }
+
+    /* Tabs that appear later (the distance matrix only exists in the manual mode) would otherwise
+     * be appended wherever they happened to register. */
+    [Parameter]
+    public int Order { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    protected override void OnInitialized() => Parent.Add(this);
+
+    public void Dispose() => Parent?.Remove(this);
+}

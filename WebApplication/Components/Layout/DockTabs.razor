@@ -1,0 +1,56 @@
+@* A docked panel of tool-window tabs, like the views Visual Studio lets you attach below the editor.
+   The panes register themselves (DockTab), and every pane stays rendered with the inactive ones
+   hidden. The views inside them hold component references the page keeps writing to (the tables,
+   the charts), so taking a pane out of the render tree while it is not shown would leave those
+   references pointing at disposed components. *@
+<div class="dock">
+    <div class="dock-tabs" role="tablist">
+        @foreach (var tab in Ordered) {
+            var current = tab;
+            <button type="button" role="tab" class="dock-tab @(IsActive(current) ? "active" : null)"
+                    aria-selected="@(IsActive(current) ? "true" : "false")"
+                    @onclick="() => Select(current)">
+                @current.Title
+            </button>
+        }
+    </div>
+    <div class="dock-body">
+        <CascadingValue Value="this" IsFixed="true">
+            @ChildContent
+        </CascadingValue>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    private readonly List<DockTab> tabs = new();
+    private DockTab active;
+
+    private IEnumerable<DockTab> Ordered => tabs.OrderBy(t => t.Order);
+
+    /* The pane shown when nothing has been picked, or when the picked one went away (a mode that
+     * has no distance matrix, say): the first in order. */
+    private DockTab Shown => active != null && tabs.Contains(active) ? active : Ordered.FirstOrDefault();
+
+    public bool IsActive(DockTab tab) => tab == Shown;
+
+    internal void Add(DockTab tab) {
+        if (tabs.Contains(tab))
+            return;
+
+        tabs.Add(tab);
+        StateHasChanged();
+    }
+
+    internal void Remove(DockTab tab) {
+        if (tabs.Remove(tab))
+            StateHasChanged();
+    }
+
+    private void Select(DockTab tab) {
+        active = tab;
+        StateHasChanged();
+    }
+}

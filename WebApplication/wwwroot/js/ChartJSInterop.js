@@ -61,8 +61,13 @@ export function LineChart(canvasid, chartInfo) {
                 backgroundColor: "rgba(220, 53, 69, 0.08)"
             }]
         },
+        /* Responsive, because the charts live in a dock tab that may be hidden when they are
+         * created: a fixed-size chart measured inside a hidden pane comes out 300 x 150. Chart.js
+         * resizes a responsive one to its box as soon as the pane is shown. */
         options: {
-            responsive: false,
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2.4,
             animation: { duration: 0 },
             legend: { labels: { fontColor: textColor } },
             scales: {

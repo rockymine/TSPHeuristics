@@ -98,3 +98,158 @@ a, .btn-link {
 .header {
     color: #a699e6;
 }
+/* ── Workspace layout ───────────────────────────────────────────────────────
+   Settings on the left, the stage on the right: a toolbar for moving through the run's states,
+   the two canvases side by side, and the docked views below them. */
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+.app-header h5 {
+    margin: 0;
+}
+
+.workspace {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    align-items: start;
+}
+
+.sidebar {
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+    background-color: #333333;
+    border-right: 1px solid #3a3a3a;
+}
+
+.stage {
+    min-width: 0;
+    padding: 0 1rem 1rem;
+}
+
+.stage-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 1rem;
+    padding: 0.6rem 0;
+    background-color: var(--bs-body-bg, #222);
+    border-bottom: 1px solid #3a3a3a;
+}
+
+.stage-toolbar .btn-toolbar {
+    gap: 2px;
+}
+
+.stage-toolbar-state {
+    flex-basis: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.1rem 1.25rem;
+    overflow-wrap: anywhere;
+}
+
+.stage-canvases {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.stage-canvases.pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.canvas-frame {
+    margin: 0;
+    min-width: 0;
+}
+
+.canvas-frame figcaption {
+    margin-bottom: 0.3rem;
+    font-weight: 500;
+}
+
+/* The canvas keeps its pixel size as a buffer and is scaled down to fit its column. */
+.canvas-frame canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.chart-box {
+    position: relative;
+    width: 100%;
+}
+
+/* ── Docked views ─────────────────────────────────────────────────────── */
+.dock {
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    background-color: #333333;
+}
+
+.dock-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 4px 4px 0;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+.dock-tab {
+    padding: 0.35rem 0.9rem;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    background: transparent;
+    color: inherit;
+    opacity: 0.75;
+}
+
+.dock-tab:hover {
+    opacity: 1;
+}
+
+.dock-tab.active {
+    opacity: 1;
+    background-color: #222;
+    border-color: #3a3a3a;
+}
+
+.dock-body {
+    padding: 0.75rem 1rem;
+}
+
+@media (max-width: 1100px) {
+    .stage-canvases.pair {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 800px) {
+    .workspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sidebar {
+        position: static;
+        max-height: none;
+        border-right: none;
+        border-bottom: 1px solid #3a3a3a;
+    }
+
+    .stage {
+        padding: 0 0.75rem 1rem;
+    }
+}
